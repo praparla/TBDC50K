@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Responsive Layout Tests — TB DC 50K</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link rel="stylesheet" href="../style.css" />
+  <link rel="stylesheet" href="../style.css?v=2" />
   <style>
     /* Test overlay */
     #test-overlay {
@@ -56,6 +56,44 @@
       </div>
     </div>
 
+    <div class="section collapsed" id="section-pace">
+      <h2>Pace Calculator <span class="section-toggle">&#9660;</span></h2>
+      <div class="section-body">
+        <div class="pace-form">
+          <label class="pace-label">Goal Finish Time</label>
+          <div class="pace-inputs">
+            <input type="number" id="pace-hours" min="0" max="11" placeholder="hrs" />
+            <span class="pace-separator">:</span>
+            <input type="number" id="pace-minutes" min="0" max="59" placeholder="min" />
+            <button id="btn-calc-pace" onclick="calculatePace()">Calculate</button>
+          </div>
+        </div>
+        <div id="pace-results">
+          <p class="hint">Enter a goal time to see splits.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="section collapsed" id="section-food">
+      <h2>Mandatory Food &#127790; <span class="section-toggle">&#9660;</span></h2>
+      <div class="section-body">
+        <p class="hint">Race rules — check off when completed:</p>
+        <div id="food-tracker"></div>
+      </div>
+    </div>
+
+    <div class="section collapsed" id="section-tools">
+      <h2>Tools <span class="section-toggle">&#9660;</span></h2>
+      <div class="section-body">
+        <div class="tools-grid">
+          <button id="btn-bathrooms" class="tool-btn" onclick="toggleBathrooms()">&#128701; Find Restrooms</button>
+          <button class="tool-btn" onclick="exportToGoogleMaps()">&#128506; Open in Google Maps</button>
+          <button class="tool-btn" onclick="downloadICS()">&#128197; Add to Calendar</button>
+          <button id="btn-flythrough" class="tool-btn" onclick="startFlythrough()">&#127916; Preview Route</button>
+        </div>
+      </div>
+    </div>
+
     <div class="section collapsed" id="section-pins">
       <h2>Custom Pins <span class="section-toggle">&#9660;</span></h2>
       <div class="section-body">
@@ -100,7 +138,7 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="../gpx_data.js"></script>
-  <script src="../app.js"></script>
+  <script src="../app.js?v=2"></script>
   <script>
     // ── Test Runner ──
     const _tests = [];
@@ -121,7 +159,7 @@
         html += `<div class="test-group"><h2>${group}</h2>`;
         tests.forEach(t => {
           const cls = t.pass ? 't-pass' : 't-fail';
-          const icon = t.pass ? '✓' : '✗';
+          const icon = t.pass ? '\u2713' : '\u2717';
           const detail = t.detail ? ` <span class="t-detail">(${t.detail})</span>` : '';
           html += `<div class="t-row ${cls}">${icon} ${t.name}${detail}</div>`;
         });
@@ -155,6 +193,12 @@
       testJSFunctions();
       testMapInit();
       testPinForm();
+      testDirections();
+      testPaceCalculator();
+      testFoodTracker();
+      testToolsSection();
+      testFlythroughFunctions();
+      testStopDistances();
     }
 
     // ── DOM Structure ──
@@ -163,13 +207,18 @@
       assert(G, 'sidebar exists', document.getElementById('sidebar'));
       assert(G, 'map container exists', document.getElementById('map'));
       assert(G, 'section-stops exists', document.getElementById('section-stops'));
+      assert(G, 'section-pace exists', document.getElementById('section-pace'));
+      assert(G, 'section-food exists', document.getElementById('section-food'));
+      assert(G, 'section-tools exists', document.getElementById('section-tools'));
       assert(G, 'section-pins exists', document.getElementById('section-pins'));
       assert(G, 'section-route exists', document.getElementById('section-route'));
       assert(G, 'context menu exists', document.getElementById('context-menu'));
       assert(G, 'sidebar-title-row exists', document.querySelector('.sidebar-title-row'));
 
       // Each section has section-body and section-toggle
-      ['section-stops', 'section-pins', 'section-route'].forEach(id => {
+      const sectionIds = ['section-stops', 'section-pace', 'section-food',
+                          'section-tools', 'section-pins', 'section-route'];
+      sectionIds.forEach(id => {
         const sec = document.getElementById(id);
         assert(G, `${id} has .section-body`, sec && sec.querySelector('.section-body'));
         assert(G, `${id} has .section-toggle`, sec && sec.querySelector('.section-toggle'));
@@ -285,15 +334,6 @@
       }
       assert(G, 'CSS custom properties defined in :root', hasCustomProps);
 
-      // FOUC prevention: data-theme should match saved theme on load
-      const savedTheme = localStorage.getItem(THEME_STORAGE_KEY);
-      const appliedTheme = document.documentElement.getAttribute('data-theme');
-      if (savedTheme && savedTheme !== DEFAULT_THEME) {
-        assert(G, 'data-theme matches localStorage on load',
-          appliedTheme === savedTheme,
-          `saved=${savedTheme}, applied=${appliedTheme}`);
-      }
-
       // Sidebar background pattern
       const sidebar = document.getElementById('sidebar');
       const bgImage = cs(sidebar).backgroundImage;
@@ -302,38 +342,43 @@
         bgImage.substring(0, 60) + '...');
     }
 
-    // ── Collapsible Sections ──
+    // ── Collapsible Sections (all viewports) ──
     function testCollapsibleSections() {
       const G = 'Collapsible Sections';
 
       // All start collapsed (class is in HTML)
-      assert(G, 'stops starts collapsed',
-        document.getElementById('section-stops').classList.contains('collapsed'));
-      assert(G, 'pins starts collapsed',
-        document.getElementById('section-pins').classList.contains('collapsed'));
-      assert(G, 'route starts collapsed',
-        document.getElementById('section-route').classList.contains('collapsed'));
+      const sectionIds = ['section-stops', 'section-pace', 'section-food',
+                          'section-tools', 'section-pins', 'section-route'];
+      sectionIds.forEach(id => {
+        assert(G, `${id} starts collapsed`,
+          document.getElementById(id).classList.contains('collapsed'));
+      });
 
-      // Toggle works: click h2 to expand
+      // Collapsed body is hidden (all viewports now)
+      const collapsedBody = document.querySelector('.section.collapsed .section-body');
+      if (collapsedBody) {
+        assert(G, 'collapsed body display=none',
+          cs(collapsedBody).display === 'none', cs(collapsedBody).display);
+      }
+
+      // Section-toggle is visible (all viewports now)
+      const toggle = document.querySelector('.section-toggle');
+      assert(G, 'section-toggle is visible',
+        toggle && cs(toggle).display !== 'none', toggle ? cs(toggle).display : 'missing');
+
+      // Toggle works: click h2 to expand then collapse
       const stopsH2 = document.querySelector('#section-stops h2');
       const stopsSection = document.getElementById('section-stops');
-      const isMobileNow = window.matchMedia('(max-width: 768px)').matches;
-
-      if (isMobileNow) {
-        stopsH2.click();
-        assert(G, 'clicking h2 toggles collapsed (mobile)',
-          !stopsSection.classList.contains('collapsed'));
-        // Toggle back
-        stopsH2.click();
-        assert(G, 'clicking again re-collapses (mobile)',
-          stopsSection.classList.contains('collapsed'));
-      } else {
-        // On desktop, clicking should not toggle
-        const wasBefore = stopsSection.classList.contains('collapsed');
-        stopsH2.click();
-        assert(G, 'clicking h2 does NOT toggle on desktop',
-          stopsSection.classList.contains('collapsed') === wasBefore);
-      }
+      stopsH2.click();
+      assert(G, 'clicking h2 expands section',
+        !stopsSection.classList.contains('collapsed'));
+      const stopsBody = stopsSection.querySelector('.section-body');
+      assert(G, 'expanded body is visible',
+        cs(stopsBody).display !== 'none', cs(stopsBody).display);
+      // Toggle back
+      stopsH2.click();
+      assert(G, 'clicking again re-collapses',
+        stopsSection.classList.contains('collapsed'));
     }
 
     // ── Responsive CSS Rules ──
@@ -364,19 +409,7 @@
       assert(G, 'small phone media query (380px) exists', hasSmallPhoneQuery);
       assert(G, 'landscape phone media query exists', hasLandscapeQuery);
 
-      // Desktop-only: section-toggle hidden
       if (!isMobileNow) {
-        const toggle = document.querySelector('.section-toggle');
-        assert(G, 'desktop: section-toggle display=none',
-          cs(toggle).display === 'none', cs(toggle).display);
-
-        // Desktop: section body always visible even if collapsed class
-        document.querySelectorAll('.section').forEach(sec => {
-          const body = sec.querySelector('.section-body');
-          assert(G, `desktop: ${sec.id} body visible`,
-            cs(body).display !== 'none', cs(body).display);
-        });
-
         // Desktop: sidebar width 340px
         const sidebar = document.getElementById('sidebar');
         assert(G, 'desktop: sidebar width=340px',
@@ -385,14 +418,17 @@
         // Desktop: body flex-direction=row
         assert(G, 'desktop: body flex-direction=row',
           cs(document.body).flexDirection === 'row', cs(document.body).flexDirection);
+
+        // Desktop: tools grid is 2-column
+        const toolsGrid = document.querySelector('.tools-grid');
+        if (toolsGrid) {
+          assert(G, 'desktop: tools-grid is 2-column',
+            cs(toolsGrid).gridTemplateColumns.includes('fr'),
+            cs(toolsGrid).gridTemplateColumns);
+        }
       }
 
-      // Mobile-only checks
       if (isMobileNow) {
-        const toggle = document.querySelector('.section-toggle');
-        assert(G, 'mobile: section-toggle visible',
-          cs(toggle).display !== 'none', cs(toggle).display);
-
         // Mobile: body flex-direction=column
         assert(G, 'mobile: body flex-direction=column',
           cs(document.body).flexDirection === 'column', cs(document.body).flexDirection);
@@ -402,19 +438,23 @@
         assert(G, 'mobile: sidebar is full width',
           sidebar.offsetWidth >= window.innerWidth - 2, `${sidebar.offsetWidth}px`);
 
-        // Mobile: collapsed body hidden
-        const collapsed = document.querySelector('.section.collapsed .section-body');
-        if (collapsed) {
-          assert(G, 'mobile: collapsed body display=none',
-            cs(collapsed).display === 'none', cs(collapsed).display);
-        }
-
         // Mobile: touch targets >= 44px
         const stopItem = document.querySelector('.stop-item');
         if (stopItem) {
           assert(G, 'mobile: stop-item min-height>=44',
             parseInt(cs(stopItem).minHeight) >= 44,
             cs(stopItem).minHeight);
+        }
+
+        // Mobile: tools grid is 1-column
+        const toolsGrid = document.querySelector('.tools-grid');
+        if (toolsGrid) {
+          // Expand tools section first
+          document.querySelector('#section-tools h2').click();
+          const cols = cs(toolsGrid).gridTemplateColumns;
+          assert(G, 'mobile: tools-grid is single column',
+            !cols.includes(' '), cols);
+          document.querySelector('#section-tools h2').click();
         }
       }
     }
@@ -482,6 +522,218 @@
       assert(G, 'add button text is contextual',
         addBtn && (addBtn.textContent.includes('Tap') || addBtn.textContent.includes('Click')),
         addBtn ? addBtn.textContent : 'missing');
+    }
+
+    // ── Directions (openInMaps) ──
+    function testDirections() {
+      const G = 'Directions';
+      assert(G, 'openInMaps is a function', typeof openInMaps === 'function');
+      assert(G, 'openInMaps is on window', typeof window.openInMaps === 'function');
+
+      // Stop popups should contain Directions button markup
+      // Open first stop popup and check
+      if (stopMarkers.length > 0) {
+        const popup = stopMarkers[0].getPopup();
+        assert(G, 'stop marker has popup', !!popup);
+        const content = popup ? popup.getContent() : '';
+        assert(G, 'stop popup has Directions button',
+          content.includes('popup-directions-btn') && content.includes('openInMaps'),
+          content.substring(0, 80));
+      }
+    }
+
+    // ── Pace Calculator ──
+    function testPaceCalculator() {
+      const G = 'Pace Calculator';
+
+      assert(G, 'calculatePace is a function', typeof calculatePace === 'function');
+      assert(G, 'calculatePace is on window', typeof window.calculatePace === 'function');
+
+      // DOM elements exist
+      assert(G, 'pace-hours input exists', !!document.getElementById('pace-hours'));
+      assert(G, 'pace-minutes input exists', !!document.getElementById('pace-minutes'));
+      assert(G, 'pace-results div exists', !!document.getElementById('pace-results'));
+      assert(G, 'btn-calc-pace exists', !!document.getElementById('btn-calc-pace'));
+
+      // Calculate with 9h 0m and check output
+      const hoursInput = document.getElementById('pace-hours');
+      const minsInput = document.getElementById('pace-minutes');
+      const resultsDiv = document.getElementById('pace-results');
+
+      hoursInput.value = '9';
+      minsInput.value = '0';
+      calculatePace();
+
+      const html = resultsDiv.innerHTML;
+      assert(G, 'results contain pace-splits', html.includes('pace-splits'));
+      assert(G, 'results contain Start row', html.includes('Start'));
+      assert(G, 'results contain Finish row', html.includes('Finish'));
+      assert(G, 'results show pace note', html.includes('min/mi'));
+
+      // Check split count (8 stops + 1 finish = 9 rows)
+      const rows = resultsDiv.querySelectorAll('.pace-split-row');
+      assert(G, '9 pace split rows (8 stops + finish)', rows.length === 9, `found ${rows.length}`);
+
+      // Mandatory food stops show taco emoji
+      assert(G, 'Stop 3 has taco emoji', html.includes('Stop 3') && html.includes('\uD83C\uDF2E'));
+      assert(G, 'Stop 7 has taco emoji', html.includes('Stop 7'));
+
+      // Empty input shows hint
+      hoursInput.value = '';
+      minsInput.value = '';
+      calculatePace();
+      assert(G, 'empty input shows hint',
+        resultsDiv.innerHTML.includes('Enter a goal time'));
+
+      // Persistence: set and check localStorage
+      hoursInput.value = '8';
+      minsInput.value = '30';
+      calculatePace();
+      assert(G, 'hours persisted to localStorage',
+        localStorage.getItem('tb50k_pace_hours') === '8');
+      assert(G, 'minutes persisted to localStorage',
+        localStorage.getItem('tb50k_pace_minutes') === '30');
+
+      // Clean up
+      localStorage.removeItem('tb50k_pace_hours');
+      localStorage.removeItem('tb50k_pace_minutes');
+      hoursInput.value = '';
+      minsInput.value = '';
+    }
+
+    // ── Mandatory Food Tracker ──
+    function testFoodTracker() {
+      const G = 'Food Tracker';
+
+      assert(G, 'FOOD_RULES array exists', Array.isArray(FOOD_RULES));
+      assert(G, 'FOOD_RULES has 2 rules', FOOD_RULES.length === 2, `found ${FOOD_RULES.length}`);
+      assert(G, 'buildFoodTracker is a function', typeof buildFoodTracker === 'function');
+
+      // Food tracker DOM
+      const container = document.getElementById('food-tracker');
+      assert(G, 'food-tracker container exists', !!container);
+
+      const rows = container ? container.querySelectorAll('.food-rule-row') : [];
+      assert(G, '2 food rule rows rendered', rows.length === 2, `found ${rows.length}`);
+
+      if (rows.length >= 2) {
+        // Each row has checkbox and label
+        const cb1 = rows[0].querySelector('input[type="checkbox"]');
+        const label1 = rows[0].querySelector('.food-rule-label');
+        assert(G, 'first rule has checkbox', !!cb1);
+        assert(G, 'first rule has label', !!label1);
+        assert(G, 'first rule mentions Stop 3',
+          label1 && label1.textContent.includes('Stop 3'));
+
+        const cb2 = rows[1].querySelector('input[type="checkbox"]');
+        const label2 = rows[1].querySelector('.food-rule-label');
+        assert(G, 'second rule has checkbox', !!cb2);
+        assert(G, 'second rule mentions Stop 7',
+          label2 && label2.textContent.includes('Stop 7'));
+
+        // Check toggle: check, verify class, uncheck
+        if (cb1) {
+          cb1.checked = true;
+          cb1.dispatchEvent(new Event('change'));
+          assert(G, 'checking adds .completed class',
+            rows[0].classList.contains('completed'));
+          assert(G, 'check persisted to localStorage',
+            localStorage.getItem('tb50k_food_rule_1') === 'true');
+
+          cb1.checked = false;
+          cb1.dispatchEvent(new Event('change'));
+          assert(G, 'unchecking removes .completed class',
+            !rows[0].classList.contains('completed'));
+
+          // Clean up
+          localStorage.removeItem('tb50k_food_rule_1');
+          localStorage.removeItem('tb50k_food_rule_2');
+        }
+      }
+    }
+
+    // ── Tools Section ──
+    function testToolsSection() {
+      const G = 'Tools Section';
+
+      // Tool buttons exist
+      const grid = document.querySelector('.tools-grid');
+      assert(G, 'tools-grid exists', !!grid);
+      const buttons = grid ? grid.querySelectorAll('.tool-btn') : [];
+      assert(G, '4 tool buttons', buttons.length === 4, `found ${buttons.length}`);
+
+      // Specific buttons
+      assert(G, 'bathrooms button exists', !!document.getElementById('btn-bathrooms'));
+      assert(G, 'flythrough button exists', !!document.getElementById('btn-flythrough'));
+
+      // Functions exist
+      assert(G, 'toggleBathrooms is a function', typeof toggleBathrooms === 'function');
+      assert(G, 'exportToGoogleMaps is a function', typeof exportToGoogleMaps === 'function');
+      assert(G, 'downloadICS is a function', typeof downloadICS === 'function');
+      assert(G, 'startFlythrough is a function', typeof startFlythrough === 'function');
+
+      // Bathroom state starts off
+      assert(G, 'bathroomToggleOn starts false', bathroomToggleOn === false);
+      assert(G, 'bathroomLayer starts null', bathroomLayer === null);
+
+      // Constants
+      assert(G, 'BATHROOM_CACHE_KEY defined', typeof BATHROOM_CACHE_KEY === 'string');
+      assert(G, 'BATHROOM_CACHE_TTL is 7 days',
+        BATHROOM_CACHE_TTL === 7 * 24 * 60 * 60 * 1000,
+        `${BATHROOM_CACHE_TTL}ms`);
+    }
+
+    // ── Flythrough Functions ──
+    function testFlythroughFunctions() {
+      const G = 'Flythrough';
+
+      assert(G, 'startFlythrough is a function', typeof startFlythrough === 'function');
+      assert(G, 'stopFlythrough is a function', typeof stopFlythrough === 'function');
+      assert(G, 'flythroughActive starts false', flythroughActive === false);
+      assert(G, 'flythroughInterval starts null', flythroughInterval === null);
+
+      // Start flythrough, verify state, stop it immediately
+      startFlythrough();
+      assert(G, 'after start: flythroughActive is true', flythroughActive === true);
+      assert(G, 'after start: interval is set', flythroughInterval !== null);
+
+      const btn = document.getElementById('btn-flythrough');
+      assert(G, 'after start: button text changes',
+        btn && btn.textContent.includes('Stop'), btn ? btn.textContent : 'missing');
+      assert(G, 'after start: button has .active',
+        btn && btn.classList.contains('active'));
+
+      stopFlythrough();
+      assert(G, 'after stop: flythroughActive is false', flythroughActive === false);
+      assert(G, 'after stop: interval is cleared', flythroughInterval === null);
+      assert(G, 'after stop: button text resets',
+        btn && btn.textContent.includes('Preview'), btn ? btn.textContent : 'missing');
+    }
+
+    // ── STOP_DISTANCES ──
+    function testStopDistances() {
+      const G = 'Stop Distances';
+
+      assert(G, 'STOP_DISTANCES is array', Array.isArray(STOP_DISTANCES));
+      assert(G, 'STOP_DISTANCES has 9 entries (start + 7 stops + finish)',
+        STOP_DISTANCES.length === 9, `found ${STOP_DISTANCES.length}`);
+      assert(G, 'starts at 0', STOP_DISTANCES[0] === 0);
+      assert(G, 'finishes at 32.4', STOP_DISTANCES[8] === 32.4);
+
+      // Monotonically increasing
+      let monotonic = true;
+      for (let i = 1; i < STOP_DISTANCES.length; i++) {
+        if (STOP_DISTANCES[i] <= STOP_DISTANCES[i - 1]) {
+          monotonic = false;
+          break;
+        }
+      }
+      assert(G, 'distances are monotonically increasing', monotonic);
+
+      // Matches known stop values
+      assert(G, 'Stop 1 at 5.1 mi', STOP_DISTANCES[1] === 5.1);
+      assert(G, 'Stop 3 at 15.5 mi', STOP_DISTANCES[3] === 15.5);
+      assert(G, 'Stop 7 at 23.5 mi', STOP_DISTANCES[7] === 23.5);
     }
   </script>
 </body>

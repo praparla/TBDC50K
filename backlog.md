@@ -301,3 +301,4 @@ Working through backlog in priority order. Skipping features that require user a
 - [x] **Course preview flythrough** (2026-03-10) — Animated camera pan along GPX track, togglable start/stop.
 - [x] **Mobile-first redesign** (2026-03-10) — Collapsible sidebar sections on all viewports, 44px+ touch targets, responsive tools grid.
 - [x] **Collapsible sections on desktop** (2026-03-10) — Sections start collapsed to reduce visual clutter; click to expand. Toggle arrows visible on all viewports.
+- [x] **Comprehensive test rewrite** (2026-03-10) — Rewrote `tests/responsive.test.html` to cover all new features. 246 total assertions across 14 test groups: DOM structure, event link, theme system, collapsible sections, responsive CSS, JS functions, map init, pin form, directions, pace calculator, food tracker, tools section, flythrough, stop distances. Tests pass at both mobile (375px) and desktop (1280px) viewports.

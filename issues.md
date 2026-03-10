@@ -7,6 +7,7 @@
 - **Browser caching during dev:** When changing JS that defines new globals (e.g. `THEMES`), aggressive browser caching can serve stale files even after server restart. Temporary cache-bust query params on `<script>` tags (`?v=2`) force a fresh load. Remove after confirming.
 - **FOUC prevention for themes:** Apply saved theme via inline `<script>` in `<head>` (before body renders) to avoid flash of default theme. Read `localStorage` and set `data-theme` attribute immediately.
 - **Leaflet init without setView:** For flex layouts, create the map without `setView()` and use `requestAnimationFrame` + `fitBounds({ animate: false })`. Avoids visible map jump on load. Don't use CSS `visibility`/`opacity` to hide the map container — Leaflet needs it visible for size calculations.
+- **Stale file copies on dev server:** When serving from `/tmp` via a copy-on-start script, edits to source files in iCloud Drive aren't reflected until you manually re-copy. Always re-copy all changed files after edits, then force reload with cache-bust params (`?v=N`) on `<link>` and `<script>` tags.
 
 ---
 
@@ -17,6 +18,15 @@
 ---
 
 ## Closed Issues
+
+### [ISSUE-005] CSS rules not loading after style.css edits
+- **Status:** Fixed
+- **Severity:** Medium
+- **Found:** 2026-03-10
+- **Fixed:** 2026-03-10
+- **Root Cause:** The `/tmp/tb50k_serve.sh` dev server copies files from iCloud Drive to `/tmp` only at startup. After editing `style.css` and `app.js` to add new features (pace calculator, food tracker, tools grid, collapsible sections), the served files were stale. Browser only loaded 67 of the expected ~132 CSS rules; all new selectors were missing.
+- **Fix:** (1) Manually re-copied all source files to `/tmp/tb50k_serve/` after each edit batch. (2) Added cache-bust query params `?v=2` to `<link rel="stylesheet">` and `<script>` tags in `index.html` to force browsers to reload fresh assets.
+- **Lesson:** When using a copy-on-start dev server, always re-copy after edits and use cache-bust params to defeat browser caching. Added to Key Pointers.
 
 ### [ISSUE-004] Map visibly resizes/jumps on initial page load
 - **Status:** Fixed
