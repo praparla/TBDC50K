@@ -27,6 +27,32 @@
     radial-gradient(ellipse at 20% 80%, rgba(104,42,141,0.2) 0%, transparent 50%);
 }
 
+/* ── Theme: Live Más Modern (explicit, same as :root) ── */
+[data-theme="modern"] {
+  --color-bg: #1a0a2e;
+  --color-bg-secondary: #2a1a4a;
+  --color-accent: #682a8d;
+  --color-accent-hover: #7c3aed;
+  --color-accent-secondary: #a78bfa;
+  --color-accent-tertiary: #d8b4fe;
+  --color-text: #ffffff;
+  --color-text-secondary: #d8b4fe;
+  --color-text-muted: #999;
+  --color-border: #4a2070;
+  --color-border-subtle: #3a1850;
+  --color-alert: #e11d48;
+  --color-warning: #fbbf24;
+  --color-success: #059669;
+  --color-route: #a78bfa;
+  --color-disabled: #444;
+  --color-shadow: rgba(0,0,0,0.4);
+  --color-scrollbar: #555;
+  --sidebar-pattern:
+    linear-gradient(135deg, rgba(104,42,141,0.25) 0%, transparent 50%),
+    linear-gradient(225deg, rgba(167,139,250,0.12) 0%, transparent 40%),
+    radial-gradient(ellipse at 20% 80%, rgba(104,42,141,0.2) 0%, transparent 50%);
+}
+
 /* ── Theme: Retro Bell '85 ── */
 [data-theme="retro85"] {
   --color-bg: #1a0800;

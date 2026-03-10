@@ -89,8 +89,10 @@ Each Taco Bell stop and bathroom deserves a richer experience than a basic Leafl
 - [ ] **Funny stop rating scales** — Each TB stop gets three fun ratings displayed as emoji pip rows:
   - 🌯 **Bean Burrito Price Scale** (1–5): relative cost of the mandatory food item, calibrated so 1 burrito ≈ $1.49. Shows what you're paying in burrito-equivalents. Tooltip: "This stop will cost you 3 Bean Burritos."
   - 🌮 **Stop Experience Scale** (1–5): overall vibe from "Sad Sauce Packet" (1) to "Cantina Tier" (5). Ratings are pre-authored in a `STOP_META` object in `app.js`.
-  - 🚽 **Bathroom Quality Scale** (1–5): from "Porta-Potty Purgatory" (1) → "Questionable" (2) → "Functional" (3) → "Surprisingly Decent" (4) → "Porcelain Palace" (5). Pre-authored per stop; shown on bathroom markers too.
+  - 🤢 **Vomit Risk Scale** (1–5): from "100% Upchuck Guarantee" (1) → "Odds Not Good" (2) → "Roll The Dice" (3) → "Probably Fine" (4) → "Would Eat A Chalupa Off This Floor" (5). Pre-authored per stop; shown on bathroom finder layer markers too. Each bathroom marker popup leads with this rating in big text so runners can make a split-second call at mile 24.
   - Implementation: define a `STOP_META` array in `app.js` with `{ stopIndex, burritoRating, tacoRating, bathroomRating, vibeNote, crewAccess, trivia }` for each of the 8 stops. Rendering is pure DOM — no new dependencies.
+
+- [ ] **Funny reviews panel (Google Places)** — Fetch top 3–5 reviews per Taco Bell stop from the Google Places API (`Places Details` endpoint, `fields=reviews,rating`). Pre-look up and hardcode each stop's `placeId` in `STOP_DATA` once (they never change). Cache raw API response in `localStorage` keyed `tb50k_reviews_{placeId}` with a 30-day TTL — 8 stops × ~1 API request per visitor stays well inside the $200/month free credit tier (~$0.017/lookup). Render in the stop detail panel as a horizontal scroll of review cards: ★★★★☆ rating, reviewer name, relative timestamp, and review text capped at 240 chars with a "Read more" toggle. Sort by Google's relevance-first default, which naturally surfaces the most distinctive and funny reviews. Tag any review mentioning Taco Bell menu items (chalupa, bean burrito, baja blast, fire sauce, crunchwrap, etc.) with a 🌮 badge. **Fallback plan (critical):** if API call fails or quota is hit, fall back to 2–3 pre-authored satirical placeholder reviews committed in `STOP_META` — e.g., *"Ate here at mile 21. Can confirm the Chalupa Supreme is still good when you're dissociating."* No review panel on OSM bathroom markers — no Place IDs available and the vibes would be grim. **API key hygiene:** browser-side key restricted to this domain only; inject at build time from `.env`; never commit raw.
 
 - [ ] **Sauce packet wisdom copy** — When "Sauce Packet" theme is active, replace standard UI hint text with sauce packet sayings. Examples: sidebar empty state → *"Will you marry me?"* | bathroom tooltip → *"Is it hot in here, or is it just me?"* | distance banner → *"I'm not like other hot sauces."* Defined in a `SAUCE_COPY` object keyed by UI element ID; `applyTheme()` swaps copy in when theme === 'sauce'.
 
@@ -111,11 +113,11 @@ A static, organizer-curated layer of neighborhood hospitality stops: private hom
     "host": "Jake M.",
     "runner_note": "Cold towels, beer, and a cowbell. Find us on the corner.",
     "crew_note": "Parking on 14th St N. Ring bell for gate code.",
-    "amenities": ["beer", "snacks", "music", "chairs"],
+    "amenities": ["beer", "shots", "snacks", "water", "music", "chairs", "ice", "porta-potty", "tattoos", "dog-petting-zone", "medical", "family-zone"],
     "confirmed": true
   }
   ```
-  Load via `fetch('block_parties.json')` on page init; cache in `localStorage` key `tb50k_block_parties` for 1 hour. Render as a toggleable 🎉 marker layer.
+  Full amenity glossary (rendered as emoji badges in UI): 🍺 beer · 🥃 shots · 🌮 snacks · 💧 water · 🎵 music · 🪑 chairs · 🧊 ice · 🚽 porta-potty · 🎨 tattoos · 🐶 dog-petting-zone · 🏥 medical · 👨‍👩‍👧 family-zone. Runner view shows only runner-relevant badges (water, snacks, shots, tattoos, dogs); Crew view shows all including parking/medical. Load via `fetch('block_parties.json')` on page init; cache in `localStorage` key `tb50k_block_parties` for 1 hour. Render as a toggleable 🎉 marker layer.
 
 - [ ] **Runner vs. Crew view toggle** — Toggle in the sidebar header (two-button pill: 🏃 Runner | 🧑‍🤝‍🧑 Crew). In **Runner view**: block party popups show name, mile marker, what to expect, and "Open in Maps" button — no address, no parking, nothing distracting. In **Crew view**: full address, parking notes, host contact (if provided), and all amenities. State persisted to `localStorage`. Also controls visibility of other crew-relevant info (e.g., parking callouts on spectator spots layer).
 
@@ -131,7 +133,7 @@ These features require user authentication and a persistent backend (e.g., Supab
 
 - [ ] **Runner vs. Cheerer registration** — Users sign up and declare: "I'm running" or "I'm cheering." Runners see their training plan overlay and pace calculator; Cheerers see optimal spectator spots and party layer by default. Role stored on user profile; switchable.
 
-- [ ] **Mandatory food posting** — At each of the two mandatory food stops (Stop 3 and Stop 7), runners can log what they ate and optionally add a photo + one-sentence hot take. E.g., "Ate the Crunchwrap Supreme. No regrets. 🌮🌮🌮🌮🌮." Logged with timestamp and GPS coordinates for authenticity.
+- [ ] **Food consumption log at every stop** — Runners log what they ate at all 8 TB stops (not just the two mandatory ones). Each entry: menu item(s) ordered, quantity, optional one-sentence hot take, optional photo, timestamp, and GPS coordinates (auto-captured for authenticity). Mandatory stops (Stop 3 + Stop 7) are flagged — the two race rules auto-validate when logged and display a "✓ Rule satisfied" badge. Running tally shown in the sidebar: *"You've consumed 6 menu items. Legend. 🌮🌮🌮🌮🌮🌮"* Log stored server-side on user profile; also powers the social feed. This is part of the race rules per the event website, so it's a core P3 feature, not a nice-to-have.
 
 - [ ] **Social feed — what did you eat?** — A race-day feed (think lightweight Strava flyby) showing posts from all runners in real time: "Stop 4 — Jake just ate a Chalupa Supreme at 10:42 AM." Feed visible to all logged-in users; sortable by recency or stop number. Basic moderation: posts auto-hidden if flagged by 3+ users.
 

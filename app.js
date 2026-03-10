@@ -52,7 +52,7 @@ const THEMES = {
   },
 };
 
-const DEFAULT_THEME = 'modern';
+const DEFAULT_THEME = 'reign94';
 const THEME_STORAGE_KEY = 'tb50k_theme';
 
 const TACO_BELL_STOPS = [
@@ -104,11 +104,7 @@ function applyTheme(themeId) {
   currentThemeId = theme.id;
 
   // Apply data-theme attribute (CSS variables switch)
-  if (theme.id === DEFAULT_THEME) {
-    document.documentElement.removeAttribute('data-theme');
-  } else {
-    document.documentElement.setAttribute('data-theme', theme.id);
-  }
+  document.documentElement.setAttribute('data-theme', theme.id);
 
   // Persist
   localStorage.setItem(THEME_STORAGE_KEY, theme.id);
@@ -170,7 +166,7 @@ function initMap() {
   map = L.map('map', {
     zoomControl: true,
     attributionControl: true,
-  }).setView([38.87, -77.05], 12);
+  });
 
   // Apply saved theme's tile layer (or default)
   const theme = getTheme(getThemeId());
@@ -200,13 +196,13 @@ function loadGPX() {
   // Add Taco Bell stop markers from embedded waypoints
   addStopMarkers(GPX_WAYPOINTS);
 
-  // Fit map to route
-  const delay = isMobile() ? 300 : 100;
-  setTimeout(() => {
+  // Fit map to route — use rAF to let flex layout settle before sizing (ISSUE-004)
+  requestAnimationFrame(() => {
     map.invalidateSize();
     const padding = isMobile() ? 0.02 : 0.05;
-    map.fitBounds(routeLayer.getBounds().pad(padding));
-  }, delay);
+    map.fitBounds(routeLayer.getBounds().pad(padding), { animate: false });
+    document.getElementById('map').classList.add('map-ready');
+  });
 
   // Calculate route info
   updateRouteInfo(GPX_TRACK);

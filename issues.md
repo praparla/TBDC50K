@@ -6,21 +6,26 @@
 - **Embedded data > fetch for static sites:** Embedding GPX data as JS avoids CORS issues with `file://` protocol and removes server dependency for local development.
 - **Browser caching during dev:** When changing JS that defines new globals (e.g. `THEMES`), aggressive browser caching can serve stale files even after server restart. Temporary cache-bust query params on `<script>` tags (`?v=2`) force a fresh load. Remove after confirming.
 - **FOUC prevention for themes:** Apply saved theme via inline `<script>` in `<head>` (before body renders) to avoid flash of default theme. Read `localStorage` and set `data-theme` attribute immediately.
+- **Leaflet init without setView:** For flex layouts, create the map without `setView()` and use `requestAnimationFrame` + `fitBounds({ animate: false })`. Avoids visible map jump on load. Don't use CSS `visibility`/`opacity` to hide the map container — Leaflet needs it visible for size calculations.
 
 ---
 
 ## Open Issues
 
-### [ISSUE-004] Map visibly resizes/jumps on initial page load
-- **Status:** Open
-- **Severity:** Low
-- **Found:** 2026-03-10
-- **Root Cause:** On page load, the flex layout (sidebar + map) settles over ~100–300ms. The map initializes at a default zoom, then `fitBounds` fires after a `setTimeout` delay. This creates a visible jump/resize as the map snaps from its initial state to the fitted route bounds. More noticeable on mobile where the layout shift is larger (sidebar stacks above map, changing map height significantly).
-- **Possible Fixes:** (1) Hide map with `opacity: 0` until after `fitBounds` completes, then fade in. (2) Use `ResizeObserver` on the map container instead of a fixed `setTimeout` to trigger `fitBounds` at exactly the right moment. (3) Increase the `setTimeout` delay on mobile (currently 300ms) if the layout hasn't settled yet.
+(none)
 
 ---
 
 ## Closed Issues
+
+### [ISSUE-004] Map visibly resizes/jumps on initial page load
+- **Status:** Fixed
+- **Severity:** Low
+- **Found:** 2026-03-10
+- **Fixed:** 2026-03-10
+- **Root Cause:** On page load, the flex layout (sidebar + map) settles over ~100–300ms. The map initializes at a default `setView()` zoom, then `fitBounds` fires after a `setTimeout` delay. This creates a visible jump/resize as the map snaps from its initial state to the fitted route bounds.
+- **Fix:** Three changes: (1) Initialize Leaflet map without `setView()` so there's no wrong initial zoom to snap from. (2) Replace `setTimeout` with `requestAnimationFrame` for tighter timing on `invalidateSize()` + `fitBounds()`. (3) Pass `{ animate: false }` to `fitBounds()` to prevent visible animated transition.
+- **Lesson:** For flex layouts, defer Leaflet's initial view entirely — create the map without `setView`, then call `fitBounds` inside `requestAnimationFrame` after the layout paints. Avoid CSS visibility/opacity hacks on the map container as they break Leaflet's container size calculations.
 
 ### [ISSUE-001] Map renders at world zoom on first load
 - **Status:** Fixed

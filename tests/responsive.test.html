@@ -138,10 +138,13 @@
     function cs(el) { return getComputedStyle(el); }
 
     // Wait for app to initialize then run tests
+    // Use rAF inside setTimeout to ensure loadGPX's rAF has completed
     setTimeout(() => {
-      runAllTests();
-      renderTests();
-    }, 600);
+      requestAnimationFrame(() => {
+        runAllTests();
+        renderTests();
+      });
+    }, 800);
 
     function runAllTests() {
       testDOMStructure();
@@ -454,6 +457,13 @@
       assert(G, 'stop markers created',
         Array.isArray(stopMarkers) && stopMarkers.length === 8,
         `count=${stopMarkers ? stopMarkers.length : 'undefined'}`);
+
+      // Map reveal after fitBounds (ISSUE-004 fix)
+      const mapEl = document.getElementById('map');
+      assert(G, 'map has .map-ready class after load',
+        mapEl.classList.contains('map-ready'));
+      assert(G, 'map is visible after load',
+        cs(mapEl).visibility === 'visible', cs(mapEl).visibility);
     }
 
     // ── Pin Form ──

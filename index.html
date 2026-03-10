@@ -9,8 +9,8 @@
   <script>
     // Apply saved theme before render to prevent flash of default theme
     (function() {
-      var t = localStorage.getItem('tb50k_theme');
-      if (t) document.documentElement.setAttribute('data-theme', t);
+      var t = localStorage.getItem('tb50k_theme') || 'reign94';
+      document.documentElement.setAttribute('data-theme', t);
     })();
   </script>
 </head>
