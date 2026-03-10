@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Responsive Layout Tests — TB DC 50K</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="../style.css" />
+  <style>
+    /* Test overlay */
+    #test-overlay {
+      position: fixed;
+      top: 0; right: 0;
+      width: 420px;
+      max-height: 100vh;
+      overflow-y: auto;
+      background: rgba(10, 10, 30, 0.95);
+      border-left: 2px solid #6b2fa0;
+      z-index: 9999;
+      padding: 16px;
+      font-family: monospace;
+      font-size: 13px;
+      color: #e0e0e0;
+    }
+    #test-overlay h1 { color: #d8b4fe; font-size: 1rem; margin-bottom: 12px; }
+    .test-group { margin-bottom: 12px; }
+    .test-group h2 { color: #a78bfa; font-size: 0.85rem; margin-bottom: 4px; border-bottom: 1px solid #333; padding-bottom: 2px; }
+    .t-pass { color: #34d399; }
+    .t-fail { color: #fb7185; }
+    .t-row { padding: 1px 0; }
+    .t-detail { color: #888; font-size: 11px; }
+    .t-summary { margin-top: 12px; padding: 8px; border-radius: 6px; font-weight: bold; }
+    .t-summary.ok { background: rgba(5, 150, 105, 0.2); color: #34d399; }
+    .t-summary.fail { background: rgba(225, 29, 72, 0.2); color: #fb7185; }
+  </style>
+</head>
+<body>
+  <!-- Load the real app HTML structure -->
+  <div id="sidebar">
+    <div class="sidebar-title-row">
+      <h1>&#127790; TB DC 50K</h1>
+      <a href="https://tacobelldc50k.com/" target="_blank" rel="noopener" class="event-link">Event Site &rarr;</a>
+    </div>
+    <p class="subtitle">Nov 27, 2026 &bull; 32.4 mi &bull; Alexandria / Arlington / DC</p>
+
+    <div class="section collapsed" id="section-stops">
+      <h2>Taco Bell Stops <span class="section-toggle">&#9660;</span></h2>
+      <div class="section-body">
+        <div id="stops-list"></div>
+      </div>
+    </div>
+
+    <div class="section collapsed" id="section-pins">
+      <h2>Custom Pins <span class="section-toggle">&#9660;</span></h2>
+      <div class="section-body">
+        <p class="hint">Tap the map to add a pin, or use the form below.</p>
+        <div id="pin-form">
+          <input type="text" id="pin-name" placeholder="Name (e.g. Jake's House)" />
+          <select id="pin-icon">
+            <option value="restroom">&#128701; Restroom</option>
+            <option value="water">&#128167; Water</option>
+            <option value="friend">&#127968; Friend's House</option>
+            <option value="food">&#127828; Food</option>
+            <option value="medical">&#9971; Medical</option>
+            <option value="parking">&#128663; Parking</option>
+            <option value="custom">&#128204; Custom</option>
+          </select>
+          <button id="btn-add-pin" disabled>Click Map to Place Pin</button>
+        </div>
+        <div id="pins-list"></div>
+      </div>
+    </div>
+
+    <div class="section collapsed" id="section-route">
+      <h2>Route Info <span class="section-toggle">&#9660;</span></h2>
+      <div class="section-body">
+        <div id="route-info">Loading...</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="map"></div>
+
+  <div id="context-menu" class="context-menu hidden">
+    <button id="ctx-add-pin">Add Pin Here</button>
+    <button id="ctx-cancel">Cancel</button>
+  </div>
+
+  <!-- Test overlay (renders on top) -->
+  <div id="test-overlay">
+    <h1>Responsive Tests</h1>
+    <div id="test-results">Running...</div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="../gpx_data.js"></script>
+  <script src="../app.js"></script>
+  <script>
+    // ── Test Runner ──
+    const _tests = [];
+    function assert(group, name, condition, detail) {
+      _tests.push({ group, name, pass: !!condition, detail: detail || '' });
+    }
+
+    function renderTests() {
+      const el = document.getElementById('test-results');
+      const groups = {};
+      _tests.forEach(t => {
+        if (!groups[t.group]) groups[t.group] = [];
+        groups[t.group].push(t);
+      });
+
+      let html = '';
+      for (const [group, tests] of Object.entries(groups)) {
+        html += `<div class="test-group"><h2>${group}</h2>`;
+        tests.forEach(t => {
+          const cls = t.pass ? 't-pass' : 't-fail';
+          const icon = t.pass ? '✓' : '✗';
+          const detail = t.detail ? ` <span class="t-detail">(${t.detail})</span>` : '';
+          html += `<div class="t-row ${cls}">${icon} ${t.name}${detail}</div>`;
+        });
+        html += '</div>';
+      }
+
+      const passed = _tests.filter(t => t.pass).length;
+      const failed = _tests.filter(t => !t.pass).length;
+      const cls = failed === 0 ? 'ok' : 'fail';
+      html += `<div class="t-summary ${cls}">${passed}/${_tests.length} passed${failed ? `, ${failed} failed` : ''}</div>`;
+      el.innerHTML = html;
+    }
+
+    function cs(el) { return getComputedStyle(el); }
+
+    // Wait for app to initialize then run tests
+    setTimeout(() => {
+      runAllTests();
+      renderTests();
+    }, 600);
+
+    function runAllTests() {
+      testDOMStructure();
+      testEventLink();
+      testCollapsibleSections();
+      testResponsiveCSS();
+      testJSFunctions();
+      testMapInit();
+      testPinForm();
+    }
+
+    // ── DOM Structure ──
+    function testDOMStructure() {
+      const G = 'DOM Structure';
+      assert(G, 'sidebar exists', document.getElementById('sidebar'));
+      assert(G, 'map container exists', document.getElementById('map'));
+      assert(G, 'section-stops exists', document.getElementById('section-stops'));
+      assert(G, 'section-pins exists', document.getElementById('section-pins'));
+      assert(G, 'section-route exists', document.getElementById('section-route'));
+      assert(G, 'context menu exists', document.getElementById('context-menu'));
+      assert(G, 'sidebar-title-row exists', document.querySelector('.sidebar-title-row'));
+
+      // Each section has section-body and section-toggle
+      ['section-stops', 'section-pins', 'section-route'].forEach(id => {
+        const sec = document.getElementById(id);
+        assert(G, `${id} has .section-body`, sec && sec.querySelector('.section-body'));
+        assert(G, `${id} has .section-toggle`, sec && sec.querySelector('.section-toggle'));
+      });
+
+      // Stop items rendered by app.js
+      const stops = document.querySelectorAll('.stop-item');
+      assert(G, '8 stop items rendered', stops.length === 8, `found ${stops.length}`);
+    }
+
+    // ── Event Link ──
+    function testEventLink() {
+      const G = 'Event Link';
+      const link = document.querySelector('.event-link');
+      assert(G, 'link element exists', link);
+      assert(G, 'href is tacobelldc50k.com',
+        link && link.getAttribute('href') === 'https://tacobelldc50k.com/',
+        link ? link.getAttribute('href') : 'missing');
+      assert(G, 'opens in new tab (target=_blank)',
+        link && link.target === '_blank');
+      assert(G, 'has rel=noopener',
+        link && link.rel.includes('noopener'));
+      assert(G, 'is visible',
+        link && cs(link).display !== 'none' && cs(link).visibility !== 'hidden');
+      assert(G, 'has border styling',
+        link && cs(link).borderStyle !== 'none');
+    }
+
+    // ── Collapsible Sections ──
+    function testCollapsibleSections() {
+      const G = 'Collapsible Sections';
+
+      // All start collapsed (class is in HTML)
+      assert(G, 'stops starts collapsed',
+        document.getElementById('section-stops').classList.contains('collapsed'));
+      assert(G, 'pins starts collapsed',
+        document.getElementById('section-pins').classList.contains('collapsed'));
+      assert(G, 'route starts collapsed',
+        document.getElementById('section-route').classList.contains('collapsed'));
+
+      // Toggle works: click h2 to expand
+      const stopsH2 = document.querySelector('#section-stops h2');
+      const stopsSection = document.getElementById('section-stops');
+      const isMobileNow = window.matchMedia('(max-width: 768px)').matches;
+
+      if (isMobileNow) {
+        stopsH2.click();
+        assert(G, 'clicking h2 toggles collapsed (mobile)',
+          !stopsSection.classList.contains('collapsed'));
+        // Toggle back
+        stopsH2.click();
+        assert(G, 'clicking again re-collapses (mobile)',
+          stopsSection.classList.contains('collapsed'));
+      } else {
+        // On desktop, clicking should not toggle
+        const wasBefore = stopsSection.classList.contains('collapsed');
+        stopsH2.click();
+        assert(G, 'clicking h2 does NOT toggle on desktop',
+          stopsSection.classList.contains('collapsed') === wasBefore);
+      }
+    }
+
+    // ── Responsive CSS Rules ──
+    function testResponsiveCSS() {
+      const G = 'Responsive CSS';
+      const isMobileNow = window.matchMedia('(max-width: 768px)').matches;
+
+      // Check stylesheet has the expected media queries
+      let hasMobileQuery = false;
+      let hasSmallPhoneQuery = false;
+      let hasLandscapeQuery = false;
+      for (const sheet of document.styleSheets) {
+        try {
+          for (const rule of sheet.cssRules) {
+            if (rule instanceof CSSMediaRule) {
+              const media = rule.conditionText || rule.media.mediaText;
+              if (media.includes('max-width') && media.includes('768px') && !media.includes('orientation'))
+                hasMobileQuery = true;
+              if (media.includes('380px'))
+                hasSmallPhoneQuery = true;
+              if (media.includes('landscape'))
+                hasLandscapeQuery = true;
+            }
+          }
+        } catch (e) { /* cross-origin sheets */ }
+      }
+      assert(G, 'mobile media query (768px) exists', hasMobileQuery);
+      assert(G, 'small phone media query (380px) exists', hasSmallPhoneQuery);
+      assert(G, 'landscape phone media query exists', hasLandscapeQuery);
+
+      // Desktop-only: section-toggle hidden
+      if (!isMobileNow) {
+        const toggle = document.querySelector('.section-toggle');
+        assert(G, 'desktop: section-toggle display=none',
+          cs(toggle).display === 'none', cs(toggle).display);
+
+        // Desktop: section body always visible even if collapsed class
+        document.querySelectorAll('.section').forEach(sec => {
+          const body = sec.querySelector('.section-body');
+          assert(G, `desktop: ${sec.id} body visible`,
+            cs(body).display !== 'none', cs(body).display);
+        });
+
+        // Desktop: sidebar width 340px
+        const sidebar = document.getElementById('sidebar');
+        assert(G, 'desktop: sidebar width=340px',
+          sidebar.offsetWidth === 340, `${sidebar.offsetWidth}px`);
+
+        // Desktop: body flex-direction=row
+        assert(G, 'desktop: body flex-direction=row',
+          cs(document.body).flexDirection === 'row', cs(document.body).flexDirection);
+      }
+
+      // Mobile-only checks
+      if (isMobileNow) {
+        const toggle = document.querySelector('.section-toggle');
+        assert(G, 'mobile: section-toggle visible',
+          cs(toggle).display !== 'none', cs(toggle).display);
+
+        // Mobile: body flex-direction=column
+        assert(G, 'mobile: body flex-direction=column',
+          cs(document.body).flexDirection === 'column', cs(document.body).flexDirection);
+
+        // Mobile: sidebar full width
+        const sidebar = document.getElementById('sidebar');
+        assert(G, 'mobile: sidebar is full width',
+          sidebar.offsetWidth >= window.innerWidth - 2, `${sidebar.offsetWidth}px`);
+
+        // Mobile: collapsed body hidden
+        const collapsed = document.querySelector('.section.collapsed .section-body');
+        if (collapsed) {
+          assert(G, 'mobile: collapsed body display=none',
+            cs(collapsed).display === 'none', cs(collapsed).display);
+        }
+
+        // Mobile: touch targets >= 44px
+        const stopItem = document.querySelector('.stop-item');
+        if (stopItem) {
+          assert(G, 'mobile: stop-item min-height>=44',
+            parseInt(cs(stopItem).minHeight) >= 44,
+            cs(stopItem).minHeight);
+        }
+      }
+    }
+
+    // ── JS Functions ──
+    function testJSFunctions() {
+      const G = 'JS Functions';
+
+      assert(G, 'isMobile() is a function', typeof isMobile === 'function');
+      assert(G, 'isMobile() returns boolean', typeof isMobile() === 'boolean');
+
+      // matchMedia consistency
+      const expected = window.matchMedia('(max-width: 768px)').matches;
+      assert(G, 'isMobile() matches matchMedia result',
+        isMobile() === expected, `isMobile=${isMobile()}, matchMedia=${expected}`);
+
+      // Globals exist
+      assert(G, 'map is initialized', typeof map === 'object' && map !== null);
+      assert(G, 'TACO_BELL_STOPS has 8 entries',
+        Array.isArray(TACO_BELL_STOPS) && TACO_BELL_STOPS.length === 8,
+        `length=${TACO_BELL_STOPS ? TACO_BELL_STOPS.length : 'undefined'}`);
+      assert(G, 'PIN_ICONS has expected keys',
+        PIN_ICONS && PIN_ICONS.restroom && PIN_ICONS.water && PIN_ICONS.custom);
+      assert(G, 'GPX_TRACK is array with data',
+        Array.isArray(GPX_TRACK) && GPX_TRACK.length > 100,
+        `length=${GPX_TRACK ? GPX_TRACK.length : 'undefined'}`);
+      assert(G, 'GPX_WAYPOINTS is array with 8 entries',
+        Array.isArray(GPX_WAYPOINTS) && GPX_WAYPOINTS.length === 8,
+        `length=${GPX_WAYPOINTS ? GPX_WAYPOINTS.length : 'undefined'}`);
+    }
+
+    // ── Map Initialization ──
+    function testMapInit() {
+      const G = 'Map';
+      assert(G, 'Leaflet map instance exists', map && typeof map.getCenter === 'function');
+      assert(G, 'map container has dimensions',
+        document.getElementById('map').offsetHeight > 0 &&
+        document.getElementById('map').offsetWidth > 0);
+      assert(G, 'route layer exists', routeLayer && typeof routeLayer.getBounds === 'function');
+      assert(G, 'stop markers created',
+        Array.isArray(stopMarkers) && stopMarkers.length === 8,
+        `count=${stopMarkers ? stopMarkers.length : 'undefined'}`);
+    }
+
+    // ── Pin Form ──
+    function testPinForm() {
+      const G = 'Pin Form';
+      const nameInput = document.getElementById('pin-name');
+      const iconSelect = document.getElementById('pin-icon');
+      const addBtn = document.getElementById('btn-add-pin');
+
+      assert(G, 'name input exists and is text', nameInput && nameInput.type === 'text');
+      assert(G, 'icon select exists', iconSelect && iconSelect.tagName === 'SELECT');
+      assert(G, 'icon select has 7 options',
+        iconSelect && iconSelect.options.length === 7,
+        `count=${iconSelect ? iconSelect.options.length : 0}`);
+      assert(G, 'add button starts disabled', addBtn && addBtn.disabled === true);
+      assert(G, 'add button text is contextual',
+        addBtn && (addBtn.textContent.includes('Tap') || addBtn.textContent.includes('Click')),
+        addBtn ? addBtn.textContent : 'missing');
+    }
+  </script>
+</body>
+</html>

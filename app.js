@@ -28,12 +28,20 @@ let pinMarkers = [];
 let pendingPinLatLng = null;
 let customPins = [];
 
+// ── Device Detection ──
+function isMobile() {
+  return window.matchMedia('(max-width: 768px)').matches;
+}
+
 // ── Initialize ──
 document.addEventListener('DOMContentLoaded', () => {
   initMap();
   loadGPX();
   loadCustomPins();
   setupEventListeners();
+  setupMobileCollapsibleSections();
+  handleOrientationAndResize();
+  resetAddButton();
 });
 
 function initMap() {
@@ -66,11 +74,14 @@ function loadGPX() {
   // Add Taco Bell stop markers from embedded waypoints
   addStopMarkers(GPX_WAYPOINTS);
 
-  // Fit map to route — defer to next frame so Leaflet has correct container size
+  // Fit map to route — defer so Leaflet has correct container size
+  // Mobile needs longer delay for layout to settle
+  const delay = isMobile() ? 300 : 100;
   setTimeout(() => {
     map.invalidateSize();
-    map.fitBounds(routeLayer.getBounds().pad(0.05));
-  }, 100);
+    const padding = isMobile() ? 0.02 : 0.05;
+    map.fitBounds(routeLayer.getBounds().pad(padding));
+  }, delay);
 
   // Calculate route info
   updateRouteInfo(GPX_TRACK);
@@ -191,7 +202,11 @@ function onMapClick(e) {
   pendingPinLatLng = e.latlng;
   const addBtn = document.getElementById('btn-add-pin');
   addBtn.disabled = false;
-  addBtn.textContent = `Place Pin at ${e.latlng.lat.toFixed(4)}, ${e.latlng.lng.toFixed(4)}`;
+  if (isMobile()) {
+    addBtn.textContent = `Place Pin (${e.latlng.lat.toFixed(3)}, ${e.latlng.lng.toFixed(3)})`;
+  } else {
+    addBtn.textContent = `Place Pin at ${e.latlng.lat.toFixed(4)}, ${e.latlng.lng.toFixed(4)}`;
+  }
   addBtn.classList.add('ready');
 }
 
@@ -287,7 +302,7 @@ function deletePin(id) {
 function resetAddButton() {
   const addBtn = document.getElementById('btn-add-pin');
   addBtn.disabled = true;
-  addBtn.textContent = 'Click Map to Place Pin';
+  addBtn.textContent = isMobile() ? 'Tap Map to Place Pin' : 'Click Map to Place Pin';
   addBtn.classList.remove('ready');
 }
 
@@ -308,5 +323,45 @@ function loadCustomPins() {
     }
   } catch (e) {
     console.warn('Failed to load saved pins:', e);
+  }
+}
+
+// ── Mobile: Collapsible Sections ──
+function setupMobileCollapsibleSections() {
+  document.querySelectorAll('.section h2').forEach(h2 => {
+    h2.addEventListener('click', () => {
+      if (!isMobile()) return;
+      const section = h2.closest('.section');
+      section.classList.toggle('collapsed');
+      // After collapsing/expanding, the map may need to recalculate its size
+      setTimeout(() => map.invalidateSize(), 50);
+    });
+  });
+}
+
+// ── Handle resize and orientation changes ──
+function handleOrientationAndResize() {
+  let resizeTimer;
+  const onResize = () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      map.invalidateSize();
+    }, 150);
+  };
+
+  window.addEventListener('resize', onResize);
+  // Some mobile browsers fire orientationchange separately
+  window.addEventListener('orientationchange', () => {
+    setTimeout(() => map.invalidateSize(), 300);
+  });
+
+  // On mobile, close sidebar popup when clicking a stop (focus the map)
+  if (isMobile()) {
+    document.querySelectorAll('.stop-item').forEach(item => {
+      item.addEventListener('click', () => {
+        // Let the map focus happen, then invalidate size
+        setTimeout(() => map.invalidateSize(), 100);
+      });
+    });
   }
 }

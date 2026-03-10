@@ -136,6 +136,16 @@ Maintain a `backlog.md` file in the project root for bigger ideas, new features,
 
 ---
 
+## Testing (this project)
+
+- **Test file:** `tests/responsive.test.html` — browser-based test suite for responsive layout.
+- **Run:** Serve the project (e.g. `python3 -m http.server 8050`) and open `http://localhost:8050/tests/responsive.test.html`.
+- **What it covers:** DOM structure, event link, collapsible sections, responsive CSS (mobile/tablet/desktop media queries, touch targets, flex layout), JS functions, map init, pin form.
+- **Viewport-dependent:** Tests auto-detect mobile vs desktop and run the appropriate assertions. Resize browser to test each breakpoint.
+- **Updating:** When adding new UI features, add assertions to the matching group function (e.g. `testDOMStructure`, `testResponsiveCSS`). Add new groups via `function testMyFeature()` and call it from `runAllTests()`.
+
+---
+
 ## Cost Optimization (for AI/API pipelines)
 
 - Use the cheapest model that meets quality requirements by default.

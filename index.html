@@ -9,36 +9,45 @@
 </head>
 <body>
   <div id="sidebar">
-    <h1>&#127790; TB DC 50K</h1>
+    <div class="sidebar-title-row">
+      <h1>&#127790; TB DC 50K</h1>
+      <a href="https://tacobelldc50k.com/" target="_blank" rel="noopener" class="event-link">Event Site &rarr;</a>
+    </div>
     <p class="subtitle">Nov 27, 2026 &bull; 32.4 mi &bull; Alexandria / Arlington / DC</p>
 
-    <div class="section">
-      <h2>Taco Bell Stops</h2>
-      <div id="stops-list"></div>
-    </div>
-
-    <div class="section">
-      <h2>Custom Pins</h2>
-      <p class="hint">Click the map to add a pin, or use the form below.</p>
-      <div id="pin-form">
-        <input type="text" id="pin-name" placeholder="Name (e.g. Jake's House)" />
-        <select id="pin-icon">
-          <option value="restroom">&#128701; Restroom</option>
-          <option value="water">&#128167; Water</option>
-          <option value="friend">&#127968; Friend's House</option>
-          <option value="food">&#127828; Food</option>
-          <option value="medical">&#9971; Medical</option>
-          <option value="parking">&#128663; Parking</option>
-          <option value="custom">&#128204; Custom</option>
-        </select>
-        <button id="btn-add-pin" disabled>Click Map to Place Pin</button>
+    <div class="section collapsed" id="section-stops">
+      <h2>Taco Bell Stops <span class="section-toggle">&#9660;</span></h2>
+      <div class="section-body">
+        <div id="stops-list"></div>
       </div>
-      <div id="pins-list"></div>
     </div>
 
-    <div class="section">
-      <h2>Route Info</h2>
-      <div id="route-info">Loading...</div>
+    <div class="section collapsed" id="section-pins">
+      <h2>Custom Pins <span class="section-toggle">&#9660;</span></h2>
+      <div class="section-body">
+        <p class="hint">Tap the map to add a pin, or use the form below.</p>
+        <div id="pin-form">
+          <input type="text" id="pin-name" placeholder="Name (e.g. Jake's House)" />
+          <select id="pin-icon">
+            <option value="restroom">&#128701; Restroom</option>
+            <option value="water">&#128167; Water</option>
+            <option value="friend">&#127968; Friend's House</option>
+            <option value="food">&#127828; Food</option>
+            <option value="medical">&#9971; Medical</option>
+            <option value="parking">&#128663; Parking</option>
+            <option value="custom">&#128204; Custom</option>
+          </select>
+          <button id="btn-add-pin" disabled>Click Map to Place Pin</button>
+        </div>
+        <div id="pins-list"></div>
+      </div>
+    </div>
+
+    <div class="section collapsed" id="section-route">
+      <h2>Route Info <span class="section-toggle">&#9660;</span></h2>
+      <div class="section-body">
+        <div id="route-info">Loading...</div>
+      </div>
     </div>
   </div>
 
