@@ -10,6 +10,18 @@
 
 ## Active Backlog
 
+### P0 - Quick Wins (High Priority)
+
+- [ ] **Click any pin → open in native maps app** — Every marker popup (TB stops, custom pins, bathrooms) should have a "Directions" button that deep-links to the device's native maps app. Use UA detection: `maps://?ll=LAT,LNG&q=LABEL` on iOS, `geo:LAT,LNG?q=LAT,LNG(LABEL)` on Android, and `https://www.google.com/maps/search/?api=1&query=LAT,LNG` on desktop. ~15 lines of JS in a shared `openInMaps(lat, lng, label)` utility. Add to `buildStopPopup()`, `buildPinPopup()`, and future bathroom popups.
+
+- [ ] **Bathroom finder toggle** — "Find Restrooms" toggle button in the sidebar that fetches public restrooms near the route from the OpenStreetMap Overpass API (free, no API key). POST to `https://overpass-api.de/api/interpreter` with query `[out:json]; node["amenity"="toilets"](38.80,-77.15,38.93,-76.99); out center;` (bounding box covers the full DC/Arlington/Alexandria corridor). Cache the JSON response in `localStorage` key `tb50k_bathrooms` for 7 days so subsequent loads are instant. Render as a toggleable `L.layerGroup` of 🚽 markers with popups showing name (if any) and a "Directions" deep-link button. ~60 lines of JS + a new sidebar toggle button. Supersedes the existing `P1` aid station / restroom finder entry above.
+
+- [ ] **Export full route to Google Maps** — "Open in Google Maps" button that opens the full 32-mile route in Google Maps. Strategy: pre-build a Google My Maps link with all 8 TB stops as waypoints (one-time manual setup — shareable short link, works on all devices with no waypoint limits). Also add a desktop fallback that constructs a `https://www.google.com/maps/dir/?api=1&origin=...&destination=...&waypoints=PIPE_SEPARATED` URL with up to 8 intermediate stops; warn mobile users that the URL will truncate to 3 waypoints on mobile and suggest the My Maps link instead. Expose as both a sidebar button and a link in the route-info section.
+
+- [ ] **Better event website UX** — The `tacobelldc50k.com` link is currently a text anchor in the header. Improve: make it a proper pill/badge button with the 🌮 icon, give it hover/focus styles consistent with the theme system, and ensure it's always visible even when the sidebar is scrolled (sticky within `.sidebar-header`). On mobile, increase tap target to at least 44×44px.
+
+---
+
 ### P1 - Route & Visualization
 - [ ] **Elevation profile** - Show interactive elevation chart (via `leaflet-elevation` plugin) below the map. Hover/scrub to move a dot along the route. Shows grade, elevation, and cumulative distance. Already have GPX data — zero new network requests needed.
 - [ ] **Grade-colored route polyline** - Segment the `GPX_TRACK` array and color each segment by steepness: green (flat), yellow (moderate), red (steep). Lets runners instantly spot hard sections without reading a chart.
@@ -64,6 +76,70 @@
 
 ### P2 - Gamification
 - [ ] **"Taco Bell Passport" achievement system** - Checklist-style badges: "Visited All 8 TBs on a Training Run," "Logged 20+ Mile Training Run," "Both Mandatory Food Items Checked," "Finished Under 9 Hours." SVG/emoji badges shown in a passport panel; state in localStorage. No backend.
+
+### P2 - Rich Info Cards Per Stop
+
+Each Taco Bell stop and bathroom deserves a richer experience than a basic Leaflet popup. Replace popups with a Komoot/AllTrails-style sidebar detail panel that slides in when you click a marker.
+
+- [ ] **Stop detail panel** — Clicking a TB stop in the sidebar or on the map slides open a detail panel (replacing sidebar list content, or as a bottom sheet on mobile). Panel layout:
+  - **Above the fold:** Stop number + name, cumulative miles from start, miles to next stop, estimated arrival time (if pace calculator is set), mandatory food indicator (🌮 badge if this is Stop 3 or Stop 7)
+  - **Below the fold:** Crew/spectator access notes (parking, Metro station, street address), "Open in Maps" button, fun stop rating
+  - **Collapsible extra:** historical Taco Bell trivia blurb for that location
+
+- [ ] **Funny stop rating scales** — Each TB stop gets three fun ratings displayed as emoji pip rows:
+  - 🌯 **Bean Burrito Price Scale** (1–5): relative cost of the mandatory food item, calibrated so 1 burrito ≈ $1.49. Shows what you're paying in burrito-equivalents. Tooltip: "This stop will cost you 3 Bean Burritos."
+  - 🌮 **Stop Experience Scale** (1–5): overall vibe from "Sad Sauce Packet" (1) to "Cantina Tier" (5). Ratings are pre-authored in a `STOP_META` object in `app.js`.
+  - 🚽 **Bathroom Quality Scale** (1–5): from "Porta-Potty Purgatory" (1) → "Questionable" (2) → "Functional" (3) → "Surprisingly Decent" (4) → "Porcelain Palace" (5). Pre-authored per stop; shown on bathroom markers too.
+  - Implementation: define a `STOP_META` array in `app.js` with `{ stopIndex, burritoRating, tacoRating, bathroomRating, vibeNote, crewAccess, trivia }` for each of the 8 stops. Rendering is pure DOM — no new dependencies.
+
+- [ ] **Sauce packet wisdom copy** — When "Sauce Packet" theme is active, replace standard UI hint text with sauce packet sayings. Examples: sidebar empty state → *"Will you marry me?"* | bathroom tooltip → *"Is it hot in here, or is it just me?"* | distance banner → *"I'm not like other hot sauces."* Defined in a `SAUCE_COPY` object keyed by UI element ID; `applyTheme()` swaps copy in when theme === 'sauce'.
+
+---
+
+### P2 - Neighborhood Block Parties & Crew Spots
+
+A static, organizer-curated layer of neighborhood hospitality stops: private homes or local spots along the route where spectators are setting up parties, offering snacks, handing out beer, blasting music. Completely unique to this race and extremely on-brand for the TB DC community vibe.
+
+- [ ] **`block_parties.json` data layer** — Add `block_parties.json` to the repo root. Schema per entry:
+  ```json
+  {
+    "id": "bp-001",
+    "name": "Jake's Corner Party",
+    "lat": 38.8921,
+    "lng": -77.0321,
+    "mile_marker": 14.2,
+    "host": "Jake M.",
+    "runner_note": "Cold towels, beer, and a cowbell. Find us on the corner.",
+    "crew_note": "Parking on 14th St N. Ring bell for gate code.",
+    "amenities": ["beer", "snacks", "music", "chairs"],
+    "confirmed": true
+  }
+  ```
+  Load via `fetch('block_parties.json')` on page init; cache in `localStorage` key `tb50k_block_parties` for 1 hour. Render as a toggleable 🎉 marker layer.
+
+- [ ] **Runner vs. Crew view toggle** — Toggle in the sidebar header (two-button pill: 🏃 Runner | 🧑‍🤝‍🧑 Crew). In **Runner view**: block party popups show name, mile marker, what to expect, and "Open in Maps" button — no address, no parking, nothing distracting. In **Crew view**: full address, parking notes, host contact (if provided), and all amenities. State persisted to `localStorage`. Also controls visibility of other crew-relevant info (e.g., parking callouts on spectator spots layer).
+
+- [ ] **Block party sidebar section** — New collapsible section "🎉 Party Spots" in the sidebar listing confirmed block parties sorted by mile marker. Each item shows: party name, mile marker, host name, amenity emoji badges (🍺🎵🪑). Clicking flies the map to that pin and opens the detail popup.
+
+- [ ] **Intake form for submitting a party** — Link in the "Party Spots" sidebar section: "Hosting a party? Submit here →" opens a Google Form (or Formspree-backed HTML form) for hosts to register. Fields: name, address, approximate mile marker, what you're offering, runner-facing note, crew-facing note, contact email. Submissions are reviewed and manually curated into `block_parties.json` by the race organizer before going live — no auto-publish. Keeps spam out while keeping setup zero-backend.
+
+---
+
+### P3 - Social & User Accounts (Long-term / Requires Backend)
+
+These features require user authentication and a persistent backend (e.g., Supabase, Firebase, or a simple Node/Postgres API). Not suitable for the current static-site architecture — treat as a future phase if the race grows.
+
+- [ ] **Runner vs. Cheerer registration** — Users sign up and declare: "I'm running" or "I'm cheering." Runners see their training plan overlay and pace calculator; Cheerers see optimal spectator spots and party layer by default. Role stored on user profile; switchable.
+
+- [ ] **Mandatory food posting** — At each of the two mandatory food stops (Stop 3 and Stop 7), runners can log what they ate and optionally add a photo + one-sentence hot take. E.g., "Ate the Crunchwrap Supreme. No regrets. 🌮🌮🌮🌮🌮." Logged with timestamp and GPS coordinates for authenticity.
+
+- [ ] **Social feed — what did you eat?** — A race-day feed (think lightweight Strava flyby) showing posts from all runners in real time: "Stop 4 — Jake just ate a Chalupa Supreme at 10:42 AM." Feed visible to all logged-in users; sortable by recency or stop number. Basic moderation: posts auto-hidden if flagged by 3+ users.
+
+- [ ] **Party hosting + subscriber alerts** — Block party hosts can claim their party on the map and send text/push alerts to subscribers. Subscribers tap "I'll stop by" on a party → get a push notification when the host marks the party as "live." Requires push notifications (Web Push API or SMS via Twilio). Subscription state stored server-side.
+
+- [ ] **Friend betting system** — Pre-race, friends can wager on: finish time (over/under), mandatory food items consumed, number of bathroom stops, whether someone DNFs. Outcomes logged at race end; winner gets bragging rights (no real money — just a leaderboard of prediction accuracy). Each bet is a JSON record; results adjudicated by the runner or a trusted third party after the race. Lightweight: could be built as a Google Sheet with a Forms intake if backend is too complex.
+
+---
 
 ### P3 - Extras
 - [ ] **Taco Bell menu integration** - Show menus at each stop, plan what to eat
