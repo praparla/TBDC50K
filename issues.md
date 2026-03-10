@@ -11,7 +11,12 @@
 
 ## Open Issues
 
-_No open issues._
+### [ISSUE-004] Map visibly resizes/jumps on initial page load
+- **Status:** Open
+- **Severity:** Low
+- **Found:** 2026-03-10
+- **Root Cause:** On page load, the flex layout (sidebar + map) settles over ~100–300ms. The map initializes at a default zoom, then `fitBounds` fires after a `setTimeout` delay. This creates a visible jump/resize as the map snaps from its initial state to the fitted route bounds. More noticeable on mobile where the layout shift is larger (sidebar stacks above map, changing map height significantly).
+- **Possible Fixes:** (1) Hide map with `opacity: 0` until after `fitBounds` completes, then fade in. (2) Use `ResizeObserver` on the map container instead of a fixed `setTimeout` to trigger `fitBounds` at exactly the right moment. (3) Increase the `setTimeout` delay on mobile (currently 300ms) if the layout hasn't settled yet.
 
 ---
 
