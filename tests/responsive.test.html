@@ -35,13 +35,19 @@
   </style>
 </head>
 <body>
-  <!-- Load the real app HTML structure -->
+  <!-- Load the real app HTML structure (must mirror index.html) -->
   <div id="sidebar">
-    <div class="sidebar-title-row">
-      <h1>&#127790; TB DC 50K</h1>
-      <a href="https://tacobelldc50k.com/" target="_blank" rel="noopener" class="event-link">Event Site &rarr;</a>
+    <div class="sidebar-header">
+      <div class="sidebar-title-row">
+        <h1>&#127790; TB DC 50K</h1>
+        <a href="https://tacobelldc50k.com/" target="_blank" rel="noopener" class="event-link">&#127790; tacobelldc50k.com</a>
+      </div>
+      <p class="subtitle">Nov 27, 2026 &bull; 32.4 mi &bull; Alexandria / Arlington / DC</p>
+      <div class="theme-picker" id="theme-picker">
+        <span class="theme-picker-label">Theme</span>
+        <!-- Swatches injected by app.js -->
+      </div>
     </div>
-    <p class="subtitle">Nov 27, 2026 &bull; 32.4 mi &bull; Alexandria / Arlington / DC</p>
 
     <div class="section collapsed" id="section-stops">
       <h2>Taco Bell Stops <span class="section-toggle">&#9660;</span></h2>
@@ -140,6 +146,7 @@
     function runAllTests() {
       testDOMStructure();
       testEventLink();
+      testThemeSystem();
       testCollapsibleSections();
       testResponsiveCSS();
       testJSFunctions();
@@ -186,6 +193,110 @@
         link && cs(link).display !== 'none' && cs(link).visibility !== 'hidden');
       assert(G, 'has border styling',
         link && cs(link).borderStyle !== 'none');
+    }
+
+    // ── Theme System ──
+    function testThemeSystem() {
+      const G = 'Theme System';
+
+      // THEMES config object
+      assert(G, 'THEMES object exists', typeof THEMES === 'object' && THEMES !== null);
+      const themeIds = Object.keys(THEMES);
+      assert(G, '6 themes defined', themeIds.length === 6, `found ${themeIds.length}`);
+      assert(G, 'has modern theme', !!THEMES.modern);
+      assert(G, 'has retro85 theme', !!THEMES.retro85);
+      assert(G, 'has reign94 theme', !!THEMES.reign94);
+      assert(G, 'has baja theme', !!THEMES.baja);
+      assert(G, 'has cantina theme', !!THEMES.cantina);
+      assert(G, 'has sauce theme', !!THEMES.sauce);
+
+      // Each theme has required properties
+      themeIds.forEach(id => {
+        const t = THEMES[id];
+        assert(G, `${id}: has id`, typeof t.id === 'string' && t.id.length > 0);
+        assert(G, `${id}: has name`, typeof t.name === 'string' && t.name.length > 0);
+        assert(G, `${id}: has swatch color`, /^#[0-9a-fA-F]{6}$/.test(t.swatch));
+        assert(G, `${id}: has tileUrl`, typeof t.tileUrl === 'string' && t.tileUrl.includes('{z}'));
+        assert(G, `${id}: has routeColor`, /^#[0-9a-fA-F]{6}$/.test(t.routeColor));
+      });
+
+      // Theme functions exist
+      assert(G, 'getThemeId() is function', typeof getThemeId === 'function');
+      assert(G, 'getTheme() is function', typeof getTheme === 'function');
+      assert(G, 'applyTheme() is function', typeof applyTheme === 'function');
+      assert(G, 'buildThemePicker() is function', typeof buildThemePicker === 'function');
+
+      // getTheme returns valid theme
+      const t = getTheme('modern');
+      assert(G, 'getTheme(modern) returns theme', t && t.id === 'modern');
+      const fallback = getTheme('nonexistent');
+      assert(G, 'getTheme(invalid) falls back to default', fallback && fallback.id === DEFAULT_THEME);
+
+      // Theme picker UI
+      const picker = document.getElementById('theme-picker');
+      assert(G, 'theme-picker element exists', !!picker);
+      const swatches = picker ? picker.querySelectorAll('.theme-swatch') : [];
+      assert(G, '6 swatch buttons rendered', swatches.length === 6, `found ${swatches.length}`);
+
+      // Each swatch has required attributes
+      if (swatches.length > 0) {
+        const first = swatches[0];
+        assert(G, 'swatch has data-theme attr', !!first.dataset.theme);
+        assert(G, 'swatch has aria-label', !!first.getAttribute('aria-label'));
+        assert(G, 'swatch has background color', first.style.background.length > 0);
+      }
+
+      // Exactly one swatch is active
+      const activeSwatches = picker ? picker.querySelectorAll('.theme-swatch.active') : [];
+      assert(G, 'exactly 1 active swatch', activeSwatches.length === 1, `found ${activeSwatches.length}`);
+
+      // Apply a theme and verify
+      const beforeTheme = currentThemeId;
+      applyTheme('baja');
+      assert(G, 'applyTheme sets data-theme attr',
+        document.documentElement.getAttribute('data-theme') === 'baja');
+      assert(G, 'applyTheme updates currentThemeId', currentThemeId === 'baja');
+      assert(G, 'applyTheme persists to localStorage',
+        localStorage.getItem(THEME_STORAGE_KEY) === 'baja');
+
+      // Route color updates
+      if (routeLayer) {
+        assert(G, 'route color matches theme after switch',
+          routeLayer.options.color === THEMES.baja.routeColor,
+          routeLayer.options.color);
+      }
+
+      // Restore original theme
+      applyTheme(beforeTheme);
+
+      // CSS custom properties exist in stylesheet
+      let hasCustomProps = false;
+      for (const sheet of document.styleSheets) {
+        try {
+          for (const rule of sheet.cssRules) {
+            if (rule.selectorText === ':root' && rule.cssText.includes('--color-bg')) {
+              hasCustomProps = true;
+            }
+          }
+        } catch (e) { /* cross-origin */ }
+      }
+      assert(G, 'CSS custom properties defined in :root', hasCustomProps);
+
+      // FOUC prevention: data-theme should match saved theme on load
+      const savedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+      const appliedTheme = document.documentElement.getAttribute('data-theme');
+      if (savedTheme && savedTheme !== DEFAULT_THEME) {
+        assert(G, 'data-theme matches localStorage on load',
+          appliedTheme === savedTheme,
+          `saved=${savedTheme}, applied=${appliedTheme}`);
+      }
+
+      // Sidebar background pattern
+      const sidebar = document.getElementById('sidebar');
+      const bgImage = cs(sidebar).backgroundImage;
+      assert(G, 'sidebar has background pattern (gradient)',
+        bgImage !== 'none' && bgImage.includes('gradient'),
+        bgImage.substring(0, 60) + '...');
     }
 
     // ── Collapsible Sections ──

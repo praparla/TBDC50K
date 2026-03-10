@@ -18,7 +18,7 @@
 
 - [ ] **Export full route to Google Maps** — "Open in Google Maps" button that opens the full 32-mile route in Google Maps. Strategy: pre-build a Google My Maps link with all 8 TB stops as waypoints (one-time manual setup — shareable short link, works on all devices with no waypoint limits). Also add a desktop fallback that constructs a `https://www.google.com/maps/dir/?api=1&origin=...&destination=...&waypoints=PIPE_SEPARATED` URL with up to 8 intermediate stops; warn mobile users that the URL will truncate to 3 waypoints on mobile and suggest the My Maps link instead. Expose as both a sidebar button and a link in the route-info section.
 
-- [ ] **Better event website UX** — The `tacobelldc50k.com` link is currently a text anchor in the header. Improve: make it a proper pill/badge button with the 🌮 icon, give it hover/focus styles consistent with the theme system, and ensure it's always visible even when the sidebar is scrolled (sticky within `.sidebar-header`). On mobile, increase tap target to at least 44×44px.
+- [x] **Better event website UX** — ~~Redesign event link as pill button.~~ **DONE** (2026-03-10). Restyled as a rounded pill badge with 🌮 icon, hover/focus styles driven by theme system CSS variables, adequate mobile tap target.
 
 ---
 
@@ -64,7 +64,7 @@
 - [ ] **Shareable race card image** - CSS-styled `<div>` showing route thumbnail, goal time, name, and Taco Bell branding — screenshottable for Instagram/social hype.
 
 ### P2 - UI/UX
-- [ ] **Theme switcher** - See detailed plan below in "Taco Bell Theme System" section. Multiple TB-era themes switchable from a menu, persisted to localStorage.
+- [x] **Theme switcher** - ~~See detailed plan below.~~ **DONE.** 6 TB-era themes (Live Más Modern, Retro '85, Purple Reign '94, Baja Blast, Cantina Night, Sauce Packet) switchable from swatch picker in sidebar header. CSS custom properties, tile layer swap, route color swap, themed sidebar background patterns, persisted to localStorage. See "Taco Bell Theme System" section for original plan.
 - [ ] **Mobile-first redesign** - Better mobile experience with collapsible sidebar
 - [ ] **Search for locations** - Geocoding to search and add pins by address
 - [ ] **Drag to reposition pins** - Allow dragging placed pins to adjust location
@@ -267,4 +267,5 @@ Every sauce packet is a sub-brand. White (Mild) → Orange (Hot) → Red (Fire) 
 ---
 
 ## Completed
-_Nothing completed yet._
+- [x] **Theme switcher** (2026-03-10) — 6 TB-era themes with CSS custom properties, tile layer swap, route color swap, themed sidebar background patterns (pure CSS gradients, zero HTTP requests), event link redesign as pill button. Persisted to localStorage. Mobile/desktop tested.
+- [x] **Better event website UX** (2026-03-10) — Event link redesigned as rounded pill badge with 🌮 icon, theme-aware hover/focus styles, proper mobile tap targets. Implemented as part of theme system work.

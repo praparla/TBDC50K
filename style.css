@@ -1,3 +1,209 @@
+/* ── CSS Custom Properties (Theme System) ── */
+:root {
+  /* Live Más Modern (2016–present) — Default */
+  --color-bg: #1a0a2e;
+  --color-bg-secondary: #2a1a4a;
+  --color-accent: #682a8d;
+  --color-accent-hover: #7c3aed;
+  --color-accent-secondary: #a78bfa;
+  --color-accent-tertiary: #d8b4fe;
+  --color-text: #ffffff;
+  --color-text-secondary: #d8b4fe;
+  --color-text-muted: #999;
+  --color-border: #4a2070;
+  --color-border-subtle: #3a1850;
+  --color-alert: #e11d48;
+  --color-warning: #fbbf24;
+  --color-success: #059669;
+  --color-route: #a78bfa;
+  --color-disabled: #444;
+  --color-shadow: rgba(0,0,0,0.4);
+  --color-popup-bg: var(--color-bg);
+  --color-scrollbar: #555;
+  /* Sidebar background pattern (overridden per theme) */
+  --sidebar-pattern:
+    linear-gradient(135deg, rgba(104,42,141,0.25) 0%, transparent 50%),
+    linear-gradient(225deg, rgba(167,139,250,0.12) 0%, transparent 40%),
+    radial-gradient(ellipse at 20% 80%, rgba(104,42,141,0.2) 0%, transparent 50%);
+}
+
+/* ── Theme: Retro Bell '85 ── */
+[data-theme="retro85"] {
+  --color-bg: #1a0800;
+  --color-bg-secondary: #2d1008;
+  --color-accent: #c41230;
+  --color-accent-hover: #e8410a;
+  /* Bold diagonal stripes — retro diner / Miami Vice signage */
+  --sidebar-pattern:
+    repeating-linear-gradient(
+      -45deg,
+      transparent,
+      transparent 16px,
+      rgba(245,197,24,0.08) 16px,
+      rgba(245,197,24,0.08) 18px
+    ),
+    linear-gradient(180deg, rgba(196,18,48,0.3) 0%, transparent 50%),
+    radial-gradient(ellipse at 30% 100%, rgba(232,65,10,0.2) 0%, transparent 50%);
+  --color-accent-secondary: #f5c518;
+  --color-accent-tertiary: #f5c518;
+  --color-text: #fff8e7;
+  --color-text-secondary: #f5c518;
+  --color-text-muted: #c89060;
+  --color-border: #7a0a1a;
+  --color-border-subtle: #4a0a10;
+  --color-alert: #e8410a;
+  --color-warning: #f5c518;
+  --color-route: #f5c518;
+  --color-disabled: #5a3020;
+  --color-shadow: rgba(0,0,0,0.5);
+  --color-scrollbar: #7a0a1a;
+}
+
+/* ── Theme: Purple Reign '94 ── */
+/* Inspired by the iconic 90s TB interior: big pink circle, zigzag lightning,
+   teal booth triangles, deep purple base. Geometric Memphis-style shapes. */
+[data-theme="reign94"] {
+  --color-bg: #1a002e;
+  --color-bg-secondary: #2d0050;
+  /* 90s geometric shapes — pink circle, teal triangles, zigzag energy */
+  --sidebar-pattern:
+    /* Big pink circle (the centerpiece shape) */
+    radial-gradient(circle at 25% 30%, rgba(217,32,138,0.35) 0%, rgba(217,32,138,0.15) 12%, transparent 22%),
+    /* Teal triangle accent — upper right (booth divider vibes) */
+    linear-gradient(210deg, rgba(0,200,195,0.55) 0%, rgba(0,200,195,0.3) 10%, transparent 22%),
+    /* Teal triangle accent — lower left */
+    linear-gradient(30deg, rgba(0,200,195,0.45) 0%, rgba(0,200,195,0.22) 12%, transparent 24%),
+    /* Teal horizontal band (booth seat accent) */
+    linear-gradient(180deg, transparent 58%, rgba(0,200,195,0.2) 70%, rgba(0,200,195,0.14) 80%, transparent 90%),
+    /* Zigzag / staircase stripes (the lightning bolt pattern) */
+    repeating-linear-gradient(
+      -60deg,
+      transparent,
+      transparent 22px,
+      rgba(255,224,51,0.06) 22px,
+      rgba(255,224,51,0.06) 25px
+    ),
+    /* Purple base glow */
+    radial-gradient(ellipse at 50% 70%, rgba(92,30,140,0.3) 0%, transparent 50%),
+    /* Subtle cream zigzag overlay */
+    repeating-linear-gradient(
+      60deg,
+      transparent,
+      transparent 30px,
+      rgba(255,255,240,0.03) 30px,
+      rgba(255,255,240,0.03) 33px
+    );
+  --color-accent: #8b2fc9;
+  --color-accent-hover: #a040e0;
+  --color-accent-secondary: #d9208a;
+  --color-accent-tertiary: #ffe033;
+  --color-text: #ffffff;
+  --color-text-secondary: #ffe033;
+  --color-text-muted: #b080d0;
+  --color-border: #5c1e8c;
+  --color-border-subtle: #3a1060;
+  --color-alert: #d9208a;
+  --color-warning: #ffe033;
+  --color-route: #d9208a;
+  --color-disabled: #3a1060;
+  --color-shadow: rgba(0,0,0,0.5);
+  --color-scrollbar: #5c1e8c;
+}
+
+/* ── Theme: Baja Blast ── */
+[data-theme="baja"] {
+  --color-bg: #f0fcfc;
+  --color-bg-secondary: #e0f5f4;
+  --color-accent: #00bfb3;
+  --color-accent-hover: #00a89e;
+  --color-accent-secondary: #00bfb3;
+  /* Tropical wave curves — poolside summer vibes */
+  --sidebar-pattern:
+    radial-gradient(ellipse at 0% 100%, rgba(0,191,179,0.18) 0%, transparent 55%),
+    radial-gradient(ellipse at 100% 0%, rgba(239,24,151,0.08) 0%, transparent 40%),
+    linear-gradient(170deg, rgba(0,191,179,0.1) 0%, transparent 35%),
+    radial-gradient(ellipse at 60% 90%, rgba(104,42,141,0.06) 0%, transparent 40%);
+  --color-accent-tertiary: #682a8d;
+  --color-text: #0d0d0d;
+  --color-text-secondary: #007a78;
+  --color-text-muted: #558888;
+  --color-border: #b2f0ed;
+  --color-border-subtle: #d0f5f3;
+  --color-alert: #e11d48;
+  --color-warning: #ef1897;
+  --color-route: #00bfb3;
+  --color-disabled: #ccc;
+  --color-shadow: rgba(0,0,0,0.15);
+  --color-popup-bg: #ffffff;
+  --color-scrollbar: #b2f0ed;
+}
+
+/* ── Theme: Cantina Night ── */
+[data-theme="cantina"] {
+  --color-bg: #0d0d0d;
+  --color-bg-secondary: #1a1a1a;
+  --color-accent: #c9a84c;
+  --color-accent-hover: #dabb60;
+  --color-accent-secondary: #c9a84c;
+  /* Gold geometric glow — pendant lights, distressed metal */
+  --sidebar-pattern:
+    radial-gradient(ellipse at 50% 0%, rgba(201,168,76,0.2) 0%, transparent 45%),
+    linear-gradient(180deg, rgba(201,168,76,0.08) 0%, transparent 25%),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 35px,
+      rgba(201,168,76,0.04) 35px,
+      rgba(201,168,76,0.04) 36px
+    ),
+    radial-gradient(ellipse at 80% 90%, rgba(104,42,141,0.08) 0%, transparent 40%);
+  --color-accent-tertiary: #c9a84c;
+  --color-text: #f5f5f0;
+  --color-text-secondary: #c9a84c;
+  --color-text-muted: #a08060;
+  --color-border: #2a1a00;
+  --color-border-subtle: #1a1000;
+  --color-alert: #ef1897;
+  --color-warning: #c9a84c;
+  --color-route: #c9a84c;
+  --color-disabled: #333;
+  --color-shadow: rgba(0,0,0,0.6);
+  --color-scrollbar: #2a1a00;
+}
+
+/* ── Theme: Sauce Packet ── */
+[data-theme="sauce"] {
+  --color-bg: #fff8f0;
+  --color-bg-secondary: #f5ede0;
+  --color-accent: #e8410a;
+  --color-accent-hover: #c41230;
+  --color-accent-secondary: #e8410a;
+  /* Heat gradient — mild to diablo, diagonal drip */
+  --sidebar-pattern:
+    linear-gradient(160deg,
+      rgba(240,128,48,0.15) 0%,
+      rgba(232,65,10,0.12) 30%,
+      rgba(196,18,48,0.1) 60%,
+      rgba(59,10,10,0.08) 100%
+    ),
+    radial-gradient(ellipse at 15% 50%, rgba(240,128,48,0.12) 0%, transparent 40%),
+    radial-gradient(ellipse at 85% 30%, rgba(196,18,48,0.08) 0%, transparent 35%);
+  --color-accent-tertiary: #c41230;
+  --color-text: #1a0a00;
+  --color-text-secondary: #c41230;
+  --color-text-muted: #8a6a50;
+  --color-border: #e8cdb0;
+  --color-border-subtle: #f0dcc8;
+  --color-alert: #c41230;
+  --color-warning: #f08030;
+  --color-route: #e8410a;
+  --color-disabled: #ccc;
+  --color-shadow: rgba(0,0,0,0.15);
+  --color-popup-bg: #ffffff;
+  --color-scrollbar: #e8cdb0;
+}
+
+/* ── Reset ── */
 * {
   margin: 0;
   padding: 0;
@@ -9,8 +215,8 @@ body {
   display: flex;
   height: 100vh;
   overflow: hidden;
-  background: #1a1a2e;
-  color: #e0e0e0;
+  background: var(--color-bg);
+  color: var(--color-text);
 }
 
 #sidebar {
@@ -18,10 +224,15 @@ body {
   min-width: 340px;
   height: 100vh;
   overflow-y: auto;
-  background: #1a1a2e;
+  background: var(--sidebar-pattern), var(--color-bg);
   padding: 20px;
-  border-right: 2px solid #6b2fa0;
+  border-right: 2px solid var(--color-accent);
   z-index: 1000;
+}
+
+/* ── Sidebar Header ── */
+.sidebar-header {
+  margin-bottom: 12px;
 }
 
 .sidebar-title-row {
@@ -33,41 +244,117 @@ body {
 
 #sidebar h1 {
   font-size: 1.5rem;
-  color: #d8b4fe;
+  color: var(--color-accent-tertiary);
   margin-bottom: 4px;
-}
-
-.event-link {
-  font-size: 0.75rem;
-  color: #a78bfa;
-  text-decoration: none;
-  white-space: nowrap;
-  padding: 4px 10px;
-  border: 1px solid #6b2fa0;
-  border-radius: 6px;
-  transition: background 0.15s, color 0.15s;
-  flex-shrink: 0;
-}
-
-.event-link:hover {
-  background: #6b2fa0;
-  color: white;
 }
 
 .subtitle {
   font-size: 0.8rem;
-  color: #888;
-  margin-bottom: 16px;
+  color: var(--color-text-muted);
+  margin-bottom: 4px;
 }
 
+/* ── Event Link (pill button) ── */
+.event-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-accent-secondary);
+  text-decoration: none;
+  white-space: nowrap;
+  padding: 5px 12px;
+  border: 1px solid var(--color-accent);
+  border-radius: 20px;
+  transition: background 0.15s, color 0.15s, transform 0.1s;
+  flex-shrink: 0;
+}
+
+.event-link:hover {
+  background: var(--color-accent);
+  color: var(--color-text);
+  transform: scale(1.03);
+}
+
+.event-link:active {
+  transform: scale(0.97);
+}
+
+/* ── Theme Picker ── */
+.theme-picker {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 0;
+  flex-wrap: wrap;
+}
+
+.theme-picker-label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-text-muted);
+  margin-right: 2px;
+}
+
+.theme-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.theme-swatch:hover {
+  transform: scale(1.2);
+  box-shadow: 0 0 8px var(--color-shadow);
+}
+
+.theme-swatch:active {
+  transform: scale(0.95);
+}
+
+.theme-swatch.active {
+  border-color: var(--color-text);
+  box-shadow: 0 0 0 2px var(--color-accent);
+}
+
+/* Tooltip for swatch name */
+.theme-swatch::after {
+  content: attr(data-name);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--color-bg-secondary);
+  color: var(--color-text);
+  font-size: 0.65rem;
+  padding: 3px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+  z-index: 10;
+}
+
+.theme-swatch:hover::after {
+  opacity: 1;
+}
+
+/* ── Sections ── */
 .section {
   margin-bottom: 20px;
 }
 
 .section h2 {
   font-size: 0.95rem;
-  color: #a78bfa;
-  border-bottom: 1px solid #333;
+  color: var(--color-accent-secondary);
+  border-bottom: 1px solid var(--color-border-subtle);
   padding-bottom: 6px;
   margin-bottom: 10px;
   text-transform: uppercase;
@@ -76,11 +363,11 @@ body {
 
 .hint {
   font-size: 0.75rem;
-  color: #666;
+  color: var(--color-text-muted);
   margin-bottom: 8px;
 }
 
-/* Stop items */
+/* ── Stop Items ── */
 .stop-item {
   display: flex;
   align-items: center;
@@ -94,11 +381,11 @@ body {
 }
 
 .stop-item:hover {
-  background: #2a2a4a;
+  background: var(--color-bg-secondary);
 }
 
 .stop-number {
-  background: #6b2fa0;
+  background: var(--color-accent);
   color: white;
   width: 24px;
   height: 24px;
@@ -112,7 +399,7 @@ body {
 }
 
 .stop-number.start-finish {
-  background: #e11d48;
+  background: var(--color-alert);
 }
 
 .stop-address {
@@ -122,10 +409,10 @@ body {
 
 .stop-distance {
   font-size: 0.7rem;
-  color: #888;
+  color: var(--color-text-muted);
 }
 
-/* Pin form */
+/* ── Pin Form ── */
 #pin-form {
   display: flex;
   flex-direction: column;
@@ -135,9 +422,9 @@ body {
 
 #pin-form input,
 #pin-form select {
-  background: #2a2a4a;
-  border: 1px solid #444;
-  color: #e0e0e0;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
   padding: 8px 10px;
   border-radius: 6px;
   font-size: 0.85rem;
@@ -146,11 +433,11 @@ body {
 #pin-form input:focus,
 #pin-form select:focus {
   outline: none;
-  border-color: #6b2fa0;
+  border-color: var(--color-accent);
 }
 
 #btn-add-pin {
-  background: #6b2fa0;
+  background: var(--color-accent);
   color: white;
   border: none;
   padding: 8px;
@@ -161,19 +448,19 @@ body {
 }
 
 #btn-add-pin:hover:not(:disabled) {
-  background: #7c3aed;
+  background: var(--color-accent-hover);
 }
 
 #btn-add-pin:disabled {
-  background: #444;
+  background: var(--color-disabled);
   cursor: not-allowed;
 }
 
 #btn-add-pin.ready {
-  background: #059669;
+  background: var(--color-success);
 }
 
-/* Pin items */
+/* ── Pin Items ── */
 .pin-item {
   display: flex;
   align-items: center;
@@ -182,7 +469,7 @@ body {
   margin-bottom: 4px;
   border-radius: 6px;
   font-size: 0.82rem;
-  background: #2a2a4a;
+  background: var(--color-bg-secondary);
 }
 
 .pin-item .pin-icon-label {
@@ -196,7 +483,7 @@ body {
 .pin-item .pin-delete {
   background: none;
   border: none;
-  color: #888;
+  color: var(--color-text-muted);
   cursor: pointer;
   font-size: 0.9rem;
   padding: 2px 6px;
@@ -204,32 +491,32 @@ body {
 }
 
 .pin-item .pin-delete:hover {
-  color: #e11d48;
+  color: var(--color-alert);
   background: rgba(225, 29, 72, 0.1);
 }
 
-/* Route info */
+/* ── Route Info ── */
 #route-info {
   font-size: 0.82rem;
-  color: #aaa;
+  color: var(--color-text-muted);
   line-height: 1.6;
 }
 
-/* Map */
+/* ── Map ── */
 #map {
   flex: 1;
   height: 100vh;
 }
 
-/* Context menu */
+/* ── Context Menu ── */
 .context-menu {
   position: fixed;
-  background: #2a2a4a;
-  border: 1px solid #555;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   padding: 4px;
   z-index: 2000;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  box-shadow: 0 4px 20px var(--color-shadow);
 }
 
 .context-menu.hidden {
@@ -241,7 +528,7 @@ body {
   width: 100%;
   background: none;
   border: none;
-  color: #e0e0e0;
+  color: var(--color-text);
   padding: 8px 16px;
   text-align: left;
   cursor: pointer;
@@ -250,12 +537,12 @@ body {
 }
 
 .context-menu button:hover {
-  background: #6b2fa0;
+  background: var(--color-accent);
 }
 
-/* Custom Leaflet markers */
+/* ── Custom Leaflet Markers ── */
 .taco-bell-marker {
-  background: #6b2fa0;
+  background: var(--color-accent);
   color: white;
   border-radius: 50%;
   width: 28px;
@@ -266,11 +553,11 @@ body {
   font-weight: bold;
   font-size: 13px;
   border: 2px solid white;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  box-shadow: 0 2px 8px var(--color-shadow);
 }
 
 .taco-bell-marker.start-finish {
-  background: #e11d48;
+  background: var(--color-alert);
   width: 32px;
   height: 32px;
   font-size: 14px;
@@ -278,49 +565,49 @@ body {
 
 .custom-pin-marker {
   font-size: 24px;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  text-shadow: 0 2px 4px var(--color-shadow);
 }
 
-/* Popup styling */
+/* ── Popup Styling ── */
 .leaflet-popup-content-wrapper {
-  background: #1a1a2e;
-  color: #e0e0e0;
-  border: 1px solid #6b2fa0;
+  background: var(--color-popup-bg, var(--color-bg));
+  color: var(--color-text);
+  border: 1px solid var(--color-accent);
   border-radius: 8px;
 }
 
 .leaflet-popup-tip {
-  background: #1a1a2e;
-  border: 1px solid #6b2fa0;
+  background: var(--color-popup-bg, var(--color-bg));
+  border: 1px solid var(--color-accent);
 }
 
 .popup-content h3 {
-  color: #d8b4fe;
+  color: var(--color-accent-tertiary);
   font-size: 0.95rem;
   margin-bottom: 4px;
 }
 
 .popup-content p {
   font-size: 0.8rem;
-  color: #aaa;
+  color: var(--color-text-muted);
   margin: 2px 0;
 }
 
 .popup-content .mandatory {
-  color: #fbbf24;
+  color: var(--color-warning);
   font-size: 0.75rem;
   margin-top: 6px;
 }
 
-/* Scrollbar */
+/* ── Scrollbar ── */
 #sidebar::-webkit-scrollbar {
   width: 6px;
 }
 #sidebar::-webkit-scrollbar-track {
-  background: #1a1a2e;
+  background: var(--color-bg);
 }
 #sidebar::-webkit-scrollbar-thumb {
-  background: #444;
+  background: var(--color-scrollbar);
   border-radius: 3px;
 }
 
@@ -329,12 +616,12 @@ body {
   display: none;
 }
 
-/* ── Mobile: auto-detected via media query ── */
+/* ── Mobile ── */
 @media (max-width: 768px) {
   body {
     flex-direction: column;
     height: 100vh;
-    height: 100dvh; /* dynamic viewport height for mobile browsers */
+    height: 100dvh;
   }
 
   #sidebar {
@@ -344,7 +631,7 @@ body {
     max-height: 35vh;
     max-height: 35dvh;
     border-right: none;
-    border-bottom: 2px solid #6b2fa0;
+    border-bottom: 2px solid var(--color-accent);
     padding: 12px 16px;
   }
 
@@ -355,11 +642,10 @@ body {
 
   .subtitle {
     font-size: 0.7rem;
-    margin-bottom: 8px;
+    margin-bottom: 4px;
     line-height: 1.3;
   }
 
-  /* Map fills remaining space */
   #map {
     flex: 1;
     height: auto;
@@ -380,7 +666,7 @@ body {
   .section-toggle {
     display: inline;
     font-size: 0.7rem;
-    color: #888;
+    color: var(--color-text-muted);
     transition: transform 0.2s;
   }
 
@@ -401,7 +687,7 @@ body {
     padding: 10px 10px;
     gap: 10px;
     font-size: 0.88rem;
-    min-height: 44px; /* Apple HIG minimum touch target */
+    min-height: 44px;
   }
 
   .stop-number {
@@ -437,7 +723,6 @@ body {
     padding: 10px;
     font-size: 0.9rem;
     min-height: 44px;
-    /* Truncate long coordinate text */
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -449,7 +734,6 @@ body {
     min-height: 44px;
   }
 
-  /* Better popup sizing on mobile */
   .leaflet-popup-content-wrapper {
     max-width: 260px;
   }
@@ -462,10 +746,25 @@ body {
     font-size: 0.76rem;
   }
 
-  /* Route info compact */
   #route-info {
     font-size: 0.78rem;
     line-height: 1.5;
+  }
+
+  /* Theme picker mobile */
+  .theme-swatch {
+    width: 26px;
+    height: 26px;
+  }
+
+  .theme-swatch::after {
+    display: none; /* tooltips don't work on touch */
+  }
+
+  /* Event link mobile */
+  .event-link {
+    padding: 5px 10px;
+    font-size: 0.72rem;
   }
 }
 
@@ -489,9 +788,14 @@ body {
     height: 24px;
     font-size: 0.72rem;
   }
+
+  .theme-swatch {
+    width: 22px;
+    height: 22px;
+  }
 }
 
-/* Landscape phone: give map more room */
+/* Landscape phone */
 @media (max-width: 768px) and (orientation: landscape) {
   body {
     flex-direction: row;
@@ -505,7 +809,7 @@ body {
     height: 100vh;
     height: 100dvh;
     border-bottom: none;
-    border-right: 2px solid #6b2fa0;
+    border-right: 2px solid var(--color-accent);
   }
 
   #map {

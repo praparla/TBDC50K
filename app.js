@@ -1,5 +1,60 @@
 // ── Taco Bell DC 50K Route Planner ──
 
+// ── Theme Configuration (modular — add new themes here) ──
+const THEMES = {
+  modern: {
+    id: 'modern',
+    name: 'Live Más',
+    swatch: '#682a8d',
+    tileUrl: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+    tileAttr: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
+    routeColor: '#a78bfa',
+  },
+  retro85: {
+    id: 'retro85',
+    name: "Retro '85",
+    swatch: '#f5c518',
+    tileUrl: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    tileAttr: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>',
+    routeColor: '#f5c518',
+  },
+  reign94: {
+    id: 'reign94',
+    name: "Purple Reign '94",
+    swatch: '#d9208a',
+    tileUrl: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+    tileAttr: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
+    routeColor: '#d9208a',
+  },
+  baja: {
+    id: 'baja',
+    name: 'Baja Blast',
+    swatch: '#00bfb3',
+    tileUrl: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+    tileAttr: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
+    routeColor: '#00bfb3',
+  },
+  cantina: {
+    id: 'cantina',
+    name: 'Cantina Night',
+    swatch: '#c9a84c',
+    tileUrl: 'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png',
+    tileAttr: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
+    routeColor: '#c9a84c',
+  },
+  sauce: {
+    id: 'sauce',
+    name: 'Sauce Packet',
+    swatch: '#e8410a',
+    tileUrl: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+    tileAttr: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
+    routeColor: '#e8410a',
+  },
+};
+
+const DEFAULT_THEME = 'modern';
+const THEME_STORAGE_KEY = 'tb50k_theme';
+
 const TACO_BELL_STOPS = [
   { num: 0, address: '417 King St, Alexandria, VA 22314', label: 'Start/Finish - Taco Bell Cantina', note: 'Start & Finish Line', mandatory: null },
   { num: 1, address: '231 S Van Dorn St, Alexandria, VA 22304', label: 'Stop 1 - Alexandria', note: '5.1 mi cumulative', mandatory: null },
@@ -22,20 +77,87 @@ const PIN_ICONS = {
 };
 
 let map;
+let tileLayer;
 let routeLayer;
 let stopMarkers = [];
 let pinMarkers = [];
 let pendingPinLatLng = null;
 let customPins = [];
+let currentThemeId = DEFAULT_THEME;
 
 // ── Device Detection ──
 function isMobile() {
   return window.matchMedia('(max-width: 768px)').matches;
 }
 
+// ── Theme System ──
+function getThemeId() {
+  return localStorage.getItem(THEME_STORAGE_KEY) || DEFAULT_THEME;
+}
+
+function getTheme(id) {
+  return THEMES[id] || THEMES[DEFAULT_THEME];
+}
+
+function applyTheme(themeId) {
+  const theme = getTheme(themeId);
+  currentThemeId = theme.id;
+
+  // Apply data-theme attribute (CSS variables switch)
+  if (theme.id === DEFAULT_THEME) {
+    document.documentElement.removeAttribute('data-theme');
+  } else {
+    document.documentElement.setAttribute('data-theme', theme.id);
+  }
+
+  // Persist
+  localStorage.setItem(THEME_STORAGE_KEY, theme.id);
+
+  // Swap tile layer
+  if (tileLayer) {
+    map.removeLayer(tileLayer);
+  }
+  tileLayer = L.tileLayer(theme.tileUrl, {
+    attribution: theme.tileAttr,
+    subdomains: 'abcd',
+    maxZoom: 19,
+  }).addTo(map);
+
+  // Update route polyline color
+  if (routeLayer) {
+    routeLayer.setStyle({ color: theme.routeColor });
+  }
+
+  // Update active swatch indicator
+  document.querySelectorAll('.theme-swatch').forEach(s => {
+    s.classList.toggle('active', s.dataset.theme === theme.id);
+  });
+}
+
+function buildThemePicker() {
+  const picker = document.getElementById('theme-picker');
+  if (!picker) return;
+
+  const savedTheme = getThemeId();
+
+  Object.values(THEMES).forEach(theme => {
+    const swatch = document.createElement('button');
+    swatch.className = 'theme-swatch';
+    if (theme.id === savedTheme) swatch.classList.add('active');
+    swatch.style.background = theme.swatch;
+    swatch.dataset.theme = theme.id;
+    swatch.dataset.name = theme.name;
+    swatch.title = theme.name;
+    swatch.setAttribute('aria-label', `Switch to ${theme.name} theme`);
+    swatch.addEventListener('click', () => applyTheme(theme.id));
+    picker.appendChild(swatch);
+  });
+}
+
 // ── Initialize ──
 document.addEventListener('DOMContentLoaded', () => {
   initMap();
+  buildThemePicker();
   loadGPX();
   loadCustomPins();
   setupEventListeners();
@@ -50,9 +172,11 @@ function initMap() {
     attributionControl: true,
   }).setView([38.87, -77.05], 12);
 
-  // Dark tile layer
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
+  // Apply saved theme's tile layer (or default)
+  const theme = getTheme(getThemeId());
+  currentThemeId = theme.id;
+  tileLayer = L.tileLayer(theme.tileUrl, {
+    attribution: theme.tileAttr,
     subdomains: 'abcd',
     maxZoom: 19,
   }).addTo(map);
@@ -63,9 +187,11 @@ function initMap() {
 
 // ── Load Route Data (from gpx_data.js) ──
 function loadGPX() {
+  const theme = getTheme(currentThemeId);
+
   // Draw route from embedded track data
   routeLayer = L.polyline(GPX_TRACK, {
-    color: '#a78bfa',
+    color: theme.routeColor,
     weight: 4,
     opacity: 0.85,
     smoothFactor: 1,
@@ -74,8 +200,7 @@ function loadGPX() {
   // Add Taco Bell stop markers from embedded waypoints
   addStopMarkers(GPX_WAYPOINTS);
 
-  // Fit map to route — defer so Leaflet has correct container size
-  // Mobile needs longer delay for layout to settle
+  // Fit map to route
   const delay = isMobile() ? 300 : 100;
   setTimeout(() => {
     map.invalidateSize();
@@ -89,11 +214,6 @@ function loadGPX() {
 
 function addStopMarkers(wptCoords) {
   const stopsList = document.getElementById('stops-list');
-
-  // First waypoint = start/finish (Cantina on King St)
-  // Remaining waypoints = stops 1-7
-  // Stop 0 (start/finish) maps to wptCoords[0]
-  // Stops 1-7 map to wptCoords[1-7]
 
   TACO_BELL_STOPS.forEach((stop, i) => {
     const wpt = wptCoords[i];
@@ -190,7 +310,7 @@ function setupEventListeners() {
     resetAddButton();
   });
 
-  // Hide context menu on map click
+  // Hide context menu on click outside
   document.addEventListener('click', (e) => {
     if (!e.target.closest('.context-menu')) {
       document.getElementById('context-menu').classList.add('hidden');
@@ -216,7 +336,6 @@ function placePin(latlng) {
 
   const name = nameInput.value.trim() || 'Unnamed Pin';
   const iconType = iconSelect.value;
-  const emoji = PIN_ICONS[iconType];
 
   const pin = {
     id: Date.now(),
@@ -333,7 +452,6 @@ function setupMobileCollapsibleSections() {
       if (!isMobile()) return;
       const section = h2.closest('.section');
       section.classList.toggle('collapsed');
-      // After collapsing/expanding, the map may need to recalculate its size
       setTimeout(() => map.invalidateSize(), 50);
     });
   });
@@ -350,16 +468,13 @@ function handleOrientationAndResize() {
   };
 
   window.addEventListener('resize', onResize);
-  // Some mobile browsers fire orientationchange separately
   window.addEventListener('orientationchange', () => {
     setTimeout(() => map.invalidateSize(), 300);
   });
 
-  // On mobile, close sidebar popup when clicking a stop (focus the map)
   if (isMobile()) {
     document.querySelectorAll('.stop-item').forEach(item => {
       item.addEventListener('click', () => {
-        // Let the map focus happen, then invalidate size
         setTimeout(() => map.invalidateSize(), 100);
       });
     });

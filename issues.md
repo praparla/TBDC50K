@@ -4,6 +4,8 @@
 - **Leaflet + flex layouts:** Always call `map.invalidateSize()` before `fitBounds()` when map container size isn't known at init time (sidebar flex layouts, tabs, etc.). Use a short `setTimeout` (~100ms) to let the DOM settle.
 - **iCloud Drive + system python3:** `/usr/bin/python3` throws `PermissionError` when cwd is in iCloud Drive. Use a shell wrapper that `cd`s to a non-iCloud path first.
 - **Embedded data > fetch for static sites:** Embedding GPX data as JS avoids CORS issues with `file://` protocol and removes server dependency for local development.
+- **Browser caching during dev:** When changing JS that defines new globals (e.g. `THEMES`), aggressive browser caching can serve stale files even after server restart. Temporary cache-bust query params on `<script>` tags (`?v=2`) force a fresh load. Remove after confirming.
+- **FOUC prevention for themes:** Apply saved theme via inline `<script>` in `<head>` (before body renders) to avoid flash of default theme. Read `localStorage` and set `data-theme` attribute immediately.
 
 ---
 

@@ -6,14 +6,27 @@
   <title>Taco Bell DC 50K Route Planner</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="style.css" />
+  <script>
+    // Apply saved theme before render to prevent flash of default theme
+    (function() {
+      var t = localStorage.getItem('tb50k_theme');
+      if (t) document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
 </head>
 <body>
   <div id="sidebar">
-    <div class="sidebar-title-row">
-      <h1>&#127790; TB DC 50K</h1>
-      <a href="https://tacobelldc50k.com/" target="_blank" rel="noopener" class="event-link">Event Site &rarr;</a>
+    <div class="sidebar-header">
+      <div class="sidebar-title-row">
+        <h1>&#127790; TB DC 50K</h1>
+        <a href="https://tacobelldc50k.com/" target="_blank" rel="noopener" class="event-link">&#127790; tacobelldc50k.com</a>
+      </div>
+      <p class="subtitle">Nov 27, 2026 &bull; 32.4 mi &bull; Alexandria / Arlington / DC</p>
+      <div class="theme-picker" id="theme-picker">
+        <span class="theme-picker-label">Theme</span>
+        <!-- Swatches injected by app.js -->
+      </div>
     </div>
-    <p class="subtitle">Nov 27, 2026 &bull; 32.4 mi &bull; Alexandria / Arlington / DC</p>
 
     <div class="section collapsed" id="section-stops">
       <h2>Taco Bell Stops <span class="section-toggle">&#9660;</span></h2>
