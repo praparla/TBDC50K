@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Taco Bell DC 50K Route Planner</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css?v=2" />
   <script>
     // Apply saved theme before render to prevent flash of default theme
     (function() {
@@ -32,6 +32,44 @@
       <h2>Taco Bell Stops <span class="section-toggle">&#9660;</span></h2>
       <div class="section-body">
         <div id="stops-list"></div>
+      </div>
+    </div>
+
+    <div class="section collapsed" id="section-pace">
+      <h2>Pace Calculator <span class="section-toggle">&#9660;</span></h2>
+      <div class="section-body">
+        <div class="pace-form">
+          <label class="pace-label">Goal Finish Time</label>
+          <div class="pace-inputs">
+            <input type="number" id="pace-hours" min="0" max="11" placeholder="hrs" />
+            <span class="pace-separator">:</span>
+            <input type="number" id="pace-minutes" min="0" max="59" placeholder="min" />
+            <button id="btn-calc-pace" onclick="calculatePace()">Calculate</button>
+          </div>
+        </div>
+        <div id="pace-results">
+          <p class="hint">Enter a goal time to see splits.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="section collapsed" id="section-food">
+      <h2>Mandatory Food &#127790; <span class="section-toggle">&#9660;</span></h2>
+      <div class="section-body">
+        <p class="hint">Race rules — check off when completed:</p>
+        <div id="food-tracker"></div>
+      </div>
+    </div>
+
+    <div class="section collapsed" id="section-tools">
+      <h2>Tools <span class="section-toggle">&#9660;</span></h2>
+      <div class="section-body">
+        <div class="tools-grid">
+          <button id="btn-bathrooms" class="tool-btn" onclick="toggleBathrooms()">&#128701; Find Restrooms</button>
+          <button class="tool-btn" onclick="exportToGoogleMaps()">&#128506; Open in Google Maps</button>
+          <button class="tool-btn" onclick="downloadICS()">&#128197; Add to Calendar</button>
+          <button id="btn-flythrough" class="tool-btn" onclick="startFlythrough()">&#127916; Preview Route</button>
+        </div>
       </div>
     </div>
 
@@ -74,6 +112,6 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="gpx_data.js"></script>
-  <script src="app.js"></script>
+  <script src="app.js?v=2"></script>
 </body>
 </html>

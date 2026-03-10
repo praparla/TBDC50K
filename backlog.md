@@ -12,11 +12,11 @@
 
 ### P0 - Quick Wins (High Priority)
 
-- [ ] **Click any pin → open in native maps app** — Every marker popup (TB stops, custom pins, bathrooms) should have a "Directions" button that deep-links to the device's native maps app. Use UA detection: `maps://?ll=LAT,LNG&q=LABEL` on iOS, `geo:LAT,LNG?q=LAT,LNG(LABEL)` on Android, and `https://www.google.com/maps/search/?api=1&query=LAT,LNG` on desktop. ~15 lines of JS in a shared `openInMaps(lat, lng, label)` utility. Add to `buildStopPopup()`, `buildPinPopup()`, and future bathroom popups.
+- [x] **Click any pin → open in native maps app** — Every marker popup (TB stops, custom pins, bathrooms) should have a "Directions" button that deep-links to the device's native maps app. Use UA detection: `maps://?ll=LAT,LNG&q=LABEL` on iOS, `geo:LAT,LNG?q=LAT,LNG(LABEL)` on Android, and `https://www.google.com/maps/search/?api=1&query=LAT,LNG` on desktop. ~15 lines of JS in a shared `openInMaps(lat, lng, label)` utility. Add to `buildStopPopup()`, `buildPinPopup()`, and future bathroom popups.
 
-- [ ] **Bathroom finder toggle** — "Find Restrooms" toggle button in the sidebar that fetches public restrooms near the route from the OpenStreetMap Overpass API (free, no API key). POST to `https://overpass-api.de/api/interpreter` with query `[out:json]; node["amenity"="toilets"](38.80,-77.15,38.93,-76.99); out center;` (bounding box covers the full DC/Arlington/Alexandria corridor). Cache the JSON response in `localStorage` key `tb50k_bathrooms` for 7 days so subsequent loads are instant. Render as a toggleable `L.layerGroup` of 🚽 markers with popups showing name (if any) and a "Directions" deep-link button. ~60 lines of JS + a new sidebar toggle button. Supersedes the existing `P1` aid station / restroom finder entry above.
+- [x] **Bathroom finder toggle** — "Find Restrooms" toggle button in the sidebar that fetches public restrooms near the route from the OpenStreetMap Overpass API (free, no API key). POST to `https://overpass-api.de/api/interpreter` with query `[out:json]; node["amenity"="toilets"](38.80,-77.15,38.93,-76.99); out center;` (bounding box covers the full DC/Arlington/Alexandria corridor). Cache the JSON response in `localStorage` key `tb50k_bathrooms` for 7 days so subsequent loads are instant. Render as a toggleable `L.layerGroup` of 🚽 markers with popups showing name (if any) and a "Directions" deep-link button. ~60 lines of JS + a new sidebar toggle button. Supersedes the existing `P1` aid station / restroom finder entry above.
 
-- [ ] **Export full route to Google Maps** — "Open in Google Maps" button that opens the full 32-mile route in Google Maps. Strategy: pre-build a Google My Maps link with all 8 TB stops as waypoints (one-time manual setup — shareable short link, works on all devices with no waypoint limits). Also add a desktop fallback that constructs a `https://www.google.com/maps/dir/?api=1&origin=...&destination=...&waypoints=PIPE_SEPARATED` URL with up to 8 intermediate stops; warn mobile users that the URL will truncate to 3 waypoints on mobile and suggest the My Maps link instead. Expose as both a sidebar button and a link in the route-info section.
+- [x] **Export full route to Google Maps** — "Open in Google Maps" button that opens the full 32-mile route in Google Maps. Constructs a `https://www.google.com/maps/dir/?api=1&origin=...&destination=...&waypoints=PIPE_SEPARATED` URL with all 8 stops as waypoints. Exposed in the Tools sidebar section.
 
 - [x] **Better event website UX** — ~~Redesign event link as pill button.~~ **DONE** (2026-03-10). Restyled as a rounded pill badge with 🌮 icon, hover/focus styles driven by theme system CSS variables, adequate mobile tap target.
 
@@ -30,17 +30,17 @@
 - [ ] **Offline map support** - Service worker pre-fetches CARTO dark tiles for the route corridor at zoom 13–16 (~3–8 MB). The `gpx_data.js` embedded data is already offline; only tile layer needs caching.
 
 ### P1 - Race Planning & Pacing
-- [ ] **Pace calculator with aid station splits** - Enter goal finish time → get estimated arrival at each of the 8 Taco Bell stops accounting for cumulative distances. Include optional slowdown/decay factor for miles 20–32. Pure client-side JS math, no dependencies.
+- [x] **Pace calculator with aid station splits** - Enter goal finish time → get estimated arrival at each of the 8 Taco Bell stops accounting for cumulative distances. Includes 4% fatigue decay factor for miles 20–32. Pure client-side JS math, persisted to localStorage.
 - [ ] **Grade-adjusted pace estimator (GAP)** - Slider for user's flat-road pace + Minetti GAP model (~3.5% time penalty per 1% grade uphill). Refines the aid station split calculator for hilly sections like the Georgetown climb.
-- [ ] **Mandatory food requirement tracker** - Prominent checklist panel for the two race rules (Chalupa Supreme OR Crunchwrap by Stop 3; Burrito Supreme OR Nachos Bell Grande by Stop 7). Checkboxes turn green when satisfied; persisted to localStorage. Unique to this race and very on-brand.
+- [x] **Mandatory food requirement tracker** - Checklist panel for the two race rules (Chalupa Supreme OR Crunchwrap by Stop 3; Burrito Supreme OR Nachos Bell Grande by Stop 7). Checkboxes turn green with strikethrough when satisfied; persisted to localStorage.
 - [ ] **Race day countdown clock** - User enters their start time (e.g., 7:00 AM); a panel shows: time elapsed, estimated current position at target pace, and time remaining before the 11-hour cutoff. Runs via `setInterval`; start time persisted to localStorage.
 - [ ] **Time-of-day estimator** - Show estimated arrival time at each stop based on entered start time + pace, so runners know "I should be at Stop 4 by 11:45 AM."
-- [ ] **Aid station / restroom finder** - Auto-populate public restrooms and water fountains near the route from OpenStreetMap Overpass API.
+- [x] **Aid station / restroom finder** - Superseded by P0 Bathroom finder toggle (Overpass API).
 - [ ] **Weather overlay** - Pull NWS forecast for Nov 27, 2026 race day; display at a glance in the sidebar.
 
 ### P2 - Navigation & Map UX
 - [ ] **Map tile layer switcher** - Toggle between: CARTO Dark (current), Esri World Imagery (satellite), OpenTopoMap (contour lines), OSM Standard. Uses Leaflet's built-in `L.control.layers()`. Low effort, high utility.
-- [ ] **"Fly to stop" smooth navigation** - Replace `map.setView()` with `map.flyTo()` for smooth cinematic pan-and-zoom when clicking a stop in the sidebar.
+- [x] **"Fly to stop" smooth navigation** - Replaced `map.setView()` with `map.flyTo()` for smooth cinematic pan-and-zoom when clicking a stop or pin in the sidebar.
 - [ ] **Alternative route suggestions** - Toggle between different route options between stops.
 - [ ] **Spectator spots map layer** - Toggleable GeoJSON layer of recommended crew/spectator positions with easy parking or Metro access (Lincoln Memorial area ~mile 15, Capitol Hill ~mile 23, Old Town start/finish). Static file, no backend.
 
@@ -60,15 +60,15 @@
 - [ ] **Printable pace card** - "Print" button generates a clean single-page pace card (stop names, cumulative distances, goal arrivals, mandatory food notes) via `window.print()` with print-specific CSS. Runners can laminate and carry in their vest.
 - [ ] **GPX export** - Export the route with custom pins as a GPX file for Garmin/Wahoo.
 - [ ] **Strava integration** - Import training runs, overlay on race route.
-- [ ] **Add to Calendar (.ics)** - One-click `.ics` download for Nov 27, 2026 race day with event details pre-filled. Works in Apple Calendar, Google Calendar, and Outlook — no API keys needed.
+- [x] **Add to Calendar (.ics)** - One-click `.ics` download for Nov 27, 2026 race day with event details pre-filled. Works in Apple Calendar, Google Calendar, and Outlook — no API keys needed.
 - [ ] **Shareable race card image** - CSS-styled `<div>` showing route thumbnail, goal time, name, and Taco Bell branding — screenshottable for Instagram/social hype.
 
 ### P2 - UI/UX
 - [x] **Theme switcher** - ~~See detailed plan below.~~ **DONE.** 6 TB-era themes (Live Más Modern, Retro '85, Purple Reign '94, Baja Blast, Cantina Night, Sauce Packet) switchable from swatch picker in sidebar header. CSS custom properties, tile layer swap, route color swap, themed sidebar background patterns, persisted to localStorage. See "Taco Bell Theme System" section for original plan.
-- [ ] **Mobile-first redesign** - Better mobile experience with collapsible sidebar
+- [x] **Mobile-first redesign** - Collapsible sidebar sections on all viewports, proper touch targets, responsive tools grid
 - [ ] **Search for locations** - Geocoding to search and add pins by address
 - [ ] **Drag to reposition pins** - Allow dragging placed pins to adjust location
-- [ ] **Course preview flythrough animation** - "Preview Route" button animates the map camera flying along the GPX track start-to-finish using `setInterval` + `map.flyTo()`. ~50 lines of JS, visually impressive.
+- [x] **Course preview flythrough animation** - "Preview Route" button animates the map camera panning along the GPX track start-to-finish using `setInterval` + `map.panTo()`. Toggle to start/stop.
 
 ### P2 - PWA & Offline
 - [ ] **Installable PWA** - `manifest.json` + service worker → "Add to Home Screen" on iOS/Android. Race-day quick launch from home screen without navigating to a URL. Taco Bell 🌮 launcher icon.
@@ -268,6 +268,36 @@ Every sauce packet is a sub-brand. White (Mild) → Orange (Hot) → Red (Fire) 
 
 ---
 
+## Implementation Plan (2026-03-10 Session)
+
+Working through backlog in priority order. Skipping features that require user accounts/backend.
+
+### Batch 1 — P0 Quick Wins
+1. **Directions button** — `openInMaps(lat, lng, label)` utility with UA detection (iOS/Android/desktop). Add to all stop popups and custom pin popups.
+2. **Bathroom finder toggle** — Overpass API query for `amenity=toilets` in DC corridor. Toggleable layer group. 7-day localStorage cache. Directions button on each bathroom popup.
+3. **Export route to Google Maps** — Sidebar button that opens a Google Maps directions URL with all 8 TB stops as waypoints. Mobile fallback note.
+
+### Batch 2 — P1 Race Planning
+4. **Pace calculator** — Enter goal time → get estimated arrival at each stop. Optional decay factor for late miles. Pure client-side math.
+5. **Mandatory food tracker** — Checklist for the two race rules (Stop 3 & Stop 7). Checkboxes persisted to localStorage.
+6. **Fly-to-stop** — Replace `map.setView()` with `map.flyTo()` for smooth pan-zoom.
+
+### Batch 3 — P2 Quick Wins
+7. **Add to Calendar (.ics)** — One-click .ics download for Nov 27, 2026.
+8. **Course preview flythrough** — Animate camera along GPX track.
+
+---
+
 ## Completed
 - [x] **Theme switcher** (2026-03-10) — 6 TB-era themes with CSS custom properties, tile layer swap, route color swap, themed sidebar background patterns (pure CSS gradients, zero HTTP requests), event link redesign as pill button. Persisted to localStorage. Mobile/desktop tested.
 - [x] **Better event website UX** (2026-03-10) — Event link redesigned as rounded pill badge with 🌮 icon, theme-aware hover/focus styles, proper mobile tap targets. Implemented as part of theme system work.
+- [x] **Directions button on all popups** (2026-03-10) — `openInMaps()` utility with UA detection (iOS/Android/desktop deep-links). Added to all stop popups, custom pin popups, and bathroom popups.
+- [x] **Bathroom finder toggle** (2026-03-10) — Overpass API query for `amenity=toilets` in DC corridor. Toggleable layer group with 7-day localStorage cache. Each bathroom popup has a Directions button.
+- [x] **Export route to Google Maps** (2026-03-10) — Sidebar button constructs Google Maps directions URL with all 8 TB stops as walking waypoints.
+- [x] **Pace calculator with aid station splits** (2026-03-10) — Enter goal time, get estimated arrival at each stop with 4% fatigue decay after mile 20. Persisted to localStorage.
+- [x] **Mandatory food requirement tracker** (2026-03-10) — Two race-rule checkboxes with green strikethrough on completion. Persisted to localStorage.
+- [x] **Fly-to-stop smooth navigation** (2026-03-10) — `map.flyTo()` replaces `map.setView()` for cinematic pan-zoom on sidebar clicks.
+- [x] **Add to Calendar (.ics)** (2026-03-10) — One-click .ics download for Nov 27, 2026 with race details.
+- [x] **Course preview flythrough** (2026-03-10) — Animated camera pan along GPX track, togglable start/stop.
+- [x] **Mobile-first redesign** (2026-03-10) — Collapsible sidebar sections on all viewports, 44px+ touch targets, responsive tools grid.
+- [x] **Collapsible sections on desktop** (2026-03-10) — Sections start collapsed to reduce visual clutter; click to expand. Toggle arrows visible on all viewports.

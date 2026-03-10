@@ -625,6 +625,197 @@ body {
   margin-top: 6px;
 }
 
+.popup-directions-btn {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 4px 10px;
+  background: var(--color-accent);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  transition: background 0.15s;
+}
+
+.popup-directions-btn:hover {
+  background: var(--color-accent-hover);
+}
+
+/* ── Pace Calculator ── */
+.pace-form {
+  margin-bottom: 10px;
+}
+
+.pace-label {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  display: block;
+  margin-bottom: 4px;
+}
+
+.pace-inputs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pace-inputs input {
+  width: 60px;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.pace-inputs input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.pace-separator {
+  font-size: 1.1rem;
+  color: var(--color-text-muted);
+  font-weight: bold;
+}
+
+#btn-calc-pace {
+  background: var(--color-accent);
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: background 0.15s;
+  margin-left: 4px;
+}
+
+#btn-calc-pace:hover {
+  background: var(--color-accent-hover);
+}
+
+.pace-splits {
+  margin-top: 6px;
+}
+
+.pace-split-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 6px;
+  font-size: 0.78rem;
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.pace-split-row.finish-row {
+  border-top: 2px solid var(--color-accent);
+  border-bottom: none;
+  font-weight: bold;
+  margin-top: 2px;
+  padding-top: 6px;
+}
+
+.pace-split-label {
+  flex: 1;
+  color: var(--color-text);
+}
+
+.pace-split-dist {
+  width: 50px;
+  text-align: right;
+  color: var(--color-text-muted);
+  margin-right: 8px;
+}
+
+.pace-split-time {
+  width: 60px;
+  text-align: right;
+  color: var(--color-accent-secondary);
+  font-weight: 600;
+}
+
+.pace-note {
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+  margin-top: 6px;
+  font-style: italic;
+}
+
+/* ── Mandatory Food Tracker ── */
+.food-rule-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 6px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.15s;
+  font-size: 0.82rem;
+}
+
+.food-rule-row:hover {
+  background: var(--color-bg-secondary);
+}
+
+.food-rule-row input[type="checkbox"] {
+  margin-top: 2px;
+  accent-color: var(--color-success);
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.food-rule-label {
+  color: var(--color-text);
+  line-height: 1.4;
+}
+
+.food-rule-row.completed .food-rule-label {
+  color: var(--color-success);
+  text-decoration: line-through;
+}
+
+/* ── Tools Grid ── */
+.tools-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.tool-btn {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  padding: 8px 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.72rem;
+  transition: background 0.15s, border-color 0.15s;
+  text-align: center;
+}
+
+.tool-btn:hover {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: white;
+}
+
+.tool-btn.active {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: white;
+}
+
+/* ── Bathroom Markers ── */
+.bathroom-marker {
+  font-size: 20px;
+  text-shadow: 0 1px 3px var(--color-shadow);
+}
+
 /* ── Scrollbar ── */
 #sidebar::-webkit-scrollbar {
   width: 6px;
@@ -637,8 +828,27 @@ body {
   border-radius: 3px;
 }
 
-/* ── Collapsible sections (used on mobile, available on desktop) ── */
+/* ── Collapsible sections (all viewports) ── */
+.section h2 {
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
 .section-toggle {
+  display: inline;
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+  transition: transform 0.2s;
+}
+
+.section.collapsed .section-toggle {
+  transform: rotate(-90deg);
+}
+
+.section.collapsed .section-body {
   display: none;
 }
 
@@ -676,32 +886,6 @@ body {
     flex: 1;
     height: auto;
     min-height: 0;
-  }
-
-  /* Collapsible sections on mobile */
-  .section h2 {
-    cursor: pointer;
-    user-select: none;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 0;
-    padding-bottom: 6px;
-  }
-
-  .section-toggle {
-    display: inline;
-    font-size: 0.7rem;
-    color: var(--color-text-muted);
-    transition: transform 0.2s;
-  }
-
-  .section.collapsed .section-toggle {
-    transform: rotate(-90deg);
-  }
-
-  .section.collapsed .section-body {
-    display: none;
   }
 
   .section {
@@ -775,6 +959,46 @@ body {
   #route-info {
     font-size: 0.78rem;
     line-height: 1.5;
+  }
+
+  /* Tools grid mobile */
+  .tools-grid {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .tool-btn {
+    min-height: 44px;
+    font-size: 0.82rem;
+    padding: 10px 8px;
+  }
+
+  /* Pace inputs mobile */
+  .pace-inputs input {
+    min-height: 44px;
+    font-size: 0.95rem;
+  }
+
+  #btn-calc-pace {
+    min-height: 44px;
+    font-size: 0.85rem;
+    padding: 8px 14px;
+  }
+
+  .food-rule-row {
+    padding: 10px 6px;
+    min-height: 44px;
+  }
+
+  .food-rule-row input[type="checkbox"] {
+    width: 22px;
+    height: 22px;
+  }
+
+  .popup-directions-btn {
+    min-height: 36px;
+    padding: 6px 14px;
+    font-size: 0.82rem;
   }
 
   /* Theme picker mobile */

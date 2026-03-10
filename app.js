@@ -76,6 +76,10 @@ const PIN_ICONS = {
   custom: '📌',
 };
 
+// ── Stop Metadata (cumulative distances in miles from start) ──
+const STOP_DISTANCES = [0, 5.1, 12.7, 15.5, 19.0, 20.0, 22.0, 23.5, 32.4];
+// Index 0 = Start, 1–7 = Stops 1–7, 8 = Finish (same location as Start)
+
 let map;
 let tileLayer;
 let routeLayer;
@@ -84,11 +88,31 @@ let pinMarkers = [];
 let pendingPinLatLng = null;
 let customPins = [];
 let currentThemeId = DEFAULT_THEME;
+let bathroomLayer = null;
+let bathroomToggleOn = false;
 
 // ── Device Detection ──
 function isMobile() {
   return window.matchMedia('(max-width: 768px)').matches;
 }
+
+// ── Directions: Open in native maps app ──
+function openInMaps(lat, lng, label) {
+  const ua = navigator.userAgent || '';
+  const encodedLabel = encodeURIComponent(label || 'Pin');
+  let url;
+  if (/iPad|iPhone|iPod/.test(ua) && !window.MSStream) {
+    url = `maps://?ll=${lat},${lng}&q=${encodedLabel}`;
+  } else if (/android/i.test(ua)) {
+    url = `geo:${lat},${lng}?q=${lat},${lng}(${encodedLabel})`;
+  } else {
+    url = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+  }
+  window.open(url, '_blank');
+}
+
+// Make globally accessible for inline onclick handlers in popups
+window.openInMaps = openInMaps;
 
 // ── Theme System ──
 function getThemeId() {
@@ -160,6 +184,8 @@ document.addEventListener('DOMContentLoaded', () => {
   setupMobileCollapsibleSections();
   handleOrientationAndResize();
   resetAddButton();
+  buildFoodTracker();
+  restorePaceInputs();
 });
 
 function initMap() {
@@ -235,6 +261,7 @@ function addStopMarkers(wptCoords) {
     if (stop.mandatory) {
       popupHtml += `<p class="mandatory">⚠️ ${stop.mandatory}</p>`;
     }
+    popupHtml += `<button class="popup-directions-btn" onclick="openInMaps(${wpt.lat}, ${wpt.lon}, '${stop.label.replace(/'/g, "\\'")}')">🧭 Directions</button>`;
     popupHtml += '</div>';
     marker.bindPopup(popupHtml);
 
@@ -248,7 +275,7 @@ function addStopMarkers(wptCoords) {
       <div class="stop-address">${wpt.name}</div>
     `;
     item.addEventListener('click', () => {
-      map.setView([wpt.lat, wpt.lon], 15);
+      map.flyTo([wpt.lat, wpt.lon], 15, { duration: 1.2 });
       marker.openPopup();
     });
     stopsList.appendChild(item);
@@ -366,6 +393,7 @@ function addPinToMap(pin) {
   marker.bindPopup(`<div class="popup-content">
     <h3>${emoji} ${pin.name}</h3>
     <p>${pin.lat.toFixed(5)}, ${pin.lng.toFixed(5)}</p>
+    <button class="popup-directions-btn" onclick="openInMaps(${pin.lat}, ${pin.lng}, '${pin.name.replace(/'/g, "\\'")}')">🧭 Directions</button>
   </div>`);
 
   marker.pinId = pin.id;
@@ -386,7 +414,7 @@ function addPinToSidebar(pin) {
   `;
 
   item.querySelector('.pin-name').addEventListener('click', () => {
-    map.setView([pin.lat, pin.lng], 16);
+    map.flyTo([pin.lat, pin.lng], 16, { duration: 1.2 });
     const marker = pinMarkers.find(m => m.pinId === pin.id);
     if (marker) marker.openPopup();
   });
@@ -421,6 +449,281 @@ function resetAddButton() {
   addBtn.classList.remove('ready');
 }
 
+// ── Bathroom Finder (Overpass API) ──
+const BATHROOM_CACHE_KEY = 'tb50k_bathrooms';
+const BATHROOM_CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+function toggleBathrooms() {
+  const btn = document.getElementById('btn-bathrooms');
+  if (!btn) return;
+
+  if (bathroomToggleOn) {
+    // Turn off
+    if (bathroomLayer) {
+      map.removeLayer(bathroomLayer);
+    }
+    bathroomToggleOn = false;
+    btn.classList.remove('active');
+    btn.textContent = '🚽 Find Restrooms';
+    return;
+  }
+
+  // Turn on
+  bathroomToggleOn = true;
+  btn.classList.add('active');
+  btn.textContent = '🚽 Restrooms On';
+
+  // Check cache
+  try {
+    const cached = JSON.parse(localStorage.getItem(BATHROOM_CACHE_KEY));
+    if (cached && Date.now() - cached.ts < BATHROOM_CACHE_TTL) {
+      renderBathrooms(cached.data);
+      return;
+    }
+  } catch (e) { /* cache miss */ }
+
+  btn.textContent = '🚽 Loading...';
+
+  const query = `[out:json];node["amenity"="toilets"](38.78,-77.18,38.95,-76.96);out center;`;
+  fetch('https://overpass-api.de/api/interpreter', {
+    method: 'POST',
+    body: `data=${encodeURIComponent(query)}`,
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+  })
+    .then(r => r.json())
+    .then(data => {
+      const nodes = data.elements || [];
+      localStorage.setItem(BATHROOM_CACHE_KEY, JSON.stringify({ ts: Date.now(), data: nodes }));
+      renderBathrooms(nodes);
+      btn.textContent = '🚽 Restrooms On';
+    })
+    .catch(err => {
+      console.error('Bathroom fetch failed:', err);
+      btn.textContent = '🚽 Fetch Failed';
+      bathroomToggleOn = false;
+      btn.classList.remove('active');
+      setTimeout(() => { btn.textContent = '🚽 Find Restrooms'; }, 2000);
+    });
+}
+
+function renderBathrooms(nodes) {
+  if (bathroomLayer) {
+    map.removeLayer(bathroomLayer);
+  }
+  bathroomLayer = L.layerGroup();
+
+  nodes.forEach(node => {
+    const lat = node.lat;
+    const lng = node.lon;
+    if (!lat || !lng) return;
+
+    const name = (node.tags && node.tags.name) || 'Public Restroom';
+    const icon = L.divIcon({
+      className: 'bathroom-marker',
+      html: '🚽',
+      iconSize: [24, 24],
+      iconAnchor: [12, 12],
+    });
+
+    const marker = L.marker([lat, lng], { icon });
+    marker.bindPopup(`<div class="popup-content">
+      <h3>🚽 ${name}</h3>
+      <button class="popup-directions-btn" onclick="openInMaps(${lat}, ${lng}, '${name.replace(/'/g, "\\'")}')">🧭 Directions</button>
+    </div>`);
+    bathroomLayer.addLayer(marker);
+  });
+
+  bathroomLayer.addTo(map);
+}
+
+// ── Export Route to Google Maps ──
+function exportToGoogleMaps() {
+  // Build Google Maps directions URL with all stops as waypoints
+  const stops = GPX_WAYPOINTS;
+  if (!stops || stops.length < 2) return;
+
+  const origin = `${stops[0].lat},${stops[0].lon}`;
+  // Destination is the same as origin (loop course)
+  const destination = origin;
+
+  // Intermediate waypoints (stops 1–7)
+  const waypoints = stops.slice(1).map(s => `${s.lat},${s.lon}`).join('|');
+
+  const url = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}&waypoints=${encodeURIComponent(waypoints)}&travelmode=walking`;
+
+  window.open(url, '_blank');
+}
+
+window.exportToGoogleMaps = exportToGoogleMaps;
+
+// ── Add to Calendar (.ics) ──
+function downloadICS() {
+  const ics = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//TB DC 50K//Route Planner//EN',
+    'BEGIN:VEVENT',
+    'DTSTART:20261127T120000Z',
+    'DTEND:20261127T230000Z',
+    'SUMMARY:Taco Bell DC 50K',
+    'DESCRIPTION:32.4-mile ultramarathon through 8 Taco Bell locations in DC/Arlington/Alexandria. 11-hour time limit. Must eat Chalupa Supreme or Crunchwrap by Stop 3 and Burrito Supreme or Nachos Bell Grande by Stop 7.',
+    'LOCATION:417 King St\\, Alexandria\\, VA 22314',
+    'URL:https://tacobelldc50k.com/',
+    'END:VEVENT',
+    'END:VCALENDAR',
+  ].join('\r\n');
+
+  const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'taco-bell-dc-50k.ics';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+window.downloadICS = downloadICS;
+
+// ── Course Preview Flythrough ──
+let flythroughActive = false;
+let flythroughInterval = null;
+
+function startFlythrough() {
+  if (flythroughActive) {
+    stopFlythrough();
+    return;
+  }
+
+  const btn = document.getElementById('btn-flythrough');
+  if (btn) {
+    btn.textContent = '⏹ Stop Preview';
+    btn.classList.add('active');
+  }
+
+  flythroughActive = true;
+  const track = GPX_TRACK;
+  const totalPoints = track.length;
+  const step = Math.max(1, Math.floor(totalPoints / 200)); // ~200 frames
+  let idx = 0;
+
+  map.setZoom(15);
+
+  flythroughInterval = setInterval(() => {
+    if (idx >= totalPoints) {
+      stopFlythrough();
+      return;
+    }
+    map.panTo(track[idx], { animate: true, duration: 0.15 });
+    idx += step;
+  }, 180);
+}
+
+function stopFlythrough() {
+  flythroughActive = false;
+  if (flythroughInterval) {
+    clearInterval(flythroughInterval);
+    flythroughInterval = null;
+  }
+  const btn = document.getElementById('btn-flythrough');
+  if (btn) {
+    btn.textContent = '🎬 Preview Route';
+    btn.classList.remove('active');
+  }
+}
+
+window.startFlythrough = startFlythrough;
+
+// ── Pace Calculator ──
+function calculatePace() {
+  const hoursInput = document.getElementById('pace-hours');
+  const minsInput = document.getElementById('pace-minutes');
+  const resultsDiv = document.getElementById('pace-results');
+  if (!hoursInput || !minsInput || !resultsDiv) return;
+
+  const totalMinutes = (parseInt(hoursInput.value) || 0) * 60 + (parseInt(minsInput.value) || 0);
+  if (totalMinutes <= 0) {
+    resultsDiv.innerHTML = '<p class="hint">Enter a goal time above.</p>';
+    return;
+  }
+
+  const totalDist = STOP_DISTANCES[STOP_DISTANCES.length - 1]; // 32.4
+  const pacePerMile = totalMinutes / totalDist;
+
+  let html = '<div class="pace-splits">';
+  TACO_BELL_STOPS.forEach((stop, i) => {
+    const dist = STOP_DISTANCES[i];
+    // Apply mild fatigue factor after mile 20: +2% per mile over 20
+    let adjustedMinutes;
+    if (dist <= 20) {
+      adjustedMinutes = dist * pacePerMile;
+    } else {
+      const baseMins = 20 * pacePerMile;
+      const extraMiles = dist - 20;
+      const fatiguePerMile = pacePerMile * 1.04; // 4% slower
+      adjustedMinutes = baseMins + extraMiles * fatiguePerMile;
+    }
+    const hrs = Math.floor(adjustedMinutes / 60);
+    const mins = Math.round(adjustedMinutes % 60);
+    const timeStr = hrs > 0 ? `${hrs}h ${mins}m` : `${mins}m`;
+    const mandatory = stop.mandatory ? ' 🌮' : '';
+
+    html += `<div class="pace-split-row">
+      <span class="pace-split-label">${i === 0 ? 'Start' : 'Stop ' + stop.num}${mandatory}</span>
+      <span class="pace-split-dist">${dist} mi</span>
+      <span class="pace-split-time">${timeStr}</span>
+    </div>`;
+  });
+
+  // Add finish line
+  const finishDist = STOP_DISTANCES[STOP_DISTANCES.length - 1];
+  const finishMins = 20 * pacePerMile + (finishDist - 20) * pacePerMile * 1.04;
+  const fHrs = Math.floor(finishMins / 60);
+  const fMins = Math.round(finishMins % 60);
+  html += `<div class="pace-split-row finish-row">
+    <span class="pace-split-label">🏁 Finish</span>
+    <span class="pace-split-dist">${finishDist} mi</span>
+    <span class="pace-split-time">${fHrs}h ${fMins}m</span>
+  </div>`;
+
+  html += `<p class="pace-note">Pace: ${pacePerMile.toFixed(1)} min/mi (with 4% fatigue after mi 20)</p>`;
+  html += '</div>';
+  resultsDiv.innerHTML = html;
+
+  // Persist
+  localStorage.setItem('tb50k_pace_hours', hoursInput.value);
+  localStorage.setItem('tb50k_pace_minutes', minsInput.value);
+}
+
+window.calculatePace = calculatePace;
+
+// ── Mandatory Food Tracker ──
+const FOOD_RULES = [
+  { id: 'food_rule_1', stop: 3, label: 'Chalupa Supreme OR Crunchwrap by Stop 3', key: 'tb50k_food_rule_1' },
+  { id: 'food_rule_2', stop: 7, label: 'Burrito Supreme OR Nachos Bell Grande by Stop 7', key: 'tb50k_food_rule_2' },
+];
+
+function buildFoodTracker() {
+  const container = document.getElementById('food-tracker');
+  if (!container) return;
+
+  FOOD_RULES.forEach(rule => {
+    const checked = localStorage.getItem(rule.key) === 'true';
+    const row = document.createElement('label');
+    row.className = 'food-rule-row' + (checked ? ' completed' : '');
+    row.innerHTML = `
+      <input type="checkbox" id="${rule.id}" ${checked ? 'checked' : ''} />
+      <span class="food-rule-label">${rule.label}</span>
+    `;
+    row.querySelector('input').addEventListener('change', (e) => {
+      localStorage.setItem(rule.key, e.target.checked);
+      row.classList.toggle('completed', e.target.checked);
+    });
+    container.appendChild(row);
+  });
+}
+
 // ── LocalStorage ──
 function saveCustomPins() {
   localStorage.setItem('tb50k_pins', JSON.stringify(customPins));
@@ -445,7 +748,6 @@ function loadCustomPins() {
 function setupMobileCollapsibleSections() {
   document.querySelectorAll('.section h2').forEach(h2 => {
     h2.addEventListener('click', () => {
-      if (!isMobile()) return;
       const section = h2.closest('.section');
       section.classList.toggle('collapsed');
       setTimeout(() => map.invalidateSize(), 50);
@@ -475,4 +777,15 @@ function handleOrientationAndResize() {
       });
     });
   }
+}
+
+// ── Restore pace calculator inputs from localStorage ──
+function restorePaceInputs() {
+  const h = localStorage.getItem('tb50k_pace_hours');
+  const m = localStorage.getItem('tb50k_pace_minutes');
+  const hoursInput = document.getElementById('pace-hours');
+  const minsInput = document.getElementById('pace-minutes');
+  if (hoursInput && h) hoursInput.value = h;
+  if (minsInput && m) minsInput.value = m;
+  if (h || m) calculatePace();
 }
