@@ -1,0 +1,319 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+  background: #1a1a2e;
+  color: #e0e0e0;
+}
+
+#sidebar {
+  width: 340px;
+  min-width: 340px;
+  height: 100vh;
+  overflow-y: auto;
+  background: #1a1a2e;
+  padding: 20px;
+  border-right: 2px solid #6b2fa0;
+  z-index: 1000;
+}
+
+#sidebar h1 {
+  font-size: 1.5rem;
+  color: #d8b4fe;
+  margin-bottom: 4px;
+}
+
+.subtitle {
+  font-size: 0.8rem;
+  color: #888;
+  margin-bottom: 16px;
+}
+
+.section {
+  margin-bottom: 20px;
+}
+
+.section h2 {
+  font-size: 0.95rem;
+  color: #a78bfa;
+  border-bottom: 1px solid #333;
+  padding-bottom: 6px;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.hint {
+  font-size: 0.75rem;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+/* Stop items */
+.stop-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  margin-bottom: 4px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s;
+  font-size: 0.85rem;
+}
+
+.stop-item:hover {
+  background: #2a2a4a;
+}
+
+.stop-number {
+  background: #6b2fa0;
+  color: white;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+.stop-number.start-finish {
+  background: #e11d48;
+}
+
+.stop-address {
+  flex: 1;
+  line-height: 1.3;
+}
+
+.stop-distance {
+  font-size: 0.7rem;
+  color: #888;
+}
+
+/* Pin form */
+#pin-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+#pin-form input,
+#pin-form select {
+  background: #2a2a4a;
+  border: 1px solid #444;
+  color: #e0e0e0;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+}
+
+#pin-form input:focus,
+#pin-form select:focus {
+  outline: none;
+  border-color: #6b2fa0;
+}
+
+#btn-add-pin {
+  background: #6b2fa0;
+  color: white;
+  border: none;
+  padding: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background 0.15s;
+}
+
+#btn-add-pin:hover:not(:disabled) {
+  background: #7c3aed;
+}
+
+#btn-add-pin:disabled {
+  background: #444;
+  cursor: not-allowed;
+}
+
+#btn-add-pin.ready {
+  background: #059669;
+}
+
+/* Pin items */
+.pin-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  margin-bottom: 4px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  background: #2a2a4a;
+}
+
+.pin-item .pin-icon-label {
+  font-size: 1.1rem;
+}
+
+.pin-item .pin-name {
+  flex: 1;
+}
+
+.pin-item .pin-delete {
+  background: none;
+  border: none;
+  color: #888;
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.pin-item .pin-delete:hover {
+  color: #e11d48;
+  background: rgba(225, 29, 72, 0.1);
+}
+
+/* Route info */
+#route-info {
+  font-size: 0.82rem;
+  color: #aaa;
+  line-height: 1.6;
+}
+
+/* Map */
+#map {
+  flex: 1;
+  height: 100vh;
+}
+
+/* Context menu */
+.context-menu {
+  position: fixed;
+  background: #2a2a4a;
+  border: 1px solid #555;
+  border-radius: 8px;
+  padding: 4px;
+  z-index: 2000;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+}
+
+.context-menu.hidden {
+  display: none;
+}
+
+.context-menu button {
+  display: block;
+  width: 100%;
+  background: none;
+  border: none;
+  color: #e0e0e0;
+  padding: 8px 16px;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
+.context-menu button:hover {
+  background: #6b2fa0;
+}
+
+/* Custom Leaflet markers */
+.taco-bell-marker {
+  background: #6b2fa0;
+  color: white;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 13px;
+  border: 2px solid white;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+
+.taco-bell-marker.start-finish {
+  background: #e11d48;
+  width: 32px;
+  height: 32px;
+  font-size: 14px;
+}
+
+.custom-pin-marker {
+  font-size: 24px;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
+/* Popup styling */
+.leaflet-popup-content-wrapper {
+  background: #1a1a2e;
+  color: #e0e0e0;
+  border: 1px solid #6b2fa0;
+  border-radius: 8px;
+}
+
+.leaflet-popup-tip {
+  background: #1a1a2e;
+  border: 1px solid #6b2fa0;
+}
+
+.popup-content h3 {
+  color: #d8b4fe;
+  font-size: 0.95rem;
+  margin-bottom: 4px;
+}
+
+.popup-content p {
+  font-size: 0.8rem;
+  color: #aaa;
+  margin: 2px 0;
+}
+
+.popup-content .mandatory {
+  color: #fbbf24;
+  font-size: 0.75rem;
+  margin-top: 6px;
+}
+
+/* Scrollbar */
+#sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+#sidebar::-webkit-scrollbar-track {
+  background: #1a1a2e;
+}
+#sidebar::-webkit-scrollbar-thumb {
+  background: #444;
+  border-radius: 3px;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  body {
+    flex-direction: column;
+  }
+  #sidebar {
+    width: 100%;
+    min-width: 100%;
+    height: auto;
+    max-height: 40vh;
+    border-right: none;
+    border-bottom: 2px solid #6b2fa0;
+  }
+  #map {
+    height: 60vh;
+  }
+}

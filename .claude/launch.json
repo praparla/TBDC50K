@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "dev",
+      "runtimeExecutable": "/tmp/tb50k_serve.sh",
+      "runtimeArgs": [],
+      "port": 8050
+    }
+  ]
+}
