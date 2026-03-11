@@ -48,7 +48,8 @@ const MockSupabase = (function () {
 
       const builder = {
         select(cols, opts) {
-          pendingOp = 'select';
+          // Only set op to 'select' if not chained after insert/update/delete
+          if (!pendingOp) pendingOp = 'select';
           selectCols = cols || '*';
           if (opts && opts.count === 'exact') countMode = 'exact';
           if (opts && opts.head) isHead = true;
