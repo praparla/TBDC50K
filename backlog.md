@@ -25,7 +25,7 @@
 ### P1 - Route & Visualization
 - [ ] **Elevation profile** - Show interactive elevation chart (via `leaflet-elevation` plugin) below the map. Hover/scrub to move a dot along the route. Shows grade, elevation, and cumulative distance. Already have GPX data — zero new network requests needed.
 - [ ] **Grade-colored route polyline** - Segment the `GPX_TRACK` array and color each segment by steepness: green (flat), yellow (moderate), red (steep). Lets runners instantly spot hard sections without reading a chart.
-- [ ] **Turn-by-turn segments** - Break route into named stop-to-stop segments with individual distances and elevation change per leg.
+- [x] **Turn-by-turn segments** - Break route into named stop-to-stop segments with individual distances and elevation change per leg.
 - [ ] **Named course sections** - Define and highlight named sub-sections ("The Georgetown Climb," "Capitol Hill Push," "Final 5K") as clickable overlays with character notes. Storytelling for the course.
 - [ ] **Offline map support** - Service worker pre-fetches CARTO dark tiles for the route corridor at zoom 13–16 (~3–8 MB). The `gpx_data.js` embedded data is already offline; only tile layer needs caching.
 
@@ -33,13 +33,13 @@
 - [x] **Pace calculator with aid station splits** - Enter goal finish time → get estimated arrival at each of the 8 Taco Bell stops accounting for cumulative distances. Includes 4% fatigue decay factor for miles 20–32. Pure client-side JS math, persisted to localStorage.
 - [ ] **Grade-adjusted pace estimator (GAP)** - Slider for user's flat-road pace + Minetti GAP model (~3.5% time penalty per 1% grade uphill). Refines the aid station split calculator for hilly sections like the Georgetown climb.
 - [x] **Mandatory food requirement tracker** - Checklist panel for the two race rules (Chalupa Supreme OR Crunchwrap by Stop 3; Burrito Supreme OR Nachos Bell Grande by Stop 7). Checkboxes turn green with strikethrough when satisfied; persisted to localStorage.
-- [ ] **Race day countdown clock** - User enters their start time (e.g., 7:00 AM); a panel shows: time elapsed, estimated current position at target pace, and time remaining before the 11-hour cutoff. Runs via `setInterval`; start time persisted to localStorage.
-- [ ] **Time-of-day estimator** - Show estimated arrival time at each stop based on entered start time + pace, so runners know "I should be at Stop 4 by 11:45 AM."
+- [x] **Race day countdown clock** - User enters their start time (e.g., 7:00 AM); a panel shows: time elapsed, estimated current position at target pace, and time remaining before the 11-hour cutoff. Runs via `setInterval`; start time persisted to localStorage.
+- [x] **Time-of-day estimator** - Show estimated arrival time at each stop based on entered start time + pace, so runners know "I should be at Stop 4 by 11:45 AM."
 - [x] **Aid station / restroom finder** - Superseded by P0 Bathroom finder toggle (Overpass API).
-- [ ] **Weather overlay** - Pull NWS forecast for Nov 27, 2026 race day; display at a glance in the sidebar.
+- [x] **Weather overlay** - Pull NWS forecast for Nov 27, 2026 race day; display at a glance in the sidebar.
 
 ### P2 - Navigation & Map UX
-- [ ] **Map tile layer switcher** - Toggle between: CARTO Dark (current), Esri World Imagery (satellite), OpenTopoMap (contour lines), OSM Standard. Uses Leaflet's built-in `L.control.layers()`. Low effort, high utility.
+- [x] **Map tile layer switcher** - Toggle between: CARTO Dark (current), Esri World Imagery (satellite), OpenTopoMap (contour lines), OSM Standard. Uses Leaflet's built-in `L.control.layers()`. Low effort, high utility.
 - [x] **"Fly to stop" smooth navigation** - Replaced `map.setView()` with `map.flyTo()` for smooth cinematic pan-and-zoom when clicking a stop or pin in the sidebar.
 - [ ] **Alternative route suggestions** - Toggle between different route options between stops.
 - [ ] **Spectator spots map layer** - Toggleable GeoJSON layer of recommended crew/spectator positions with easy parking or Metro access (Lincoln Memorial area ~mile 15, Capitol Hill ~mile 23, Old Town start/finish). Static file, no backend.
@@ -51,13 +51,13 @@
 - [ ] **Friend location sharing** - Real-time location sharing on race day
 
 ### P2 - Race Day Mode
-- [ ] **Live location tracker (Race Mode)** - "Start Race Mode" toggle using the Geolocation API (`navigator.geolocation.watchPosition`). Shows user's live position as a pulsing dot on the map. ~20 lines of Leaflet + JS.
-- [ ] **Distance-to-next-stop banner** - In race mode: persistent heads-up display showing "Next: Stop 4 - Columbia Heights | 2.3 mi away." Uses Haversine already in `app.js` + live geolocation.
+- [x] **Live location tracker (Race Mode)** - "Start Race Mode" toggle using the Geolocation API (`navigator.geolocation.watchPosition`). Shows user's live position as a pulsing dot on the map. ~20 lines of Leaflet + JS.
+- [x] **Distance-to-next-stop banner** - In race mode: persistent heads-up display showing "Next: Stop 4 - Columbia Heights | 2.3 mi away." Uses Haversine already in `app.js` + live geolocation.
 - [ ] **Race-day GPS tracking** - Full GPS tracking with live position logged and split times recorded at each stop.
 - [ ] **Split history** - Log actual splits at each stop during the race.
 
 ### P2 - Sharing & Export
-- [ ] **Printable pace card** - "Print" button generates a clean single-page pace card (stop names, cumulative distances, goal arrivals, mandatory food notes) via `window.print()` with print-specific CSS. Runners can laminate and carry in their vest.
+- [x] **Printable pace card** - "Print" button generates a clean single-page pace card (stop names, cumulative distances, goal arrivals, mandatory food notes) via `window.print()` with print-specific CSS. Runners can laminate and carry in their vest.
 - [ ] **GPX export** - Export the route with custom pins as a GPX file for Garmin/Wahoo.
 - [ ] **Strava integration** - Import training runs, overlay on race route.
 - [x] **Add to Calendar (.ics)** - One-click `.ics` download for Nov 27, 2026 race day with event details pre-filled. Works in Apple Calendar, Google Calendar, and Outlook — no API keys needed.
@@ -94,7 +94,7 @@ Each Taco Bell stop and bathroom deserves a richer experience than a basic Leafl
 
 - [ ] **Funny reviews panel (Google Places)** — Fetch top 3–5 reviews per Taco Bell stop from the Google Places API (`Places Details` endpoint, `fields=reviews,rating`). Pre-look up and hardcode each stop's `placeId` in `STOP_DATA` once (they never change). Cache raw API response in `localStorage` keyed `tb50k_reviews_{placeId}` with a 30-day TTL — 8 stops × ~1 API request per visitor stays well inside the $200/month free credit tier (~$0.017/lookup). Render in the stop detail panel as a horizontal scroll of review cards: ★★★★☆ rating, reviewer name, relative timestamp, and review text capped at 240 chars with a "Read more" toggle. Sort by Google's relevance-first default, which naturally surfaces the most distinctive and funny reviews. Tag any review mentioning Taco Bell menu items (chalupa, bean burrito, baja blast, fire sauce, crunchwrap, etc.) with a 🌮 badge. **Fallback plan (critical):** if API call fails or quota is hit, fall back to 2–3 pre-authored satirical placeholder reviews committed in `STOP_META` — e.g., *"Ate here at mile 21. Can confirm the Chalupa Supreme is still good when you're dissociating."* No review panel on OSM bathroom markers — no Place IDs available and the vibes would be grim. **API key hygiene:** browser-side key restricted to this domain only; inject at build time from `.env`; never commit raw.
 
-- [ ] **Sauce packet wisdom copy** — When "Sauce Packet" theme is active, replace standard UI hint text with sauce packet sayings. Examples: sidebar empty state → *"Will you marry me?"* | bathroom tooltip → *"Is it hot in here, or is it just me?"* | distance banner → *"I'm not like other hot sauces."* Defined in a `SAUCE_COPY` object keyed by UI element ID; `applyTheme()` swaps copy in when theme === 'sauce'.
+- [x] **Sauce packet wisdom copy** — When "Sauce Packet" theme is active, replace standard UI hint text with sauce packet sayings. Examples: sidebar empty state → *"Will you marry me?"* | bathroom tooltip → *"Is it hot in here, or is it just me?"* | distance banner → *"I'm not like other hot sauces."* Defined in a `SAUCE_COPY` object keyed by UI element ID; `applyTheme()` swaps copy in when theme === 'sauce'.
 
 ---
 
@@ -341,6 +341,27 @@ Working through backlog in priority order. Skipping features that require user a
 
 ---
 
+## Implementation Plan (2026-03-11 Session #2)
+
+Working through remaining backlog in priority order. Skipping features requiring user accounts or external API keys.
+
+### Batch 1 — P1 Quick Wins
+1. **Map tile layer switcher** — `L.control.layers()` with CARTO Dark, CARTO Light, OSM Standard, Esri Satellite, OpenTopoMap. Uses existing THEMES tile URLs. ~20 lines JS.
+2. **Race day countdown clock** — New sidebar section. Enter start time → shows elapsed, estimated position, time remaining to 11h cutoff. `setInterval` timer. Persisted to localStorage.
+3. **Time-of-day estimator** — Extend pace calculator to show wall-clock arrival times (e.g., "11:45 AM") based on entered start time.
+4. **Turn-by-turn segments** — Show per-leg distances between consecutive stops in Route Info section.
+
+### Batch 2 — Race Day Features
+5. **Live location tracker (Race Mode)** — `navigator.geolocation.watchPosition`. Pulsing blue dot on map. Toggle button in Tools.
+6. **Distance-to-next-stop banner** — Fixed HUD when race mode active showing nearest stop + distance away.
+
+### Batch 3 — Polish & Export
+7. **Printable pace card** — Print CSS + "Print Pace Card" button. Clean single-page layout for laminating.
+8. **Sauce packet wisdom copy** — Sauce packet theme replaces UI hints with packet sayings.
+9. **Weather overlay** — NWS API for race day forecast. Single fetch, display in sidebar.
+
+---
+
 ## Completed
 - [x] **Theme switcher** (2026-03-10) — 6 TB-era themes with CSS custom properties, tile layer swap, route color swap, themed sidebar background patterns (pure CSS gradients, zero HTTP requests), event link redesign as pill button. Persisted to localStorage. Mobile/desktop tested.
 - [x] **Better event website UX** (2026-03-10) — Event link redesigned as rounded pill badge with 🌮 icon, theme-aware hover/focus styles, proper mobile tap targets. Implemented as part of theme system work.
@@ -362,3 +383,13 @@ Working through backlog in priority order. Skipping features that require user a
 - [x] **Backend: Friend betting** (2026-03-11) — `TB_BETTING` module. Runner search with debounced typeahead. 4 bet types (finish time, food items, bathroom stops, DNF). Resolve bets. Leaderboard with accuracy rankings.
 - [x] **Backend test suite** (2026-03-11) — `tests/supabase-mock.js` mock client + `tests/backend.test.html` with 18 test groups covering: config, mock CRUD, mock auth, mock realtime, all module APIs, auth guards, CRUD operations, UI rendering, graceful degradation, edge cases, mandatory rules, auth bar UI, offline caching.
 - [x] **Hosting & deployment guide** (2026-03-11) — Added cost-effective hosting recommendations to backlog: GitHub Pages/Cloudflare Pages (free), Supabase free tier, domain options, fork-and-deploy instructions.
+- [x] **Map tile layer switcher** (2026-03-11) — `L.control.layers()` with 5 tile options (CARTO Dark, CARTO Light, OSM, OpenTopoMap, Esri Satellite). Persists selection to localStorage. Themed to match current app theme.
+- [x] **Race day countdown clock** (2026-03-11) — New sidebar section. Enter start time → live countdown showing elapsed time, time remaining to 11h cutoff, estimated position (when pace is set). `setInterval` timer, persisted to localStorage.
+- [x] **Time-of-day estimator** (2026-03-11) — Extended pace calculator with ETA column showing wall-clock arrival times (e.g., "11:45 AM") at each stop. Uses `formatClockTime()` and `addMinutesToTime()` helpers. Only shown when race start time is set.
+- [x] **Turn-by-turn segments** (2026-03-11) — New "Leg-by-Leg" sidebar section showing 8 stop-to-stop segments with area names and distances. Built by `buildSegments()` from `STOP_DISTANCES` array.
+- [x] **Live location tracker (Race Mode)** (2026-03-11) — Toggle button in Tools. Uses `navigator.geolocation.watchPosition` with pulsing blue dot marker (`race-pulse` CSS animation). Auto-stops on geolocation error.
+- [x] **Distance-to-next-stop banner** (2026-03-11) — Fixed HUD banner when race mode active. Shows nearest stop name + distance in miles via Haversine calculation. Auto-hides when race mode stops.
+- [x] **Weather overlay** (2026-03-11) — NWS API integration (`api.weather.gov`) for race start area forecast. Shows 4 periods with temperature, description, precipitation probability. 3-hour localStorage cache. Graceful fallback on fetch failure.
+- [x] **Sauce packet wisdom copy** (2026-03-11) — `SAUCE_COPY` object with 8 sauce packet sayings. `applySaucePacketCopy()` swaps hint text when sauce theme is active using `data-sauce-id` and `data-default-hint` attributes. Reverts on theme change.
+- [x] **Printable pace card** (2026-03-11) — "Print Pace Card" button in Tools. Triggers `window.print()` with comprehensive `@media print` CSS hiding map/sidebar chrome, forcing black-on-white layout. Auto-calculates pace first.
+- [x] **Test suite update** (2026-03-11) — Added 7 new test groups (102 assertions) to `tests/responsive.test.html`: Countdown Clock, Segments, Weather, Race Mode, Sauce Packet Copy, Time-of-Day Estimator, Layer Control. Updated existing tests for new 6-button tools grid and 9-section DOM. 301/303 total assertions pass.

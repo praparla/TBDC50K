@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Responsive Layout Tests — TB DC 50K</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link rel="stylesheet" href="../style.css?v=2" />
+  <link rel="stylesheet" href="../style.css?v=4" />
   <style>
     /* Test overlay */
     #test-overlay {
@@ -82,14 +82,46 @@
       </div>
     </div>
 
+    <div class="section collapsed" id="section-countdown">
+      <h2>Race Day Clock &#9200; <span class="section-toggle">&#9660;</span></h2>
+      <div class="section-body">
+        <p class="hint" data-sauce-id="countdown-hint" data-default-hint="Enter your start time for a live countdown.">Enter your start time for a live countdown.</p>
+        <div class="countdown-form">
+          <label class="pace-label">Race Start Time</label>
+          <div class="pace-inputs">
+            <input type="number" id="race-start-hours" min="0" max="23" placeholder="hr" value="7" />
+            <span class="pace-separator">:</span>
+            <input type="number" id="race-start-minutes" min="0" max="59" placeholder="min" value="0" />
+            <button id="btn-start-countdown" onclick="startCountdown()">Start</button>
+          </div>
+        </div>
+        <div id="countdown-results">
+          <p class="hint">Press Start to begin the countdown clock.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="section collapsed" id="section-weather">
+      <h2>Weather &#127780; <span class="section-toggle">&#9660;</span></h2>
+      <div class="section-body">
+        <p class="hint" data-sauce-id="weather-hint" data-default-hint="Current forecast for the race start area.">Current forecast for the race start area.</p>
+        <div id="weather-content">
+          <p class="hint">Loading...</p>
+        </div>
+      </div>
+    </div>
+
     <div class="section collapsed" id="section-tools">
       <h2>Tools <span class="section-toggle">&#9660;</span></h2>
       <div class="section-body">
+        <p class="hint" data-sauce-id="tools-hint" data-default-hint="Utilities for race planning.">Utilities for race planning.</p>
         <div class="tools-grid">
           <button id="btn-bathrooms" class="tool-btn" onclick="toggleBathrooms()">&#128701; Find Restrooms</button>
           <button class="tool-btn" onclick="exportToGoogleMaps()">&#128506; Open in Google Maps</button>
           <button class="tool-btn" onclick="downloadICS()">&#128197; Add to Calendar</button>
           <button id="btn-flythrough" class="tool-btn" onclick="startFlythrough()">&#127916; Preview Route</button>
+          <button id="btn-race-mode" class="tool-btn" onclick="toggleRaceMode()">&#128205; Race Mode</button>
+          <button class="tool-btn" onclick="printPaceCard()">&#128424; Print Pace Card</button>
         </div>
       </div>
     </div>
@@ -115,9 +147,18 @@
       </div>
     </div>
 
+    <div class="section collapsed" id="section-segments">
+      <h2>Leg-by-Leg &#128099; <span class="section-toggle">&#9660;</span></h2>
+      <div class="section-body">
+        <p class="hint" data-sauce-id="segments-hint" data-default-hint="Distance between each stop.">Distance between each stop.</p>
+        <div id="segments-list"></div>
+      </div>
+    </div>
+
     <div class="section collapsed" id="section-route">
       <h2>Route Info <span class="section-toggle">&#9660;</span></h2>
       <div class="section-body">
+        <p class="hint" data-sauce-id="route-hint" data-default-hint="Course statistics.">Course statistics.</p>
         <div id="route-info">Loading...</div>
       </div>
     </div>
@@ -138,7 +179,7 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="../gpx_data.js"></script>
-  <script src="../app.js?v=2"></script>
+  <script src="../app.js?v=4"></script>
   <script>
     // ── Test Runner ──
     const _tests = [];
@@ -199,6 +240,13 @@
       testToolsSection();
       testFlythroughFunctions();
       testStopDistances();
+      testCountdownClock();
+      testSegments();
+      testWeatherSection();
+      testRaceMode();
+      testSaucePacketCopy();
+      testTimeOfDayEstimator();
+      testLayerControl();
     }
 
     // ── DOM Structure ──
@@ -216,8 +264,15 @@
       assert(G, 'sidebar-title-row exists', document.querySelector('.sidebar-title-row'));
 
       // Each section has section-body and section-toggle
+      // New sections from Session #2
+      assert(G, 'section-countdown exists', document.getElementById('section-countdown'));
+      assert(G, 'section-weather exists', document.getElementById('section-weather'));
+      assert(G, 'section-segments exists', document.getElementById('section-segments'));
+
+      // Each section has section-body and section-toggle
       const sectionIds = ['section-stops', 'section-pace', 'section-food',
-                          'section-tools', 'section-pins', 'section-route'];
+                          'section-countdown', 'section-weather',
+                          'section-tools', 'section-pins', 'section-segments', 'section-route'];
       sectionIds.forEach(id => {
         const sec = document.getElementById(id);
         assert(G, `${id} has .section-body`, sec && sec.querySelector('.section-body'));
@@ -348,7 +403,8 @@
 
       // All start collapsed (class is in HTML)
       const sectionIds = ['section-stops', 'section-pace', 'section-food',
-                          'section-tools', 'section-pins', 'section-route'];
+                          'section-countdown', 'section-weather',
+                          'section-tools', 'section-pins', 'section-segments', 'section-route'];
       sectionIds.forEach(id => {
         assert(G, `${id} starts collapsed`,
           document.getElementById(id).classList.contains('collapsed'));
@@ -660,17 +716,20 @@
       const grid = document.querySelector('.tools-grid');
       assert(G, 'tools-grid exists', !!grid);
       const buttons = grid ? grid.querySelectorAll('.tool-btn') : [];
-      assert(G, '4 tool buttons', buttons.length === 4, `found ${buttons.length}`);
+      assert(G, '6 tool buttons', buttons.length === 6, `found ${buttons.length}`);
 
       // Specific buttons
       assert(G, 'bathrooms button exists', !!document.getElementById('btn-bathrooms'));
       assert(G, 'flythrough button exists', !!document.getElementById('btn-flythrough'));
+      assert(G, 'race-mode button exists', !!document.getElementById('btn-race-mode'));
 
       // Functions exist
       assert(G, 'toggleBathrooms is a function', typeof toggleBathrooms === 'function');
       assert(G, 'exportToGoogleMaps is a function', typeof exportToGoogleMaps === 'function');
       assert(G, 'downloadICS is a function', typeof downloadICS === 'function');
       assert(G, 'startFlythrough is a function', typeof startFlythrough === 'function');
+      assert(G, 'toggleRaceMode is a function', typeof toggleRaceMode === 'function');
+      assert(G, 'printPaceCard is a function', typeof printPaceCard === 'function');
 
       // Bathroom state starts off
       assert(G, 'bathroomToggleOn starts false', bathroomToggleOn === false);
@@ -734,6 +793,308 @@
       assert(G, 'Stop 1 at 5.1 mi', STOP_DISTANCES[1] === 5.1);
       assert(G, 'Stop 3 at 15.5 mi', STOP_DISTANCES[3] === 15.5);
       assert(G, 'Stop 7 at 23.5 mi', STOP_DISTANCES[7] === 23.5);
+    }
+
+    // ── Countdown Clock ──
+    function testCountdownClock() {
+      const G = 'Countdown Clock';
+
+      // Functions exist
+      assert(G, 'startCountdown is a function', typeof startCountdown === 'function');
+      assert(G, 'restoreCountdownInputs is a function', typeof restoreCountdownInputs === 'function');
+      assert(G, 'startCountdown on window', typeof window.startCountdown === 'function');
+
+      // DOM elements
+      assert(G, 'race-start-hours input exists', !!document.getElementById('race-start-hours'));
+      assert(G, 'race-start-minutes input exists', !!document.getElementById('race-start-minutes'));
+      assert(G, 'countdown-results div exists', !!document.getElementById('countdown-results'));
+      assert(G, 'btn-start-countdown exists', !!document.getElementById('btn-start-countdown'));
+
+      // Default values
+      const hoursInput = document.getElementById('race-start-hours');
+      const minsInput = document.getElementById('race-start-minutes');
+      assert(G, 'hours default is 7', hoursInput && hoursInput.value === '7');
+      assert(G, 'minutes default is 0', minsInput && minsInput.value === '0');
+
+      // State variable
+      assert(G, 'countdownInterval starts null', countdownInterval === null);
+
+      // Start countdown and verify output
+      startCountdown();
+      const results = document.getElementById('countdown-results');
+      const html = results.innerHTML;
+      assert(G, 'countdown produces output', html.length > 0 && !html.includes('Press Start'));
+      assert(G, 'output has countdown-row divs', html.includes('countdown-row'));
+      assert(G, 'shows race start info', html.includes('countdown-label') && html.includes('countdown-value'));
+
+      // Countdown is running (since race is in the future)
+      assert(G, 'countdownInterval is set after start', countdownInterval !== null);
+
+      // Persists start time to localStorage
+      assert(G, 'start hours persisted',
+        localStorage.getItem('tb50k_race_start_h') === '7');
+      assert(G, 'start minutes persisted',
+        localStorage.getItem('tb50k_race_start_m') === '0');
+
+      // Clean up
+      clearInterval(countdownInterval);
+      countdownInterval = null;
+      localStorage.removeItem('tb50k_race_start_h');
+      localStorage.removeItem('tb50k_race_start_m');
+    }
+
+    // ── Segments (Leg-by-Leg) ──
+    function testSegments() {
+      const G = 'Segments';
+
+      assert(G, 'buildSegments is a function', typeof buildSegments === 'function');
+
+      const container = document.getElementById('segments-list');
+      assert(G, 'segments-list container exists', !!container);
+
+      // buildSegments should have been called by DOMContentLoaded
+      const rows = container ? container.querySelectorAll('.segment-row') : [];
+      assert(G, '8 segment rows (8 legs)', rows.length === 8, `found ${rows.length}`);
+
+      if (rows.length >= 1) {
+        // First row: Start → Stop 1
+        const firstLabel = rows[0].querySelector('.segment-label');
+        assert(G, 'first segment: Start → Stop 1',
+          firstLabel && firstLabel.textContent.includes('Start') && firstLabel.textContent.includes('Stop 1'));
+
+        const firstDist = rows[0].querySelector('.segment-dist');
+        assert(G, 'first segment distance is 5.1 mi',
+          firstDist && firstDist.textContent.includes('5.1'));
+      }
+
+      if (rows.length >= 8) {
+        // Last row: Stop 7 → Finish
+        const lastLabel = rows[7].querySelector('.segment-label');
+        assert(G, 'last segment: Stop 7 → Finish',
+          lastLabel && lastLabel.textContent.includes('Stop 7') && lastLabel.textContent.includes('Finish'));
+
+        const lastDist = rows[7].querySelector('.segment-dist');
+        assert(G, 'last segment distance is 8.9 mi',
+          lastDist && lastDist.textContent.includes('8.9'));
+      }
+
+      // Each row has area name and distance
+      if (rows.length > 0) {
+        const hasArea = rows[0].querySelector('.segment-area');
+        assert(G, 'segment rows have area names', !!hasArea);
+      }
+    }
+
+    // ── Weather Section ──
+    function testWeatherSection() {
+      const G = 'Weather';
+
+      // Functions exist
+      assert(G, 'loadWeather is a function', typeof loadWeather === 'function');
+      assert(G, 'renderWeather is a function', typeof renderWeather === 'function');
+
+      // Constants
+      assert(G, 'WEATHER_CACHE_KEY defined', typeof WEATHER_CACHE_KEY === 'string');
+      assert(G, 'WEATHER_CACHE_TTL is 3 hours',
+        WEATHER_CACHE_TTL === 3 * 60 * 60 * 1000,
+        `${WEATHER_CACHE_TTL}ms`);
+
+      // DOM
+      const container = document.getElementById('weather-content');
+      assert(G, 'weather-content container exists', !!container);
+
+      // Test renderWeather with mock data
+      const mockPeriods = [
+        { name: 'Today', temperature: 55, temperatureUnit: 'F', shortForecast: 'Partly Cloudy', probabilityOfPrecipitation: { value: 20 } },
+        { name: 'Tonight', temperature: 38, temperatureUnit: 'F', shortForecast: 'Clear', probabilityOfPrecipitation: { value: 5 } },
+      ];
+      renderWeather(mockPeriods);
+      const html = container.innerHTML;
+      assert(G, 'renderWeather produces weather-period divs', html.includes('weather-period'));
+      assert(G, 'shows temperature', html.includes('55') && html.includes('°F'));
+      assert(G, 'shows period name', html.includes('Today'));
+      assert(G, 'shows forecast description', html.includes('Partly Cloudy'));
+      assert(G, 'shows precipitation probability', html.includes('20%'));
+
+      // Empty periods shows fallback
+      renderWeather([]);
+      assert(G, 'empty periods shows fallback', container.innerHTML.includes('No forecast data'));
+
+      // Restore loading state
+      container.innerHTML = '<p class="hint">Loading...</p>';
+    }
+
+    // ── Race Mode ──
+    function testRaceMode() {
+      const G = 'Race Mode';
+
+      // Functions exist
+      assert(G, 'toggleRaceMode is a function', typeof toggleRaceMode === 'function');
+      assert(G, 'startRaceMode is a function', typeof startRaceMode === 'function');
+      assert(G, 'stopRaceMode is a function', typeof stopRaceMode === 'function');
+      assert(G, 'updateDistanceBanner is a function', typeof updateDistanceBanner === 'function');
+      assert(G, 'hideDistanceBanner is a function', typeof hideDistanceBanner === 'function');
+      assert(G, 'toggleRaceMode on window', typeof window.toggleRaceMode === 'function');
+
+      // State variables start clean
+      assert(G, 'raceModeActive starts false', raceModeActive === false);
+      assert(G, 'raceWatchId starts null', raceWatchId === null);
+      assert(G, 'raceMarker starts null', raceMarker === null);
+
+      // Race mode button
+      const btn = document.getElementById('btn-race-mode');
+      assert(G, 'race mode button exists', !!btn);
+      assert(G, 'button text contains Race Mode',
+        btn && btn.textContent.includes('Race Mode'));
+      assert(G, 'button does not start active',
+        btn && !btn.classList.contains('active'));
+
+      // Test updateDistanceBanner with known coordinates (near start)
+      updateDistanceBanner(38.8047, -77.0442);
+      assert(G, 'raceBanner created after updateDistanceBanner', !!raceBanner);
+      assert(G, 'banner has race-banner class',
+        raceBanner && raceBanner.classList.contains('race-banner'));
+      assert(G, 'banner shows stop info',
+        raceBanner && raceBanner.innerHTML.includes('race-banner-label'));
+      assert(G, 'banner shows distance',
+        raceBanner && raceBanner.innerHTML.includes('mi away'));
+
+      // Test hideDistanceBanner
+      hideDistanceBanner();
+      assert(G, 'banner hidden after hideDistanceBanner',
+        raceBanner && raceBanner.classList.contains('hidden'));
+
+      // Clean up banner
+      if (raceBanner && raceBanner.parentNode) {
+        raceBanner.parentNode.removeChild(raceBanner);
+        raceBanner = null;
+      }
+    }
+
+    // ── Sauce Packet Copy ──
+    function testSaucePacketCopy() {
+      const G = 'Sauce Packet Copy';
+
+      // SAUCE_COPY object exists
+      assert(G, 'SAUCE_COPY object exists', typeof SAUCE_COPY === 'object' && SAUCE_COPY !== null);
+
+      // Has expected keys
+      const expectedKeys = ['pace-hint', 'food-hint', 'tools-hint', 'pins-hint',
+                            'route-hint', 'countdown-hint', 'weather-hint', 'segments-hint'];
+      expectedKeys.forEach(key => {
+        assert(G, `SAUCE_COPY has "${key}"`, typeof SAUCE_COPY[key] === 'string' && SAUCE_COPY[key].length > 0);
+      });
+
+      assert(G, 'applySaucePacketCopy is a function', typeof applySaucePacketCopy === 'function');
+
+      // data-sauce-id elements exist in DOM
+      const sauceElements = document.querySelectorAll('[data-sauce-id]');
+      assert(G, 'data-sauce-id elements exist', sauceElements.length > 0, `found ${sauceElements.length}`);
+
+      // Each data-sauce-id element has data-default-hint
+      sauceElements.forEach(el => {
+        assert(G, `${el.dataset.sauceId} has data-default-hint`,
+          !!el.dataset.defaultHint, el.dataset.defaultHint || 'missing');
+      });
+
+      // Save current theme and test sauce theme swap
+      const beforeTheme = currentThemeId;
+
+      // Apply sauce theme and check copy changed
+      applyTheme('sauce');
+      const toolsHint = document.querySelector('[data-sauce-id="tools-hint"]');
+      assert(G, 'sauce theme swaps tools hint text',
+        toolsHint && toolsHint.textContent === SAUCE_COPY['tools-hint'],
+        toolsHint ? toolsHint.textContent : 'missing');
+
+      // Switch away from sauce and check default restored
+      applyTheme('modern');
+      assert(G, 'non-sauce theme restores default hint',
+        toolsHint && toolsHint.textContent === toolsHint.dataset.defaultHint,
+        toolsHint ? toolsHint.textContent : 'missing');
+
+      // Restore original theme
+      applyTheme(beforeTheme);
+    }
+
+    // ── Time-of-Day Estimator ──
+    function testTimeOfDayEstimator() {
+      const G = 'Time-of-Day Estimator';
+
+      // Helper functions exist
+      assert(G, 'formatClockTime is a function', typeof formatClockTime === 'function');
+      assert(G, 'addMinutesToTime is a function', typeof addMinutesToTime === 'function');
+
+      // formatClockTime tests
+      assert(G, 'formatClockTime(7, 0) = "7:00 AM"', formatClockTime(7, 0) === '7:00 AM');
+      assert(G, 'formatClockTime(12, 30) = "12:30 PM"', formatClockTime(12, 30) === '12:30 PM');
+      assert(G, 'formatClockTime(0, 0) = "12:00 AM"', formatClockTime(0, 0) === '12:00 AM');
+      assert(G, 'formatClockTime(13, 5) = "1:05 PM"', formatClockTime(13, 5) === '1:05 PM');
+      assert(G, 'formatClockTime(23, 59) = "11:59 PM"', formatClockTime(23, 59) === '11:59 PM');
+
+      // addMinutesToTime tests
+      assert(G, 'addMinutesToTime(7, 0, 60) = "8:00 AM"', addMinutesToTime(7, 0, 60) === '8:00 AM');
+      assert(G, 'addMinutesToTime(7, 0, 300) = "12:00 PM"', addMinutesToTime(7, 0, 300) === '12:00 PM');
+      assert(G, 'addMinutesToTime(11, 30, 90) = "1:00 PM"', addMinutesToTime(11, 30, 90) === '1:00 PM');
+
+      // Pace calculator with start time shows ETA column
+      // Set start time first
+      localStorage.setItem('tb50k_race_start_h', '7');
+      localStorage.setItem('tb50k_race_start_m', '0');
+      const hoursInput = document.getElementById('pace-hours');
+      const minsInput = document.getElementById('pace-minutes');
+      hoursInput.value = '9';
+      minsInput.value = '0';
+      calculatePace();
+
+      const results = document.getElementById('pace-results');
+      const html = results.innerHTML;
+      assert(G, 'pace results show ETA header when start time set',
+        html.includes('pace-split-header') || html.includes('ETA'));
+      assert(G, 'pace results show clock times (AM/PM)',
+        html.includes('AM') || html.includes('PM'));
+
+      // Clean up
+      localStorage.removeItem('tb50k_race_start_h');
+      localStorage.removeItem('tb50k_race_start_m');
+      localStorage.removeItem('tb50k_pace_hours');
+      localStorage.removeItem('tb50k_pace_minutes');
+      hoursInput.value = '';
+      minsInput.value = '';
+    }
+
+    // ── Layer Control ──
+    function testLayerControl() {
+      const G = 'Layer Control';
+
+      // MAP_TILES config object exists
+      assert(G, 'MAP_TILES object exists', typeof MAP_TILES === 'object' && MAP_TILES !== null);
+
+      // 5 tile options
+      const tileNames = Object.keys(MAP_TILES);
+      assert(G, '5 tile options', tileNames.length === 5, `found ${tileNames.length}`);
+      assert(G, 'has CARTO Dark', !!MAP_TILES['CARTO Dark']);
+      assert(G, 'has CARTO Light', !!MAP_TILES['CARTO Light']);
+      assert(G, 'has OpenStreetMap', !!MAP_TILES['OpenStreetMap']);
+      assert(G, 'has OpenTopoMap', !!MAP_TILES['OpenTopoMap']);
+      assert(G, 'has Esri Satellite', !!MAP_TILES['Esri Satellite']);
+
+      // Each tile has url and attr
+      tileNames.forEach(name => {
+        const tile = MAP_TILES[name];
+        assert(G, `${name}: has url`, typeof tile.url === 'string' && tile.url.includes('{z}'));
+        assert(G, `${name}: has attr`, typeof tile.attr === 'string' && tile.attr.length > 0);
+      });
+
+      // buildLayerControl function exists
+      assert(G, 'buildLayerControl is a function', typeof buildLayerControl === 'function');
+
+      // Layer control was built and added to map
+      assert(G, 'layerControl is set', layerControl !== null);
+
+      // Leaflet layer control is on the map
+      const controlEl = document.querySelector('.leaflet-control-layers');
+      assert(G, 'Leaflet layer control is in DOM', !!controlEl);
     }
   </script>
 </body>

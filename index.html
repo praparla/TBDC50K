@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Taco Bell DC 50K Route Planner</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link rel="stylesheet" href="style.css?v=3" />
+  <link rel="stylesheet" href="style.css?v=4" />
   <script>
     // Apply saved theme before render to prevent flash of default theme
     (function() {
@@ -59,7 +59,7 @@
     <div class="section collapsed" id="section-food">
       <h2>Mandatory Food &#127790; <span class="section-toggle">&#9660;</span></h2>
       <div class="section-body">
-        <p class="hint">Race rules — check off when completed:</p>
+        <p class="hint" data-sauce-id="food-hint" data-default-hint="Race rules — check off when completed.">Race rules — check off when completed.</p>
         <div id="food-tracker"></div>
       </div>
     </div>
@@ -100,14 +100,46 @@
       </div>
     </div>
 
+    <div class="section collapsed" id="section-countdown">
+      <h2>Race Day Clock &#9200; <span class="section-toggle">&#9660;</span></h2>
+      <div class="section-body">
+        <p class="hint" data-sauce-id="countdown-hint" data-default-hint="Enter your start time for a live countdown.">Enter your start time for a live countdown.</p>
+        <div class="countdown-form">
+          <label class="pace-label">Race Start Time</label>
+          <div class="pace-inputs">
+            <input type="number" id="race-start-hours" min="0" max="23" placeholder="hr" value="7" />
+            <span class="pace-separator">:</span>
+            <input type="number" id="race-start-minutes" min="0" max="59" placeholder="min" value="0" />
+            <button id="btn-start-countdown" onclick="startCountdown()">Start</button>
+          </div>
+        </div>
+        <div id="countdown-results">
+          <p class="hint">Press Start to begin the countdown clock.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="section collapsed" id="section-weather">
+      <h2>Weather &#127780; <span class="section-toggle">&#9660;</span></h2>
+      <div class="section-body">
+        <p class="hint" data-sauce-id="weather-hint" data-default-hint="Current forecast for the race start area.">Current forecast for the race start area.</p>
+        <div id="weather-content">
+          <p class="hint">Loading...</p>
+        </div>
+      </div>
+    </div>
+
     <div class="section collapsed" id="section-tools">
       <h2>Tools <span class="section-toggle">&#9660;</span></h2>
       <div class="section-body">
+        <p class="hint" data-sauce-id="tools-hint" data-default-hint="Utilities for race planning.">Utilities for race planning.</p>
         <div class="tools-grid">
           <button id="btn-bathrooms" class="tool-btn" onclick="toggleBathrooms()">&#128701; Find Restrooms</button>
           <button class="tool-btn" onclick="exportToGoogleMaps()">&#128506; Open in Google Maps</button>
           <button class="tool-btn" onclick="downloadICS()">&#128197; Add to Calendar</button>
           <button id="btn-flythrough" class="tool-btn" onclick="startFlythrough()">&#127916; Preview Route</button>
+          <button id="btn-race-mode" class="tool-btn" onclick="toggleRaceMode()">&#128205; Race Mode</button>
+          <button class="tool-btn" onclick="printPaceCard()">&#128424; Print Pace Card</button>
         </div>
       </div>
     </div>
@@ -115,7 +147,7 @@
     <div class="section collapsed" id="section-pins">
       <h2>Custom Pins <span class="section-toggle">&#9660;</span></h2>
       <div class="section-body">
-        <p class="hint">Tap the map to add a pin, or use the form below.</p>
+        <p class="hint" data-sauce-id="pins-hint" data-default-hint="Tap the map to add a pin, or use the form below.">Tap the map to add a pin, or use the form below.</p>
         <div id="pin-form">
           <input type="text" id="pin-name" placeholder="Name (e.g. Jake's House)" />
           <select id="pin-icon">
@@ -133,9 +165,18 @@
       </div>
     </div>
 
+    <div class="section collapsed" id="section-segments">
+      <h2>Leg-by-Leg &#128099; <span class="section-toggle">&#9660;</span></h2>
+      <div class="section-body">
+        <p class="hint" data-sauce-id="segments-hint" data-default-hint="Distance between each stop.">Distance between each stop.</p>
+        <div id="segments-list"></div>
+      </div>
+    </div>
+
     <div class="section collapsed" id="section-route">
       <h2>Route Info <span class="section-toggle">&#9660;</span></h2>
       <div class="section-body">
+        <p class="hint" data-sauce-id="route-hint" data-default-hint="Course statistics.">Course statistics.</p>
         <div id="route-info">Loading...</div>
       </div>
     </div>
@@ -177,7 +218,7 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="gpx_data.js"></script>
-  <script src="app.js?v=3"></script>
+  <script src="app.js?v=4"></script>
 
   <!-- Supabase + Backend Features -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>

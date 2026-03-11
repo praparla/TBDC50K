@@ -1834,3 +1834,424 @@ body {
 .bet-lb-rank { text-align: center; }
 .bet-lb-accuracy { text-align: right; }
 .bet-lb-score { text-align: right; color: var(--color-text-secondary); }
+
+/* ══════════════════════════════════════════════════════════
+   NEW FEATURES — Countdown, Segments, Weather, Race Mode,
+   Distance Banner, Print Pace Card
+   ══════════════════════════════════════════════════════════ */
+
+/* ── Countdown Clock ── */
+.countdown-form {
+  margin-bottom: 10px;
+}
+
+#btn-start-countdown {
+  background: var(--color-accent);
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: background 0.15s;
+  margin-left: 4px;
+}
+
+#btn-start-countdown:hover {
+  background: var(--color-accent-hover);
+}
+
+.countdown-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px 6px;
+  font-size: 0.82rem;
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.countdown-row.finish-row {
+  border-top: 2px solid var(--color-accent);
+  border-bottom: none;
+  font-weight: bold;
+  padding-top: 6px;
+}
+
+.countdown-label {
+  color: var(--color-text);
+}
+
+.countdown-value {
+  color: var(--color-accent-secondary);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Turn-by-Turn Segments ── */
+.segment-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px 6px;
+  font-size: 0.78rem;
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.segment-label {
+  flex: 1;
+  color: var(--color-text);
+  font-weight: 500;
+}
+
+.segment-area {
+  flex: 1;
+  color: var(--color-text-muted);
+  font-size: 0.72rem;
+  text-align: center;
+}
+
+.segment-dist {
+  width: 55px;
+  text-align: right;
+  color: var(--color-accent-secondary);
+  font-weight: 600;
+}
+
+/* ── Weather Overlay ── */
+.weather-period {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px;
+  border-bottom: 1px solid var(--color-border-subtle);
+  font-size: 0.8rem;
+}
+
+.weather-period-name {
+  flex: 1;
+  color: var(--color-text);
+  font-weight: 600;
+  font-size: 0.75rem;
+}
+
+.weather-period-temp {
+  color: var(--color-accent-secondary);
+  font-weight: 700;
+  font-size: 0.85rem;
+  min-width: 40px;
+  text-align: right;
+}
+
+.weather-period-desc {
+  flex: 2;
+  color: var(--color-text-muted);
+  font-size: 0.72rem;
+}
+
+.weather-period-precip {
+  font-size: 0.72rem;
+  color: var(--color-text-secondary);
+  min-width: 35px;
+  text-align: right;
+}
+
+/* ── Race Mode (Live Location) ── */
+.race-location-marker {
+  z-index: 1000 !important;
+}
+
+.race-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #3b82f6;
+  border: 3px solid white;
+  box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.5);
+  animation: race-pulse 1.5s infinite;
+}
+
+@keyframes race-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.5); }
+  70% { box-shadow: 0 0 0 12px rgba(59, 130, 246, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+}
+
+/* ── Distance Banner (HUD) ── */
+.race-banner {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--color-bg);
+  border: 2px solid var(--color-accent);
+  border-radius: 12px;
+  padding: 10px 20px;
+  z-index: 10001;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 4px 20px var(--color-shadow);
+  animation: slidein 0.3s ease-out;
+  white-space: nowrap;
+}
+
+.race-banner.hidden {
+  display: none;
+}
+
+.race-banner-label {
+  font-size: 0.85rem;
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.race-banner-dist {
+  font-size: 0.9rem;
+  color: var(--color-accent-secondary);
+  font-weight: 700;
+}
+
+/* ── Pace Split Header ── */
+.pace-split-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 6px;
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+  border-bottom: 2px solid var(--color-border);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.pace-split-clock {
+  width: 70px;
+  text-align: right;
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+}
+
+.pace-split-header .pace-split-clock {
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+}
+
+/* ── Leaflet Layer Control Theme Override ── */
+.leaflet-control-layers {
+  background: var(--color-bg) !important;
+  color: var(--color-text) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 2px 10px var(--color-shadow) !important;
+}
+
+.leaflet-control-layers-list {
+  color: var(--color-text) !important;
+}
+
+.leaflet-control-layers label {
+  color: var(--color-text) !important;
+}
+
+.leaflet-control-layers-separator {
+  border-color: var(--color-border) !important;
+}
+
+/* ── Print Styles (Pace Card) ── */
+@media print {
+  body {
+    display: block !important;
+    background: white !important;
+    color: black !important;
+  }
+
+  #map,
+  .context-menu,
+  .auth-modal,
+  #role-modal,
+  .race-banner,
+  .leaflet-control-layers {
+    display: none !important;
+  }
+
+  #sidebar {
+    width: 100% !important;
+    min-width: 100% !important;
+    max-height: none !important;
+    height: auto !important;
+    overflow: visible !important;
+    border: none !important;
+    padding: 20px !important;
+    background: white !important;
+    color: black !important;
+  }
+
+  .sidebar-header {
+    text-align: center;
+    border-bottom: 2px solid #333;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+  }
+
+  #sidebar h1 {
+    color: #333 !important;
+    font-size: 1.8rem !important;
+  }
+
+  .subtitle {
+    color: #555 !important;
+    font-size: 1rem !important;
+  }
+
+  /* Hide non-essential sections */
+  .theme-picker,
+  #auth-bar,
+  #section-food-log,
+  #section-social,
+  #section-parties,
+  #section-betting,
+  #section-tools,
+  #section-pins,
+  #section-weather {
+    display: none !important;
+  }
+
+  /* Show pace-relevant sections */
+  #section-stops,
+  #section-pace,
+  #section-food,
+  #section-countdown,
+  #section-segments,
+  #section-route {
+    display: block !important;
+  }
+
+  /* Force sections open for print */
+  .section.collapsed .section-body {
+    display: block !important;
+  }
+
+  .section-toggle {
+    display: none !important;
+  }
+
+  .section h2 {
+    color: #333 !important;
+    border-bottom-color: #ccc !important;
+    cursor: default !important;
+  }
+
+  .section {
+    page-break-inside: avoid;
+  }
+
+  /* Make text readable */
+  .stop-item,
+  .pace-split-row,
+  .segment-row,
+  .countdown-row,
+  .food-rule-row {
+    color: black !important;
+    border-bottom-color: #ddd !important;
+  }
+
+  .pace-split-label,
+  .pace-split-dist,
+  .pace-split-time,
+  .pace-split-clock,
+  .countdown-label,
+  .countdown-value,
+  .segment-label,
+  .segment-dist,
+  .stop-address,
+  .hint {
+    color: #333 !important;
+  }
+
+  .pace-split-time,
+  .pace-split-clock,
+  .countdown-value,
+  .segment-dist {
+    color: #000 !important;
+    font-weight: 700 !important;
+  }
+
+  .stop-number {
+    background: #333 !important;
+    color: white !important;
+  }
+
+  .event-link {
+    color: #333 !important;
+    border-color: #333 !important;
+  }
+
+  /* Footer for printed card */
+  #section-route::after {
+    content: "Taco Bell DC 50K — Nov 27, 2026 — tacobelldc50k.com";
+    display: block;
+    text-align: center;
+    font-size: 0.8rem;
+    color: #888;
+    margin-top: 20px;
+    padding-top: 10px;
+    border-top: 1px solid #ccc;
+  }
+}
+
+/* ── Mobile additions for new sections ── */
+@media (max-width: 768px) {
+  .race-banner {
+    bottom: 10px;
+    padding: 8px 14px;
+    font-size: 0.8rem;
+    gap: 8px;
+    max-width: 90%;
+  }
+
+  .race-banner-label {
+    font-size: 0.78rem;
+  }
+
+  .race-banner-dist {
+    font-size: 0.82rem;
+  }
+
+  .weather-period {
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 6px 4px;
+  }
+
+  .weather-period-desc {
+    width: 100%;
+    order: 10;
+  }
+
+  .segment-row {
+    font-size: 0.76rem;
+    padding: 6px 4px;
+  }
+
+  .countdown-row {
+    font-size: 0.8rem;
+  }
+
+  .pace-split-clock {
+    width: 62px;
+    font-size: 0.72rem;
+  }
+
+  #race-start-hours,
+  #race-start-minutes {
+    min-height: 44px;
+    font-size: 0.95rem;
+  }
+
+  #btn-start-countdown {
+    min-height: 44px;
+    font-size: 0.85rem;
+    padding: 8px 14px;
+  }
+}

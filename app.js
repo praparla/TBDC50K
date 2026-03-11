@@ -90,6 +90,41 @@ let customPins = [];
 let currentThemeId = DEFAULT_THEME;
 let bathroomLayer = null;
 let bathroomToggleOn = false;
+let layerControl = null;
+
+// ── Map Tile Options (for layer switcher) ──
+const MAP_TILES = {
+  'CARTO Dark': {
+    url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+    attr: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
+  },
+  'CARTO Light': {
+    url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+    attr: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
+  },
+  'OpenStreetMap': {
+    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    attr: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>',
+  },
+  'OpenTopoMap': {
+    url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+    attr: '&copy; <a href="https://opentopomap.org">OpenTopoMap</a> &copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>',
+  },
+  'Esri Satellite': {
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    attr: '&copy; Esri',
+    subdomains: '',
+  },
+};
+
+// ── Race Mode State ──
+let raceModeActive = false;
+let raceWatchId = null;
+let raceMarker = null;
+let raceBanner = null;
+
+// ── Countdown State ──
+let countdownInterval = null;
 
 // ── Device Detection ──
 function isMobile() {
@@ -152,6 +187,9 @@ function applyTheme(themeId) {
   document.querySelectorAll('.theme-swatch').forEach(s => {
     s.classList.toggle('active', s.dataset.theme === theme.id);
   });
+
+  // Sauce packet copy swap
+  applySaucePacketCopy();
 }
 
 function buildThemePicker() {
@@ -187,6 +225,12 @@ document.addEventListener('DOMContentLoaded', () => {
   buildFoodTracker();
   restorePaceInputs();
 
+  // New features
+  buildSegments();
+  restoreCountdownInputs();
+  loadWeather();
+  applySaucePacketCopy();
+
   // Initialize backend features (graceful degradation — works without these scripts)
   if (typeof TB_AUTH !== 'undefined') TB_AUTH.init();
   if (typeof TB_FOOD_LOG !== 'undefined') TB_FOOD_LOG.init();
@@ -212,6 +256,28 @@ function initMap() {
 
   // Map click handler for adding pins
   map.on('click', onMapClick);
+
+  // Build layer switcher control
+  buildLayerControl();
+}
+
+function buildLayerControl() {
+  const baseLayers = {};
+  Object.entries(MAP_TILES).forEach(([name, cfg]) => {
+    baseLayers[name] = L.tileLayer(cfg.url, {
+      attribution: cfg.attr,
+      subdomains: cfg.subdomains !== undefined ? cfg.subdomains : 'abcd',
+      maxZoom: 19,
+    });
+  });
+
+  layerControl = L.control.layers(baseLayers, null, { position: 'topright', collapsed: true }).addTo(map);
+
+  // When user switches base layer via the control, persist and sync
+  map.on('baselayerchange', (e) => {
+    tileLayer = e.layer;
+    localStorage.setItem('tb50k_tile_layer', e.name);
+  });
 }
 
 // ── Load Route Data (from gpx_data.js) ──
@@ -658,7 +724,19 @@ function calculatePace() {
   const totalDist = STOP_DISTANCES[STOP_DISTANCES.length - 1]; // 32.4
   const pacePerMile = totalMinutes / totalDist;
 
+  // Get start time for time-of-day estimates
+  const startH = parseInt(localStorage.getItem('tb50k_race_start_h')) || 0;
+  const startM = parseInt(localStorage.getItem('tb50k_race_start_m')) || 0;
+  const hasStartTime = startH > 0 || startM > 0;
+
   let html = '<div class="pace-splits">';
+  html += `<div class="pace-split-header">
+    <span class="pace-split-label">Stop</span>
+    <span class="pace-split-dist">Dist</span>
+    <span class="pace-split-time">Elapsed</span>
+    ${hasStartTime ? '<span class="pace-split-clock">ETA</span>' : ''}
+  </div>`;
+
   TACO_BELL_STOPS.forEach((stop, i) => {
     const dist = STOP_DISTANCES[i];
     // Apply mild fatigue factor after mile 20: +2% per mile over 20
@@ -675,11 +753,13 @@ function calculatePace() {
     const mins = Math.round(adjustedMinutes % 60);
     const timeStr = hrs > 0 ? `${hrs}h ${mins}m` : `${mins}m`;
     const mandatory = stop.mandatory ? ' 🌮' : '';
+    const clockStr = hasStartTime ? addMinutesToTime(startH, startM, adjustedMinutes) : '';
 
     html += `<div class="pace-split-row">
       <span class="pace-split-label">${i === 0 ? 'Start' : 'Stop ' + stop.num}${mandatory}</span>
       <span class="pace-split-dist">${dist} mi</span>
       <span class="pace-split-time">${timeStr}</span>
+      ${hasStartTime ? `<span class="pace-split-clock">${clockStr}</span>` : ''}
     </div>`;
   });
 
@@ -688,13 +768,18 @@ function calculatePace() {
   const finishMins = 20 * pacePerMile + (finishDist - 20) * pacePerMile * 1.04;
   const fHrs = Math.floor(finishMins / 60);
   const fMins = Math.round(finishMins % 60);
+  const finishClockStr = hasStartTime ? addMinutesToTime(startH, startM, finishMins) : '';
   html += `<div class="pace-split-row finish-row">
     <span class="pace-split-label">🏁 Finish</span>
     <span class="pace-split-dist">${finishDist} mi</span>
     <span class="pace-split-time">${fHrs}h ${fMins}m</span>
+    ${hasStartTime ? `<span class="pace-split-clock">${finishClockStr}</span>` : ''}
   </div>`;
 
   html += `<p class="pace-note">Pace: ${pacePerMile.toFixed(1)} min/mi (with 4% fatigue after mi 20)</p>`;
+  if (!hasStartTime) {
+    html += '<p class="pace-note">Set a start time in the Countdown section to see arrival times.</p>';
+  }
   html += '</div>';
   resultsDiv.innerHTML = html;
 
@@ -796,3 +881,342 @@ function restorePaceInputs() {
   if (minsInput && m) minsInput.value = m;
   if (h || m) calculatePace();
 }
+
+// ── Race Day Countdown Clock ──
+function startCountdown() {
+  const startH = document.getElementById('race-start-hours');
+  const startM = document.getElementById('race-start-minutes');
+  const resultsDiv = document.getElementById('countdown-results');
+  if (!startH || !startM || !resultsDiv) return;
+
+  const hours = parseInt(startH.value) || 7;
+  const minutes = parseInt(startM.value) || 0;
+
+  localStorage.setItem('tb50k_race_start_h', hours);
+  localStorage.setItem('tb50k_race_start_m', minutes);
+
+  // Race date: Nov 27, 2026
+  const raceDate = new Date(2026, 10, 27); // month is 0-indexed
+  const startTime = new Date(raceDate);
+  startTime.setHours(hours, minutes, 0, 0);
+
+  const cutoffMs = 11 * 60 * 60 * 1000; // 11 hours
+  const cutoffTime = new Date(startTime.getTime() + cutoffMs);
+
+  if (countdownInterval) clearInterval(countdownInterval);
+
+  function updateCountdown() {
+    const now = new Date();
+    const elapsed = now - startTime;
+    const remaining = cutoffTime - now;
+
+    if (elapsed < 0) {
+      // Race hasn't started yet
+      const until = startTime - now;
+      const dUntil = Math.floor(until / 86400000);
+      const hUntil = Math.floor((until % 86400000) / 3600000);
+      const mUntil = Math.floor((until % 3600000) / 60000);
+      resultsDiv.innerHTML = `
+        <div class="countdown-row"><span class="countdown-label">Race starts in</span><span class="countdown-value">${dUntil}d ${hUntil}h ${mUntil}m</span></div>
+        <div class="countdown-row"><span class="countdown-label">Start Time</span><span class="countdown-value">${formatClockTime(hours, minutes)}</span></div>
+        <div class="countdown-row"><span class="countdown-label">Cutoff</span><span class="countdown-value">${formatClockTime(cutoffTime.getHours(), cutoffTime.getMinutes())}</span></div>
+      `;
+      return;
+    }
+
+    if (remaining <= 0) {
+      resultsDiv.innerHTML = '<div class="countdown-row finish-row"><span class="countdown-label">Time\'s up!</span><span class="countdown-value">11h cutoff reached</span></div>';
+      clearInterval(countdownInterval);
+      return;
+    }
+
+    const elapsedH = Math.floor(elapsed / 3600000);
+    const elapsedM = Math.floor((elapsed % 3600000) / 60000);
+    const elapsedS = Math.floor((elapsed % 60000) / 1000);
+    const remainH = Math.floor(remaining / 3600000);
+    const remainM = Math.floor((remaining % 3600000) / 60000);
+
+    // Estimate current position based on pace
+    const elapsedMins = elapsed / 60000;
+    const totalDist = STOP_DISTANCES[STOP_DISTANCES.length - 1];
+    const paceGoalH = localStorage.getItem('tb50k_pace_hours');
+    const paceGoalM = localStorage.getItem('tb50k_pace_minutes');
+    let estMile = '';
+    if (paceGoalH || paceGoalM) {
+      const goalMins = (parseInt(paceGoalH) || 0) * 60 + (parseInt(paceGoalM) || 0);
+      if (goalMins > 0) {
+        const progressFrac = Math.min(elapsedMins / goalMins, 1);
+        estMile = (progressFrac * totalDist).toFixed(1) + ' mi';
+      }
+    }
+
+    resultsDiv.innerHTML = `
+      <div class="countdown-row"><span class="countdown-label">Elapsed</span><span class="countdown-value">${elapsedH}h ${elapsedM}m ${elapsedS}s</span></div>
+      <div class="countdown-row"><span class="countdown-label">Remaining</span><span class="countdown-value">${remainH}h ${remainM}m</span></div>
+      ${estMile ? `<div class="countdown-row"><span class="countdown-label">Est. Position</span><span class="countdown-value">~${estMile}</span></div>` : ''}
+      <div class="countdown-row"><span class="countdown-label">Cutoff</span><span class="countdown-value">${formatClockTime(cutoffTime.getHours(), cutoffTime.getMinutes())}</span></div>
+    `;
+  }
+
+  updateCountdown();
+  countdownInterval = setInterval(updateCountdown, 1000);
+}
+
+window.startCountdown = startCountdown;
+
+function restoreCountdownInputs() {
+  const h = localStorage.getItem('tb50k_race_start_h');
+  const m = localStorage.getItem('tb50k_race_start_m');
+  const startH = document.getElementById('race-start-hours');
+  const startM = document.getElementById('race-start-minutes');
+  if (startH && h) startH.value = h;
+  if (startM && m) startM.value = m;
+}
+
+// ── Time-of-Day Helper ──
+function formatClockTime(h, m) {
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const hour12 = h % 12 || 12;
+  return `${hour12}:${String(m).padStart(2, '0')} ${ampm}`;
+}
+
+function addMinutesToTime(baseH, baseM, addMins) {
+  const totalMins = baseH * 60 + baseM + Math.round(addMins);
+  const h = Math.floor(totalMins / 60) % 24;
+  const m = totalMins % 60;
+  return formatClockTime(h, m);
+}
+
+// ── Turn-by-Turn Segments ──
+function buildSegments() {
+  const container = document.getElementById('segments-list');
+  if (!container) return;
+
+  let html = '';
+  for (let i = 0; i < STOP_DISTANCES.length - 1; i++) {
+    const legDist = (STOP_DISTANCES[i + 1] - STOP_DISTANCES[i]).toFixed(1);
+    const fromLabel = i === 0 ? 'Start' : `Stop ${i}`;
+    const toLabel = i + 1 === STOP_DISTANCES.length - 1 ? 'Finish' : `Stop ${i + 1}`;
+    const toStop = TACO_BELL_STOPS[Math.min(i + 1, TACO_BELL_STOPS.length - 1)];
+    const areaName = toStop ? toStop.label.split(' - ')[1] || '' : '';
+
+    html += `<div class="segment-row">
+      <span class="segment-label">${fromLabel} → ${toLabel}</span>
+      <span class="segment-area">${areaName}</span>
+      <span class="segment-dist">${legDist} mi</span>
+    </div>`;
+  }
+  container.innerHTML = html;
+}
+
+// ── Live Location Tracker (Race Mode) ──
+function toggleRaceMode() {
+  if (raceModeActive) {
+    stopRaceMode();
+  } else {
+    startRaceMode();
+  }
+}
+
+window.toggleRaceMode = toggleRaceMode;
+
+function startRaceMode() {
+  if (!navigator.geolocation) {
+    console.error('Geolocation not supported');
+    return;
+  }
+
+  const btn = document.getElementById('btn-race-mode');
+  if (btn) {
+    btn.textContent = '📍 Race Mode On';
+    btn.classList.add('active');
+  }
+
+  raceModeActive = true;
+
+  // Create pulsing marker
+  const pulseIcon = L.divIcon({
+    className: 'race-location-marker',
+    html: '<div class="race-dot"></div>',
+    iconSize: [20, 20],
+    iconAnchor: [10, 10],
+  });
+
+  raceWatchId = navigator.geolocation.watchPosition(
+    (pos) => {
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
+
+      if (raceMarker) {
+        raceMarker.setLatLng([lat, lng]);
+      } else {
+        raceMarker = L.marker([lat, lng], { icon: pulseIcon, zIndexOffset: 1000 }).addTo(map);
+      }
+
+      updateDistanceBanner(lat, lng);
+    },
+    (err) => {
+      console.error('Geolocation error:', err);
+      stopRaceMode();
+    },
+    { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
+  );
+}
+
+function stopRaceMode() {
+  raceModeActive = false;
+
+  if (raceWatchId !== null) {
+    navigator.geolocation.clearWatch(raceWatchId);
+    raceWatchId = null;
+  }
+
+  if (raceMarker) {
+    map.removeLayer(raceMarker);
+    raceMarker = null;
+  }
+
+  const btn = document.getElementById('btn-race-mode');
+  if (btn) {
+    btn.textContent = '📍 Race Mode';
+    btn.classList.remove('active');
+  }
+
+  hideDistanceBanner();
+}
+
+// ── Distance-to-Next-Stop Banner ──
+function updateDistanceBanner(lat, lng) {
+  let nearest = null;
+  let nearestDist = Infinity;
+
+  GPX_WAYPOINTS.forEach((wpt, i) => {
+    const d = haversine([lat, lng], [wpt.lat, wpt.lon]);
+    if (d < nearestDist) {
+      nearestDist = d;
+      nearest = { index: i, wpt, dist: d };
+    }
+  });
+
+  if (!nearest) return;
+
+  const distMiles = (nearestDist / 1609.34).toFixed(2);
+  const stopLabel = nearest.index === 0 ? 'Start/Finish' : `Stop ${nearest.index}`;
+  const stopName = TACO_BELL_STOPS[nearest.index]?.label.split(' - ')[1] || '';
+
+  if (!raceBanner) {
+    raceBanner = document.createElement('div');
+    raceBanner.id = 'race-banner';
+    raceBanner.className = 'race-banner';
+    document.body.appendChild(raceBanner);
+  }
+
+  raceBanner.innerHTML = `
+    <span class="race-banner-label">Next: ${stopLabel} — ${stopName}</span>
+    <span class="race-banner-dist">${distMiles} mi away</span>
+  `;
+  raceBanner.classList.remove('hidden');
+}
+
+function hideDistanceBanner() {
+  if (raceBanner) {
+    raceBanner.classList.add('hidden');
+  }
+}
+
+// ── Weather Overlay (NWS API) ──
+const WEATHER_CACHE_KEY = 'tb50k_weather';
+const WEATHER_CACHE_TTL = 3 * 60 * 60 * 1000; // 3 hours
+
+function loadWeather() {
+  const container = document.getElementById('weather-content');
+  if (!container) return;
+
+  // Check cache
+  try {
+    const cached = JSON.parse(localStorage.getItem(WEATHER_CACHE_KEY));
+    if (cached && Date.now() - cached.ts < WEATHER_CACHE_TTL) {
+      renderWeather(cached.data);
+      return;
+    }
+  } catch (e) { /* cache miss */ }
+
+  container.innerHTML = '<p class="hint">Loading forecast...</p>';
+
+  // NWS API: Get grid point for Old Town Alexandria (start/finish)
+  fetch('https://api.weather.gov/points/38.8047,-77.0442', {
+    headers: { 'User-Agent': 'TacoBellDC50K-RoutePlanner' },
+  })
+    .then(r => r.json())
+    .then(pointData => {
+      const forecastUrl = pointData.properties?.forecast;
+      if (!forecastUrl) throw new Error('No forecast URL');
+      return fetch(forecastUrl, {
+        headers: { 'User-Agent': 'TacoBellDC50K-RoutePlanner' },
+      });
+    })
+    .then(r => r.json())
+    .then(forecastData => {
+      const periods = forecastData.properties?.periods || [];
+      localStorage.setItem(WEATHER_CACHE_KEY, JSON.stringify({ ts: Date.now(), data: periods }));
+      renderWeather(periods);
+    })
+    .catch(err => {
+      console.error('Weather fetch failed:', err);
+      container.innerHTML = '<p class="hint">Forecast unavailable. Check back later.</p>';
+    });
+}
+
+function renderWeather(periods) {
+  const container = document.getElementById('weather-content');
+  if (!container || !periods.length) {
+    if (container) container.innerHTML = '<p class="hint">No forecast data available.</p>';
+    return;
+  }
+
+  // Show first 4 periods (covers ~2 days)
+  let html = '';
+  const show = periods.slice(0, 4);
+  show.forEach(p => {
+    html += `<div class="weather-period">
+      <div class="weather-period-name">${p.name || 'N/A'}</div>
+      <div class="weather-period-temp">${p.temperature || '?'}°${p.temperatureUnit || 'F'}</div>
+      <div class="weather-period-desc">${p.shortForecast || 'N/A'}</div>
+      ${p.probabilityOfPrecipitation?.value ? `<div class="weather-period-precip">💧 ${p.probabilityOfPrecipitation.value}%</div>` : ''}
+    </div>`;
+  });
+
+  container.innerHTML = html;
+}
+
+// ── Sauce Packet Wisdom Copy ──
+const SAUCE_COPY = {
+  'pace-hint': 'Will you marry me?',
+  'food-hint': "I knew you were the one when you picked Fire.",
+  'tools-hint': "I'm not like other hot sauces.",
+  'pins-hint': "At this point, you might as well just move in.",
+  'route-hint': "This is the longest relationship I've ever had.",
+  'countdown-hint': "If you never do, you'll never know.",
+  'weather-hint': "Is it hot in here, or is it just me?",
+  'segments-hint': "Together, we could do great things. Or at least finish.",
+};
+
+function applySaucePacketCopy() {
+  const theme = getThemeId();
+  document.querySelectorAll('[data-sauce-id]').forEach(el => {
+    if (theme === 'sauce') {
+      el.textContent = SAUCE_COPY[el.dataset.sauceId] || el.dataset.defaultHint || el.textContent;
+    } else {
+      el.textContent = el.dataset.defaultHint || el.textContent;
+    }
+  });
+}
+
+// ── Printable Pace Card ──
+function printPaceCard() {
+  // Trigger pace calculation first if not already done
+  calculatePace();
+  window.print();
+}
+
+window.printPaceCard = printPaceCard;
