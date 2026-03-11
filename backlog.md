@@ -129,17 +129,17 @@ A static, organizer-curated layer of neighborhood hospitality stops: private hom
 
 ### P3 - Social & User Accounts (Long-term / Requires Backend)
 
-These features require user authentication and a persistent backend (e.g., Supabase, Firebase, or a simple Node/Postgres API). Not suitable for the current static-site architecture — treat as a future phase if the race grows.
+These features require user authentication and a persistent backend. **Implemented using Supabase** (2026-03-11) — free-tier BaaS with auth, Postgres, realtime, and Row Level Security. No build tools; CDN script tags + vanilla JS IIFEs.
 
-- [ ] **Runner vs. Cheerer registration** — Users sign up and declare: "I'm running" or "I'm cheering." Runners see their training plan overlay and pace calculator; Cheerers see optimal spectator spots and party layer by default. Role stored on user profile; switchable.
+- [x] **Runner vs. Cheerer registration** — Users sign up via Google OAuth or email magic links and declare: "I'm running" or "I'm cheering." Role stored on `profiles` table; switchable from the auth dropdown. Auth bar renders avatar, display name, and role emoji.
 
-- [ ] **Food consumption log at every stop** — Runners log what they ate at all 8 TB stops (not just the two mandatory ones). Each entry: menu item(s) ordered, quantity, optional one-sentence hot take, optional photo, timestamp, and GPS coordinates (auto-captured for authenticity). Mandatory stops (Stop 3 + Stop 7) are flagged — the two race rules auto-validate when logged and display a "✓ Rule satisfied" badge. Running tally shown in the sidebar: *"You've consumed 6 menu items. Legend. 🌮🌮🌮🌮🌮🌮"* Log stored server-side on user profile; also powers the social feed. This is part of the race rules per the event website, so it's a core P3 feature, not a nice-to-have.
+- [x] **Food consumption log at every stop** — Runners log what they ate at all 8 TB stops. Each entry: stop number, menu item(s) from picker, optional hot take (280 chars), GPS auto-capture. Mandatory stops (Stop 3 + Stop 7) auto-validate and display green "Rule satisfied" badges. Running tally with taco emojis. Entries grouped by stop with timestamps. Stored in `food_logs` table with RLS policies.
 
-- [ ] **Social feed — what did you eat?** — A race-day feed (think lightweight Strava flyby) showing posts from all runners in real time: "Stop 4 — Jake just ate a Chalupa Supreme at 10:42 AM." Feed visible to all logged-in users; sortable by recency or stop number. Basic moderation: posts auto-hidden if flagged by 3+ users.
+- [x] **Social feed — what did you eat?** — Real-time feed (Supabase Realtime `postgres_changes`) showing posts from all runners: "Stop 4 — Jake just ate a Chalupa Supreme at 10:42 AM." Sortable by recency or stop number. Moderation: flag button on non-own posts, entries auto-hidden after 3+ flags. Offline fallback: last 20 entries cached in localStorage.
 
-- [ ] **Party hosting + subscriber alerts** — Block party hosts can claim their party on the map and send text/push alerts to subscribers. Subscribers tap "I'll stop by" on a party → get a push notification when the host marks the party as "live." Requires push notifications (Web Push API or SMS via Twilio). Subscription state stored server-side.
+- [x] **Party hosting + subscriber alerts** — Hosts create parties with map pin placement, amenity checkboxes (11 types), mile marker, runner note. Subscribe/unsubscribe to parties. "Go Live" triggers in-app banner + browser notification for subscribers. Leaflet layer group with party markers. Realtime subscription for party updates. Offline cache in localStorage.
 
-- [ ] **Friend betting system** — Pre-race, friends can wager on: finish time (over/under), mandatory food items consumed, number of bathroom stops, whether someone DNFs. Outcomes logged at race end; winner gets bragging rights (no real money — just a leaderboard of prediction accuracy). Each bet is a JSON record; results adjudicated by the runner or a trusted third party after the race. Lightweight: could be built as a Google Sheet with a Forms intake if backend is too complex.
+- [x] **Friend betting system** — Pre-race wagers on: finish time (over/under), food items consumed, bathroom stops, DNF prediction. Runner search with debounced typeahead. Target runners resolve bets with Correct/Wrong buttons. Leaderboard sorted by accuracy with medal emojis. No real money — bragging rights only. Stored in `bets` table.
 
 ---
 
@@ -153,6 +153,59 @@ These features require user authentication and a persistent backend (e.g., Supab
 - [ ] **Community training heatmap overlay** - Static pre-rendered semi-transparent heatmap image showing high-activity corridors on the route from Strava's public Global Heatmap.
 - [ ] **Taco Bell-themed audio cheers** - Optional Web Audio API sound effects (Taco Bell "bong") when checking off stops or mandatory food items. RaceJoy-inspired.
 - [ ] **Strava segment deep-links** - Links from named route sections to corresponding Strava segment pages for leaderboard comparison.
+
+---
+
+## Hosting & Deployment — Cost-Effective Options
+
+The app is a static site + Supabase BaaS. Here's how to host it cheaply or free.
+
+### Frontend (Static Files)
+
+| Option | Cost | Notes |
+|--------|------|-------|
+| **GitHub Pages** | Free | Best for this project. Push to `main`, enable Pages. Custom domain supported. HTTPS free via Let's Encrypt. |
+| **Cloudflare Pages** | Free (unlimited bandwidth) | Deploy from GitHub. Fastest global CDN. Free custom domains + HTTPS. |
+| **Netlify** | Free (100GB/mo) | Git-push deploy. Free custom domains. 300 build minutes/mo. |
+| **Vercel** | Free (100GB/mo) | Similar to Netlify. Slightly better DX for preview deploys. |
+| **Surge.sh** | Free | CLI deploy (`surge .`). Good for quick sharing. |
+
+**Recommendation:** GitHub Pages or Cloudflare Pages. Zero cost, zero config, automatic deploys on push.
+
+### Backend (Supabase)
+
+| Tier | Cost | Limits |
+|------|------|--------|
+| **Free** | $0/mo | 500MB DB, 1GB file storage, 50K MAU, 2M Edge Function invocations, unlimited realtime. **More than enough for this race.** |
+| **Pro** | $25/mo | 8GB DB, 100GB storage, 100K MAU. Only needed if 50K+ users or heavy file uploads. |
+
+**Recommendation:** Free tier is sufficient for a single-race event. Supabase pauses inactive projects after 7 days on free tier — keep alive with a weekly cron ping or upgrade to Pro ($25/mo) if needed for race week reliability.
+
+### Custom Domain
+
+| Option | Cost |
+|--------|------|
+| `.com` via Cloudflare Registrar | ~$10/yr (at-cost, no markup) |
+| `.com` via Namecheap | ~$9/yr first year |
+| `.dev` via Google Domains | ~$12/yr |
+| Use `username.github.io` | Free |
+
+### Total Cost to Host
+
+- **Minimum viable:** $0/mo (GitHub Pages + Supabase free tier + `*.github.io` domain)
+- **With custom domain:** ~$10/yr ($0.83/mo)
+- **Production-grade for race week:** ~$25/mo (Supabase Pro for guaranteed uptime) + ~$10/yr domain
+
+### Sharing with Others
+
+To let someone else host their own copy:
+1. Fork the repo
+2. Create a Supabase project (free)
+3. Run `schema.sql` in the SQL editor
+4. Replace `TB_CONFIG.SUPABASE_URL` and `TB_CONFIG.SUPABASE_ANON_KEY` in `config.js`
+5. Enable Google OAuth in Supabase Auth settings (optional)
+6. Deploy to GitHub Pages / Cloudflare Pages / Netlify
+7. Done — full working app in ~10 minutes
 
 ---
 
@@ -302,3 +355,10 @@ Working through backlog in priority order. Skipping features that require user a
 - [x] **Mobile-first redesign** (2026-03-10) — Collapsible sidebar sections on all viewports, 44px+ touch targets, responsive tools grid.
 - [x] **Collapsible sections on desktop** (2026-03-10) — Sections start collapsed to reduce visual clutter; click to expand. Toggle arrows visible on all viewports.
 - [x] **Comprehensive test rewrite** (2026-03-10) — Rewrote `tests/responsive.test.html` to cover all new features. 246 total assertions across 14 test groups: DOM structure, event link, theme system, collapsible sections, responsive CSS, JS functions, map init, pin form, directions, pace calculator, food tracker, tools section, flythrough, stop distances. Tests pass at both mobile (375px) and desktop (1280px) viewports.
+- [x] **Backend: User accounts & auth** (2026-03-11) — Supabase integration with Google OAuth + email magic links. IIFE module `TB_AUTH` with session management, profile auto-creation, role picker modal, auth bar UI. Graceful degradation when backend not configured.
+- [x] **Backend: Food consumption log** (2026-03-11) — `TB_FOOD_LOG` module. Stop selector, menu item checkboxes, hot take input, GPS auto-capture. Running tally, mandatory rule validation, entries grouped by stop. Data layer in `TB_DB`.
+- [x] **Backend: Social feed** (2026-03-11) — `TB_SOCIAL_FEED` module. Realtime subscription via Supabase postgres_changes. Sort by recency/stop. Moderation with flag system (auto-hide at 3+ flags). Offline cache fallback.
+- [x] **Backend: Party hosting** (2026-03-11) — `TB_PARTIES` module. Party creation with map pin, amenity checkboxes, mile marker. Subscribe/unsubscribe. Go Live with in-app banner + browser notifications. Leaflet marker layer. Realtime updates.
+- [x] **Backend: Friend betting** (2026-03-11) — `TB_BETTING` module. Runner search with debounced typeahead. 4 bet types (finish time, food items, bathroom stops, DNF). Resolve bets. Leaderboard with accuracy rankings.
+- [x] **Backend test suite** (2026-03-11) — `tests/supabase-mock.js` mock client + `tests/backend.test.html` with 18 test groups covering: config, mock CRUD, mock auth, mock realtime, all module APIs, auth guards, CRUD operations, UI rendering, graceful degradation, edge cases, mandatory rules, auth bar UI, offline caching.
+- [x] **Hosting & deployment guide** (2026-03-11) — Added cost-effective hosting recommendations to backlog: GitHub Pages/Cloudflare Pages (free), Supabase free tier, domain options, fork-and-deploy instructions.

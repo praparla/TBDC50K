@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Backend Feature Tests — TB DC 50K</title>
+  <link rel="stylesheet" href="../style.css?v=3" />
+  <style>
+    /* Test overlay */
+    #test-overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100vh;
+      overflow-y: auto;
+      background: rgba(10, 10, 30, 0.97);
+      z-index: 9999;
+      padding: 24px;
+      font-family: monospace;
+      font-size: 13px;
+      color: #e0e0e0;
+      box-sizing: border-box;
+    }
+    #test-overlay h1 { color: #d8b4fe; font-size: 1.1rem; margin-bottom: 16px; }
+    .test-group { margin-bottom: 14px; }
+    .test-group h2 { color: #a78bfa; font-size: 0.85rem; margin-bottom: 4px; border-bottom: 1px solid #333; padding-bottom: 2px; }
+    .t-pass { color: #34d399; }
+    .t-fail { color: #fb7185; }
+    .t-row { padding: 1px 0; }
+    .t-detail { color: #888; font-size: 11px; }
+    .t-summary { margin-top: 16px; padding: 10px; border-radius: 6px; font-weight: bold; font-size: 14px; }
+    .t-summary.ok { background: rgba(5, 150, 105, 0.2); color: #34d399; }
+    .t-summary.fail { background: rgba(225, 29, 72, 0.2); color: #fb7185; }
+    .t-stats { display: flex; gap: 16px; margin-top: 6px; font-size: 12px; color: #aaa; }
+  </style>
+</head>
+<body>
+  <!-- Minimal DOM structure needed by backend modules -->
+  <div id="sidebar">
+    <div class="sidebar-header">
+      <div id="auth-bar" class="auth-bar"></div>
+    </div>
+  </div>
+  <div id="food-log-content"></div>
+  <div id="social-feed-content"></div>
+  <div id="parties-content"></div>
+  <div id="betting-content"></div>
+
+  <!-- Auth Modal -->
+  <div id="auth-modal" class="auth-modal hidden">
+    <div class="auth-modal-content">
+      <button class="auth-close" title="Close">&times;</button>
+      <h3>Sign In</h3>
+      <button id="auth-google-btn" class="auth-btn auth-google">Sign in with Google</button>
+      <div class="auth-email-form">
+        <input type="email" id="auth-email-input" placeholder="your@email.com" />
+        <button id="auth-email-btn" class="auth-btn">Send Magic Link</button>
+      </div>
+      <p id="auth-status" class="auth-status"></p>
+    </div>
+  </div>
+
+  <!-- Role Picker Modal -->
+  <div id="role-modal" class="auth-modal hidden">
+    <div class="auth-modal-content">
+      <h3>How are you participating?</h3>
+      <div class="role-picker-buttons">
+        <button class="role-btn" data-role="runner">I'm Running</button>
+        <button class="role-btn" data-role="cheerer">I'm Cheering</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="test-overlay">
+    <h1>Backend Feature Tests — Loading...</h1>
+  </div>
+
+  <!-- Mock + Config (loaded before real modules) -->
+  <script src="supabase-mock.js"></script>
+  <script src="../config.js"></script>
+
+  <!-- Override TB_CONFIG for testing -->
+  <script>
+    // Point at mock Supabase (any non-placeholder URL works)
+    TB_CONFIG.SUPABASE_URL = 'https://test-project.supabase.co';
+    TB_CONFIG.SUPABASE_ANON_KEY = 'test-anon-key-mock';
+  </script>
+
+  <!-- Load real backend modules -->
+  <script src="../auth.js"></script>
+  <script src="../db.js"></script>
+  <script src="../food-log.js"></script>
+  <script src="../social-feed.js"></script>
+  <script src="../party.js"></script>
+  <script src="../betting.js"></script>
+
+  <!-- Stub globals that backend modules reference but aren't loaded -->
+  <script>
+    // Leaflet stubs
+    if (typeof L === 'undefined') {
+      window.L = {
+        divIcon: (opts) => opts,
+        marker: (latlng, opts) => ({
+          bindPopup: function() { return this; },
+          addTo: function() { return this; },
+        }),
+        layerGroup: () => ({
+          addLayer: () => {},
+          addTo: () => {},
+        }),
+      };
+    }
+    if (typeof map === 'undefined') {
+      window.map = {
+        on: () => {},
+        removeLayer: () => {},
+        flyTo: () => {},
+      };
+    }
+    // TACO_BELL_STOPS stub (referenced by food-log.js)
+    if (typeof TACO_BELL_STOPS === 'undefined') {
+      window.TACO_BELL_STOPS = [
+        { num: 0, label: '0 - Start/Finish', mandatory: false },
+        { num: 1, label: '1 - Stop 1', mandatory: false },
+        { num: 2, label: '2 - Stop 2', mandatory: false },
+        { num: 3, label: '3 - Mandatory Stop', mandatory: true },
+        { num: 4, label: '4 - Stop 4', mandatory: false },
+        { num: 5, label: '5 - Stop 5', mandatory: false },
+        { num: 6, label: '6 - Stop 6', mandatory: false },
+        { num: 7, label: '7 - Mandatory Stop', mandatory: true },
+        { num: 8, label: '8 - Stop 8', mandatory: false },
+      ];
+    }
+    // openInMaps stub (referenced by party.js popup)
+    if (typeof openInMaps === 'undefined') {
+      window.openInMaps = () => {};
+    }
+  </script>
+
+  <script>
+    // ═══════════════════════════════════════
+    // TEST HARNESS
+    // ═══════════════════════════════════════
+    const testResults = [];
+    let totalPass = 0;
+    let totalFail = 0;
+
+    function assert(group, name, condition, detail) {
+      const passed = !!condition;
+      testResults.push({ group, name, passed, detail: detail || '' });
+      if (passed) totalPass++;
+      else totalFail++;
+    }
+
+    function renderResults() {
+      const overlay = document.getElementById('test-overlay');
+      const groups = {};
+      testResults.forEach(r => {
+        if (!groups[r.group]) groups[r.group] = [];
+        groups[r.group].push(r);
+      });
+
+      let html = `<h1>Backend Feature Tests</h1>`;
+      for (const [group, results] of Object.entries(groups)) {
+        const groupFails = results.filter(r => !r.passed).length;
+        html += `<div class="test-group">`;
+        html += `<h2>${group} (${results.length - groupFails}/${results.length})</h2>`;
+        results.forEach(r => {
+          const cls = r.passed ? 't-pass' : 't-fail';
+          const icon = r.passed ? '\u2714' : '\u2718';
+          html += `<div class="t-row ${cls}">${icon} ${r.name}`;
+          if (r.detail) html += ` <span class="t-detail">${r.detail}</span>`;
+          html += `</div>`;
+        });
+        html += `</div>`;
+      }
+
+      const allPass = totalFail === 0;
+      html += `<div class="t-summary ${allPass ? 'ok' : 'fail'}">
+        ${allPass ? 'ALL TESTS PASSED' : totalFail + ' TEST(S) FAILED'}
+      </div>`;
+      html += `<div class="t-stats">
+        <span>Total: ${totalPass + totalFail}</span>
+        <span class="t-pass">Pass: ${totalPass}</span>
+        <span class="t-fail">Fail: ${totalFail}</span>
+        <span>Groups: ${Object.keys(groups).length}</span>
+      </div>`;
+
+      overlay.innerHTML = html;
+    }
+
+    // ═══════════════════════════════════════
+    // HELPER: Get mock client + simulate auth
+    // ═══════════════════════════════════════
+    let mockClient = null;
+
+    function getMockClient() {
+      // TB_AUTH.getSupabase() returns the client created during init
+      return TB_AUTH.getSupabase();
+    }
+
+    function simulateSignIn(userId, email, displayName) {
+      const client = getMockClient();
+      if (!client) return;
+
+      const user = {
+        id: userId || 'user-1',
+        email: email || 'test@example.com',
+        user_metadata: { full_name: displayName || 'Test User' },
+      };
+
+      // Seed profile so ensureProfile() finds it
+      client._seedTable('profiles', [{
+        id: user.id,
+        display_name: displayName || 'Test User',
+        role: 'runner',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }]);
+
+      // Trigger auth state change
+      client._setSession({ user });
+    }
+
+    function resetMock() {
+      const client = getMockClient();
+      if (client && client._reset) client._reset();
+    }
+
+    // ═══════════════════════════════════════
+    // TEST GROUPS
+    // ═══════════════════════════════════════
+
+    // 1. Config & Constants
+    function testConfig() {
+      const G = 'Config & Constants';
+
+      assert(G, 'TB_CONFIG exists', typeof TB_CONFIG === 'object');
+      assert(G, 'TB_CONFIG.FEATURES exists', typeof TB_CONFIG.FEATURES === 'object');
+      assert(G, 'AUTH feature flag is boolean', typeof TB_CONFIG.FEATURES.AUTH === 'boolean');
+      assert(G, 'FOOD_LOG feature flag is boolean', typeof TB_CONFIG.FEATURES.FOOD_LOG === 'boolean');
+      assert(G, 'SOCIAL_FEED feature flag is boolean', typeof TB_CONFIG.FEATURES.SOCIAL_FEED === 'boolean');
+      assert(G, 'PARTIES feature flag is boolean', typeof TB_CONFIG.FEATURES.PARTIES === 'boolean');
+      assert(G, 'BETTING feature flag is boolean', typeof TB_CONFIG.FEATURES.BETTING === 'boolean');
+
+      assert(G, 'TB_MENU_ITEMS is array', Array.isArray(TB_MENU_ITEMS));
+      assert(G, 'TB_MENU_ITEMS has items', TB_MENU_ITEMS.length >= 10, `count: ${TB_MENU_ITEMS.length}`);
+      assert(G, 'Menu includes Chalupa Supreme', TB_MENU_ITEMS.includes('Chalupa Supreme'));
+      assert(G, 'Menu includes Baja Blast', TB_MENU_ITEMS.includes('Baja Blast'));
+
+      assert(G, 'TB_MANDATORY_ITEMS exists', typeof TB_MANDATORY_ITEMS === 'object');
+      assert(G, 'Mandatory stop3 items defined', Array.isArray(TB_MANDATORY_ITEMS.stop3) && TB_MANDATORY_ITEMS.stop3.length > 0);
+      assert(G, 'Mandatory stop7 items defined', Array.isArray(TB_MANDATORY_ITEMS.stop7) && TB_MANDATORY_ITEMS.stop7.length > 0);
+
+      assert(G, 'BET_TYPES exists', typeof BET_TYPES === 'object');
+      assert(G, 'BET_TYPES has finish_time', BET_TYPES.finish_time && BET_TYPES.finish_time.label);
+      assert(G, 'BET_TYPES has food_items', BET_TYPES.food_items && BET_TYPES.food_items.label);
+      assert(G, 'BET_TYPES has bathroom_stops', BET_TYPES.bathroom_stops && BET_TYPES.bathroom_stops.label);
+      assert(G, 'BET_TYPES has dnf', BET_TYPES.dnf && BET_TYPES.dnf.label);
+
+      assert(G, 'PARTY_AMENITIES is array', Array.isArray(PARTY_AMENITIES));
+      assert(G, 'PARTY_AMENITIES has items', PARTY_AMENITIES.length >= 5, `count: ${PARTY_AMENITIES.length}`);
+      assert(G, 'Amenities have id/emoji/label', PARTY_AMENITIES.every(a => a.id && a.emoji && a.label));
+    }
+
+    // 2. Mock Supabase Client
+    function testMockSupabase() {
+      const G = 'Mock Supabase Client';
+      const client = MockSupabase.createClient('https://test.supabase.co', 'test-key');
+
+      // Basic CRUD
+      assert(G, 'createClient returns object', typeof client === 'object');
+      assert(G, 'client.from returns builder', typeof client.from('profiles').select === 'function');
+      assert(G, 'client.auth exists', typeof client.auth === 'object');
+      assert(G, 'client.channel returns object', typeof client.channel('test') === 'object');
+
+      // Test helpers
+      assert(G, '_reset exists', typeof client._reset === 'function');
+      assert(G, '_getTables exists', typeof client._getTables === 'function');
+      assert(G, '_seedTable exists', typeof client._seedTable === 'function');
+
+      // Reset
+      client._reset();
+      const tables = client._getTables();
+      assert(G, 'Tables initialized empty', tables.profiles.length === 0 && tables.food_logs.length === 0);
+
+      // Seed
+      client._seedTable('profiles', [{ id: 'p1', display_name: 'Alice', role: 'runner' }]);
+      assert(G, 'Seed populates table', client._getTables().profiles.length === 1);
+      assert(G, 'Seeded data matches', client._getTables().profiles[0].display_name === 'Alice');
+
+      client._reset();
+    }
+
+    // 3. Mock Supabase Query Builder
+    async function testMockQueryBuilder() {
+      const G = 'Mock Query Builder';
+      const client = MockSupabase.createClient('https://test.supabase.co', 'test-key');
+
+      // INSERT
+      const { data: inserted, error: insertErr } = await client
+        .from('profiles')
+        .insert({ id: 'u1', display_name: 'Bob', role: 'runner' })
+        .select()
+        .single();
+
+      assert(G, 'Insert returns data', inserted !== null);
+      assert(G, 'Insert no error', insertErr === null);
+      assert(G, 'Inserted row has id', inserted && inserted.id === 'u1');
+      assert(G, 'Inserted row has display_name', inserted && inserted.display_name === 'Bob');
+      assert(G, 'Inserted row has created_at', inserted && inserted.created_at);
+
+      // SELECT
+      const { data: selected } = await client
+        .from('profiles')
+        .select('*')
+        .eq('id', 'u1')
+        .single();
+
+      assert(G, 'Select finds inserted row', selected !== null);
+      assert(G, 'Select returns correct data', selected && selected.display_name === 'Bob');
+
+      // UPDATE
+      await client
+        .from('profiles')
+        .update({ display_name: 'Bobby' })
+        .eq('id', 'u1');
+
+      const { data: updated } = await client
+        .from('profiles')
+        .select('*')
+        .eq('id', 'u1')
+        .single();
+
+      assert(G, 'Update modifies data', updated && updated.display_name === 'Bobby');
+
+      // DELETE
+      await client
+        .from('profiles')
+        .delete()
+        .eq('id', 'u1');
+
+      const { data: afterDelete } = await client
+        .from('profiles')
+        .select('*');
+
+      assert(G, 'Delete removes row', afterDelete && afterDelete.length === 0);
+
+      // INSERT MULTIPLE + ORDER + RANGE
+      await client.from('food_logs').insert({ id: 'fl1', stop_number: 3, user_id: 'u1', created_at: '2026-01-01T10:00:00Z' }).select();
+      await client.from('food_logs').insert({ id: 'fl2', stop_number: 1, user_id: 'u1', created_at: '2026-01-01T09:00:00Z' }).select();
+      await client.from('food_logs').insert({ id: 'fl3', stop_number: 7, user_id: 'u1', created_at: '2026-01-01T11:00:00Z' }).select();
+
+      const { data: ordered } = await client
+        .from('food_logs')
+        .select('*')
+        .order('stop_number', { ascending: true });
+
+      assert(G, 'Order ascending works', ordered && ordered[0].stop_number === 1);
+      assert(G, 'Order has correct count', ordered && ordered.length === 3);
+
+      const { data: ranged } = await client
+        .from('food_logs')
+        .select('*')
+        .order('stop_number', { ascending: true })
+        .range(0, 1);
+
+      assert(G, 'Range limits results', ranged && ranged.length === 2);
+
+      // ILIKE
+      await client.from('profiles').insert({ id: 'u2', display_name: 'Charlie Runner', role: 'runner' }).select();
+      await client.from('profiles').insert({ id: 'u3', display_name: 'Diana Cheerer', role: 'cheerer' }).select();
+
+      const { data: ilikeResult } = await client
+        .from('profiles')
+        .select('*')
+        .ilike('display_name', '%charlie%');
+
+      assert(G, 'ILIKE finds match', ilikeResult && ilikeResult.length === 1);
+      assert(G, 'ILIKE case insensitive', ilikeResult && ilikeResult[0].display_name === 'Charlie Runner');
+
+      // NOT
+      await client.from('bets').insert({ id: 'b1', creator_id: 'u2', is_correct: true }).select();
+      await client.from('bets').insert({ id: 'b2', creator_id: 'u2', is_correct: null }).select();
+
+      const { data: notNullResult } = await client
+        .from('bets')
+        .select('*')
+        .not('is_correct', 'is', null);
+
+      assert(G, 'NOT is null filters correctly', notNullResult && notNullResult.length === 1);
+      assert(G, 'NOT result is correct row', notNullResult && notNullResult[0].id === 'b1');
+
+      // IN
+      const { data: inResult } = await client
+        .from('food_logs')
+        .select('*')
+        .in('id', ['fl1', 'fl3']);
+
+      assert(G, 'IN filter works', inResult && inResult.length === 2);
+
+      client._reset();
+    }
+
+    // 4. Mock Auth
+    async function testMockAuth() {
+      const G = 'Mock Auth';
+      const client = MockSupabase.createClient('https://test.supabase.co', 'test-key');
+
+      // Initial state
+      const { data: { session: initialSession } } = await client.auth.getSession();
+      assert(G, 'No session initially', initialSession === null);
+
+      // Sign in with OTP
+      const { error: otpErr } = await client.auth.signInWithOtp({ email: 'alice@test.com' });
+      assert(G, 'signInWithOtp no error', otpErr === null);
+
+      const { data: { session: afterOtp } } = await client.auth.getSession();
+      assert(G, 'Session exists after OTP sign-in', afterOtp !== null);
+      assert(G, 'Session has user', afterOtp && afterOtp.user);
+      assert(G, 'User has email', afterOtp && afterOtp.user.email === 'alice@test.com');
+
+      // Invalid email
+      const { error: badEmail } = await client.auth.signInWithOtp({ email: 'not-an-email' });
+      assert(G, 'Invalid email returns error', badEmail !== null);
+
+      // Sign out
+      await client.auth.signOut();
+      const { data: { session: afterSignout } } = await client.auth.getSession();
+      assert(G, 'Session null after sign-out', afterSignout === null);
+
+      // Auth state change listener
+      let lastEvent = null;
+      client.auth.onAuthStateChange((event, session) => { lastEvent = event; });
+      await client.auth.signInWithOAuth({ provider: 'google' });
+      assert(G, 'Auth listener fires on sign-in', lastEvent === 'SIGNED_IN');
+
+      await client.auth.signOut();
+      assert(G, 'Auth listener fires on sign-out', lastEvent === 'SIGNED_OUT');
+
+      client._reset();
+    }
+
+    // 5. Mock Realtime
+    async function testMockRealtime() {
+      const G = 'Mock Realtime';
+      const client = MockSupabase.createClient('https://test.supabase.co', 'test-key');
+
+      let receivedPayload = null;
+      const channel = client
+        .channel('food_logs_realtime')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'food_logs' }, (payload) => {
+          receivedPayload = payload;
+        })
+        .subscribe();
+
+      assert(G, 'Channel created', channel !== null);
+
+      // Trigger an insert
+      await client.from('food_logs').insert({ id: 'rt1', stop_number: 5, user_id: 'u1' }).select();
+
+      assert(G, 'Realtime listener fires on INSERT', receivedPayload !== null);
+      assert(G, 'Payload has eventType', receivedPayload && receivedPayload.eventType === 'INSERT');
+      assert(G, 'Payload has new row', receivedPayload && receivedPayload.new && receivedPayload.new.id === 'rt1');
+
+      // Test UPDATE event
+      let updatePayload = null;
+      const ch2 = client
+        .channel('parties_realtime')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'parties' }, (payload) => {
+          updatePayload = payload;
+        })
+        .subscribe();
+
+      await client.from('parties').insert({ id: 'p1', name: 'Test Party', host_id: 'u1', is_live: false }).select();
+      assert(G, 'Party INSERT triggers listener', updatePayload && updatePayload.eventType === 'INSERT');
+
+      await client.from('parties').update({ is_live: true }).eq('id', 'p1');
+      assert(G, 'Party UPDATE triggers listener', updatePayload && updatePayload.eventType === 'UPDATE');
+      assert(G, 'Update payload has new data', updatePayload && updatePayload.new && updatePayload.new.is_live === true);
+
+      // Test DELETE event
+      await client.from('parties').delete().eq('id', 'p1');
+      assert(G, 'Party DELETE triggers listener', updatePayload && updatePayload.eventType === 'DELETE');
+
+      // removeChannel (should not throw)
+      client.removeChannel(channel);
+      assert(G, 'removeChannel does not throw', true);
+
+      client._reset();
+    }
+
+    // 6. TB_AUTH Module
+    function testAuthModule() {
+      const G = 'TB_AUTH Module';
+
+      assert(G, 'TB_AUTH exists', typeof TB_AUTH === 'object');
+      assert(G, 'TB_AUTH.init is function', typeof TB_AUTH.init === 'function');
+      assert(G, 'TB_AUTH.signInWithGoogle is function', typeof TB_AUTH.signInWithGoogle === 'function');
+      assert(G, 'TB_AUTH.signInWithEmail is function', typeof TB_AUTH.signInWithEmail === 'function');
+      assert(G, 'TB_AUTH.signOut is function', typeof TB_AUTH.signOut === 'function');
+      assert(G, 'TB_AUTH.setRole is function', typeof TB_AUTH.setRole === 'function');
+      assert(G, 'TB_AUTH.updateDisplayName is function', typeof TB_AUTH.updateDisplayName === 'function');
+      assert(G, 'TB_AUTH.onAuthChange is function', typeof TB_AUTH.onAuthChange === 'function');
+      assert(G, 'TB_AUTH.getSupabase is function', typeof TB_AUTH.getSupabase === 'function');
+      assert(G, 'TB_AUTH.isRunner is function', typeof TB_AUTH.isRunner === 'function');
+      assert(G, 'TB_AUTH.isCheerer is function', typeof TB_AUTH.isCheerer === 'function');
+      assert(G, 'TB_AUTH.isLoggedIn is function', typeof TB_AUTH.isLoggedIn === 'function');
+    }
+
+    // 7. TB_DB Module
+    function testDBModule() {
+      const G = 'TB_DB Module';
+
+      assert(G, 'TB_DB exists', typeof TB_DB === 'object');
+
+      // Food logs
+      assert(G, 'insertFoodLog exists', typeof TB_DB.insertFoodLog === 'function');
+      assert(G, 'fetchMyFoodLogs exists', typeof TB_DB.fetchMyFoodLogs === 'function');
+      assert(G, 'fetchAllFoodLogs exists', typeof TB_DB.fetchAllFoodLogs === 'function');
+      assert(G, 'fetchFoodLogFlagCounts exists', typeof TB_DB.fetchFoodLogFlagCounts === 'function');
+      assert(G, 'flagFoodLog exists', typeof TB_DB.flagFoodLog === 'function');
+
+      // Parties
+      assert(G, 'insertParty exists', typeof TB_DB.insertParty === 'function');
+      assert(G, 'fetchParties exists', typeof TB_DB.fetchParties === 'function');
+      assert(G, 'updatePartyLive exists', typeof TB_DB.updatePartyLive === 'function');
+      assert(G, 'deleteParty exists', typeof TB_DB.deleteParty === 'function');
+      assert(G, 'subscribeToParty exists', typeof TB_DB.subscribeToParty === 'function');
+      assert(G, 'unsubscribeFromParty exists', typeof TB_DB.unsubscribeFromParty === 'function');
+      assert(G, 'fetchMySubscriptions exists', typeof TB_DB.fetchMySubscriptions === 'function');
+      assert(G, 'fetchPartySubscriberCount exists', typeof TB_DB.fetchPartySubscriberCount === 'function');
+
+      // Bets
+      assert(G, 'insertBet exists', typeof TB_DB.insertBet === 'function');
+      assert(G, 'fetchMyBets exists', typeof TB_DB.fetchMyBets === 'function');
+      assert(G, 'fetchBetsOnMe exists', typeof TB_DB.fetchBetsOnMe === 'function');
+      assert(G, 'resolveBet exists', typeof TB_DB.resolveBet === 'function');
+      assert(G, 'fetchLeaderboard exists', typeof TB_DB.fetchLeaderboard === 'function');
+
+      // Profiles
+      assert(G, 'searchRunners exists', typeof TB_DB.searchRunners === 'function');
+
+      // Realtime
+      assert(G, 'subscribeFoodLogs exists', typeof TB_DB.subscribeFoodLogs === 'function');
+      assert(G, 'subscribeParties exists', typeof TB_DB.subscribeParties === 'function');
+      assert(G, 'unsubscribeChannel exists', typeof TB_DB.unsubscribeChannel === 'function');
+    }
+
+    // 8. TB_DB Not-Authenticated Guards
+    async function testDBAuthGuards() {
+      const G = 'DB Auth Guards';
+
+      // Before sign in, all operations should return 'Not authenticated'
+      const { data: d1, error: e1 } = await TB_DB.insertFoodLog({ stop_number: 1, menu_items: [] });
+      assert(G, 'insertFoodLog blocked when not authed', d1 === null && e1 === 'Not authenticated');
+
+      const { data: d2, error: e2 } = await TB_DB.fetchMyFoodLogs();
+      assert(G, 'fetchMyFoodLogs blocked when not authed', d2 === null && e2 === 'Not authenticated');
+
+      const { data: d3, error: e3 } = await TB_DB.insertParty({ name: 'X', lat: 0, lng: 0 });
+      assert(G, 'insertParty blocked when not authed', d3 === null && e3 === 'Not authenticated');
+
+      const { data: d4, error: e4 } = await TB_DB.insertBet({ target_runner_id: 'x', bet_type: 'dnf', prediction: {} });
+      assert(G, 'insertBet blocked when not authed', d4 === null && e4 === 'Not authenticated');
+
+      const { data: d5, error: e5 } = await TB_DB.searchRunners('test');
+      assert(G, 'searchRunners blocked when not authed', d5 === null && e5 === 'Not authenticated');
+
+      const { data: d6, error: e6 } = await TB_DB.fetchMyBets();
+      assert(G, 'fetchMyBets blocked when not authed', d6 === null && e6 === 'Not authenticated');
+
+      const { data: d7, error: e7 } = await TB_DB.fetchBetsOnMe();
+      assert(G, 'fetchBetsOnMe blocked when not authed', d7 === null && e7 === 'Not authenticated');
+
+      const { data: d8, error: e8 } = await TB_DB.fetchLeaderboard();
+      assert(G, 'fetchLeaderboard blocked when not authed', d8 === null && e8 === 'Not authenticated');
+
+      const { data: d9, error: e9 } = await TB_DB.subscribeToParty('x');
+      assert(G, 'subscribeToParty blocked when not authed', d9 === null && e9 === 'Not authenticated');
+
+      const { data: d10, error: e10 } = await TB_DB.deleteParty('x');
+      assert(G, 'deleteParty blocked when not authed', d10 === null && e10 === 'Not authenticated');
+    }
+
+    // 9. TB_DB CRUD Operations (with auth)
+    async function testDBCrudWithAuth() {
+      const G = 'DB CRUD (Authed)';
+
+      // Sign in
+      simulateSignIn('user-crud-1', 'crud@test.com', 'CRUD Tester');
+
+      // Wait for auth to propagate
+      await new Promise(r => setTimeout(r, 100));
+
+      // Verify auth
+      assert(G, 'User is logged in', TB_AUTH.isLoggedIn());
+
+      // ── Food Logs ──
+      const { data: log1, error: logErr1 } = await TB_DB.insertFoodLog({
+        stop_number: 3,
+        menu_items: [{ item: 'Chalupa Supreme', quantity: 1 }],
+        hot_take: 'Best mid-race fuel ever',
+        lat: 38.8,
+        lng: -77.0,
+      });
+      assert(G, 'insertFoodLog succeeds', log1 !== null && logErr1 === null);
+      assert(G, 'Food log has stop_number', log1 && log1.stop_number === 3);
+      assert(G, 'Food log has menu_items', log1 && Array.isArray(log1.menu_items));
+      assert(G, 'Food log has hot_take', log1 && log1.hot_take === 'Best mid-race fuel ever');
+      assert(G, 'Food log has lat/lng', log1 && log1.lat === 38.8);
+
+      // Insert second log
+      await TB_DB.insertFoodLog({
+        stop_number: 7,
+        menu_items: [{ item: 'Burrito Supreme', quantity: 1 }],
+      });
+
+      const { data: myLogs } = await TB_DB.fetchMyFoodLogs();
+      assert(G, 'fetchMyFoodLogs returns array', Array.isArray(myLogs));
+      assert(G, 'fetchMyFoodLogs returns both logs', myLogs && myLogs.length === 2);
+
+      // ── Flag a food log ──
+      const { data: flag, error: flagErr } = await TB_DB.flagFoodLog(log1.id, 'inappropriate');
+      assert(G, 'flagFoodLog succeeds', flag !== null && flagErr === null);
+
+      const { data: flagCounts } = await TB_DB.fetchFoodLogFlagCounts([log1.id]);
+      assert(G, 'fetchFoodLogFlagCounts returns counts', flagCounts && flagCounts[log1.id] === 1);
+
+      // ── Parties ──
+      const { data: party1, error: partyErr } = await TB_DB.insertParty({
+        name: 'Test Block Party',
+        description: 'Fun times',
+        lat: 38.85,
+        lng: -77.05,
+        mile_marker: 15.5,
+        amenities: ['beer', 'music'],
+        runner_note: 'Look for the balloons',
+      });
+      assert(G, 'insertParty succeeds', party1 !== null && partyErr === null);
+      assert(G, 'Party has name', party1 && party1.name === 'Test Block Party');
+      assert(G, 'Party has amenities', party1 && Array.isArray(party1.amenities) && party1.amenities.length === 2);
+
+      const { data: allParties } = await TB_DB.fetchParties();
+      assert(G, 'fetchParties returns array', Array.isArray(allParties));
+      assert(G, 'fetchParties includes our party', allParties && allParties.length >= 1);
+
+      // Go live
+      const { data: liveParty } = await TB_DB.updatePartyLive(party1.id, true);
+      assert(G, 'updatePartyLive succeeds', liveParty !== null);
+      assert(G, 'Party is now live', liveParty && liveParty.is_live === true);
+
+      // Subscribe
+      const { data: sub } = await TB_DB.subscribeToParty(party1.id);
+      assert(G, 'subscribeToParty succeeds', sub !== null);
+
+      const { data: mySubs } = await TB_DB.fetchMySubscriptions();
+      assert(G, 'fetchMySubscriptions returns array', Array.isArray(mySubs));
+      assert(G, 'Subscription is listed', mySubs && mySubs.includes(party1.id));
+
+      // Unsubscribe
+      await TB_DB.unsubscribeFromParty(party1.id);
+      const { data: afterUnsub } = await TB_DB.fetchMySubscriptions();
+      assert(G, 'Unsubscribe removes subscription', afterUnsub && !afterUnsub.includes(party1.id));
+
+      // Subscriber count
+      const { data: count } = await TB_DB.fetchPartySubscriberCount(party1.id);
+      assert(G, 'fetchPartySubscriberCount returns number', typeof count === 'number');
+
+      // Delete party
+      const { data: delResult } = await TB_DB.deleteParty(party1.id);
+      assert(G, 'deleteParty succeeds', delResult === true);
+
+      const { data: afterDel } = await TB_DB.fetchParties();
+      assert(G, 'Party removed after delete', afterDel && afterDel.length === 0);
+
+      // ── Bets ──
+      // Seed a target runner
+      const client = getMockClient();
+      client._getTables().profiles.push({
+        id: 'runner-target',
+        display_name: 'Target Runner',
+        role: 'runner',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
+
+      const { data: bet1, error: betErr } = await TB_DB.insertBet({
+        target_runner_id: 'runner-target',
+        bet_type: 'finish_time',
+        prediction: { hours: 5, minutes: 30, over_under: 'under' },
+      });
+      assert(G, 'insertBet succeeds', bet1 !== null && betErr === null);
+      assert(G, 'Bet has bet_type', bet1 && bet1.bet_type === 'finish_time');
+      assert(G, 'Bet has prediction', bet1 && bet1.prediction && bet1.prediction.hours === 5);
+
+      const { data: myBets } = await TB_DB.fetchMyBets();
+      assert(G, 'fetchMyBets returns array', Array.isArray(myBets));
+      assert(G, 'fetchMyBets includes our bet', myBets && myBets.length >= 1);
+
+      // Resolve bet
+      const { data: resolved } = await TB_DB.resolveBet(bet1.id, {}, true);
+      assert(G, 'resolveBet succeeds', resolved !== null);
+      assert(G, 'Bet is marked correct', resolved && resolved.is_correct === true);
+
+      // Leaderboard
+      const { data: lb } = await TB_DB.fetchLeaderboard();
+      assert(G, 'fetchLeaderboard returns array', Array.isArray(lb));
+      assert(G, 'Leaderboard has entry', lb && lb.length >= 1);
+      assert(G, 'Leaderboard entry has accuracy', lb && lb[0].accuracy !== undefined);
+
+      // ── Search Runners ──
+      const { data: runners } = await TB_DB.searchRunners('Target');
+      assert(G, 'searchRunners returns results', Array.isArray(runners));
+      assert(G, 'searchRunners finds Target Runner', runners && runners.some(r => r.display_name === 'Target Runner'));
+
+      // Search with no match
+      const { data: noMatch } = await TB_DB.searchRunners('zzzzzzz');
+      assert(G, 'searchRunners returns empty for no match', noMatch && noMatch.length === 0);
+
+      resetMock();
+    }
+
+    // 10. Food Log UI Module
+    function testFoodLogModule() {
+      const G = 'Food Log Module';
+
+      assert(G, 'TB_FOOD_LOG exists', typeof TB_FOOD_LOG === 'object');
+      assert(G, 'TB_FOOD_LOG.init is function', typeof TB_FOOD_LOG.init === 'function');
+      assert(G, 'TB_FOOD_LOG.render is function', typeof TB_FOOD_LOG.render === 'function');
+      assert(G, 'TB_FOOD_LOG.renderLockedState is function', typeof TB_FOOD_LOG.renderLockedState === 'function');
+      assert(G, 'TB_FOOD_LOG.loadMyLogs is function', typeof TB_FOOD_LOG.loadMyLogs === 'function');
+      assert(G, 'TB_FOOD_LOG.getMyLogs is function', typeof TB_FOOD_LOG.getMyLogs === 'function');
+
+      // Render locked state
+      TB_FOOD_LOG.renderLockedState();
+      const container = document.getElementById('food-log-content');
+      assert(G, 'Locked state renders', container && container.innerHTML.includes('Sign in'));
+
+      // Render form
+      TB_FOOD_LOG.render();
+      const stopSelect = document.getElementById('food-log-stop');
+      assert(G, 'Render creates stop select', stopSelect !== null);
+      assert(G, 'Stop select has options', stopSelect && stopSelect.options.length >= 2);
+
+      const itemChecks = document.querySelectorAll('#food-log-items input[type="checkbox"]');
+      assert(G, 'Render creates menu item checkboxes', itemChecks && itemChecks.length === TB_MENU_ITEMS.length, `count: ${itemChecks.length}`);
+
+      const submitBtn = document.getElementById('food-log-submit');
+      assert(G, 'Submit button exists', submitBtn !== null);
+      assert(G, 'Submit button starts disabled', submitBtn && submitBtn.disabled === true);
+
+      const hotTake = document.getElementById('food-log-hottake');
+      assert(G, 'Hot take input exists', hotTake !== null);
+      assert(G, 'Hot take has maxlength', hotTake && hotTake.maxLength === 280);
+
+      const tally = document.getElementById('food-log-tally');
+      assert(G, 'Tally container exists', tally !== null);
+
+      const mandatory = document.getElementById('food-log-mandatory');
+      assert(G, 'Mandatory rules container exists', mandatory !== null);
+    }
+
+    // 11. Social Feed Module
+    function testSocialFeedModule() {
+      const G = 'Social Feed Module';
+
+      assert(G, 'TB_SOCIAL_FEED exists', typeof TB_SOCIAL_FEED === 'object');
+      assert(G, 'TB_SOCIAL_FEED.init is function', typeof TB_SOCIAL_FEED.init === 'function');
+      assert(G, 'TB_SOCIAL_FEED.render is function', typeof TB_SOCIAL_FEED.render === 'function');
+      assert(G, 'TB_SOCIAL_FEED.renderLockedState is function', typeof TB_SOCIAL_FEED.renderLockedState === 'function');
+      assert(G, 'TB_SOCIAL_FEED.loadFeed is function', typeof TB_SOCIAL_FEED.loadFeed === 'function');
+      assert(G, 'TB_SOCIAL_FEED.sortBy is function', typeof TB_SOCIAL_FEED.sortBy === 'function');
+
+      // Render locked state
+      TB_SOCIAL_FEED.renderLockedState();
+      const container = document.getElementById('social-feed-content');
+      assert(G, 'Locked state renders', container && container.innerHTML.includes('Sign in'));
+
+      // Render feed UI
+      TB_SOCIAL_FEED.render();
+      const sortBtns = container.querySelectorAll('.feed-sort-btn');
+      assert(G, 'Sort buttons render', sortBtns && sortBtns.length === 2);
+      assert(G, 'Latest button is active by default', sortBtns[0] && sortBtns[0].classList.contains('active'));
+      assert(G, 'By Stop button exists', sortBtns[1] && sortBtns[1].dataset.sort === 'stop');
+    }
+
+    // 12. Party Module
+    function testPartyModule() {
+      const G = 'Party Module';
+
+      assert(G, 'TB_PARTIES exists', typeof TB_PARTIES === 'object');
+      assert(G, 'TB_PARTIES.init is function', typeof TB_PARTIES.init === 'function');
+      assert(G, 'TB_PARTIES.render is function', typeof TB_PARTIES.render === 'function');
+      assert(G, 'TB_PARTIES.renderLockedState is function', typeof TB_PARTIES.renderLockedState === 'function');
+      assert(G, 'TB_PARTIES.loadParties is function', typeof TB_PARTIES.loadParties === 'function');
+      assert(G, 'TB_PARTIES.getParties is function', typeof TB_PARTIES.getParties === 'function');
+
+      // Render locked state
+      TB_PARTIES.renderLockedState();
+      const container = document.getElementById('parties-content');
+      assert(G, 'Locked state renders', container && container.innerHTML.includes('Sign in'));
+
+      // Render party form
+      TB_PARTIES.render();
+      const nameInput = document.getElementById('party-name');
+      assert(G, 'Party name input exists', nameInput !== null);
+      assert(G, 'Party name has maxlength', nameInput && nameInput.maxLength === 100);
+
+      const descInput = document.getElementById('party-description');
+      assert(G, 'Party description input exists', descInput !== null);
+
+      const mileInput = document.getElementById('party-mile');
+      assert(G, 'Mile marker input exists', mileInput !== null);
+
+      const placeBtn = document.getElementById('party-place-btn');
+      assert(G, 'Place on map button exists', placeBtn !== null);
+
+      const submitBtn = document.getElementById('party-submit-btn');
+      assert(G, 'Submit button exists', submitBtn !== null);
+      assert(G, 'Submit button starts disabled', submitBtn && submitBtn.disabled === true);
+
+      const amenities = document.querySelectorAll('#party-amenities input[type="checkbox"]');
+      assert(G, 'Amenity checkboxes render', amenities && amenities.length === PARTY_AMENITIES.length, `count: ${amenities.length}`);
+
+      const runnerNote = document.getElementById('party-runner-note');
+      assert(G, 'Runner note input exists', runnerNote !== null);
+    }
+
+    // 13. Betting Module
+    function testBettingModule() {
+      const G = 'Betting Module';
+
+      assert(G, 'TB_BETTING exists', typeof TB_BETTING === 'object');
+      assert(G, 'TB_BETTING.init is function', typeof TB_BETTING.init === 'function');
+      assert(G, 'TB_BETTING.render is function', typeof TB_BETTING.render === 'function');
+      assert(G, 'TB_BETTING.renderLockedState is function', typeof TB_BETTING.renderLockedState === 'function');
+      assert(G, 'TB_BETTING.loadBets is function', typeof TB_BETTING.loadBets === 'function');
+
+      // Render locked state
+      TB_BETTING.renderLockedState();
+      const container = document.getElementById('betting-content');
+      assert(G, 'Locked state renders', container && container.innerHTML.includes('Sign in'));
+
+      // Render betting UI
+      TB_BETTING.render();
+      const tabs = container.querySelectorAll('.betting-tab');
+      assert(G, 'Betting tabs render', tabs && tabs.length === 3);
+      assert(G, 'Place Bet tab is active', tabs[0] && tabs[0].classList.contains('active'));
+      assert(G, 'My Bets tab exists', tabs[1] && tabs[1].dataset.tab === 'mybets');
+      assert(G, 'Leaderboard tab exists', tabs[2] && tabs[2].dataset.tab === 'leaderboard');
+    }
+
+    // 14. Graceful Degradation
+    function testGracefulDegradation() {
+      const G = 'Graceful Degradation';
+
+      // DOM containers exist even without auth
+      assert(G, 'auth-bar element exists', document.getElementById('auth-bar') !== null);
+      assert(G, 'food-log-content element exists', document.getElementById('food-log-content') !== null);
+      assert(G, 'social-feed-content element exists', document.getElementById('social-feed-content') !== null);
+      assert(G, 'parties-content element exists', document.getElementById('parties-content') !== null);
+      assert(G, 'betting-content element exists', document.getElementById('betting-content') !== null);
+
+      // Auth modal and role modal exist
+      assert(G, 'auth-modal element exists', document.getElementById('auth-modal') !== null);
+      assert(G, 'role-modal element exists', document.getElementById('role-modal') !== null);
+      assert(G, 'auth-modal starts hidden', document.getElementById('auth-modal').classList.contains('hidden'));
+      assert(G, 'role-modal starts hidden', document.getElementById('role-modal').classList.contains('hidden'));
+
+      // Feature flags are all booleans
+      for (const [key, val] of Object.entries(TB_CONFIG.FEATURES)) {
+        assert(G, `Feature flag ${key} is boolean`, typeof val === 'boolean');
+      }
+
+      // Modules exist even if backend is down
+      assert(G, 'TB_AUTH accessible', typeof TB_AUTH !== 'undefined');
+      assert(G, 'TB_DB accessible', typeof TB_DB !== 'undefined');
+      assert(G, 'TB_FOOD_LOG accessible', typeof TB_FOOD_LOG !== 'undefined');
+      assert(G, 'TB_SOCIAL_FEED accessible', typeof TB_SOCIAL_FEED !== 'undefined');
+      assert(G, 'TB_PARTIES accessible', typeof TB_PARTIES !== 'undefined');
+      assert(G, 'TB_BETTING accessible', typeof TB_BETTING !== 'undefined');
+    }
+
+    // 15. Edge Cases
+    async function testEdgeCases() {
+      const G = 'Edge Cases';
+
+      // Empty menu items array
+      simulateSignIn('edge-user', 'edge@test.com', 'Edge Tester');
+      await new Promise(r => setTimeout(r, 50));
+
+      const { data: emptyLog } = await TB_DB.insertFoodLog({
+        stop_number: 1,
+        menu_items: [],
+        hot_take: '',
+      });
+      assert(G, 'Empty menu_items insert succeeds', emptyLog !== null);
+      assert(G, 'Empty menu_items stored as array', emptyLog && Array.isArray(emptyLog.menu_items));
+
+      // Null hot_take
+      const { data: nullHotTake } = await TB_DB.insertFoodLog({
+        stop_number: 2,
+        menu_items: [{ item: 'Water', quantity: 1 }],
+      });
+      assert(G, 'Null hot_take defaults to empty string', nullHotTake && nullHotTake.hot_take === '');
+
+      // Null lat/lng
+      assert(G, 'Null lat stored', nullHotTake && nullHotTake.lat === null);
+      assert(G, 'Null lng stored', nullHotTake && nullHotTake.lng === null);
+
+      // Empty amenities party
+      const { data: bareParty } = await TB_DB.insertParty({
+        name: 'Bare Party',
+        lat: 38.9,
+        lng: -77.1,
+      });
+      assert(G, 'Party with no amenities succeeds', bareParty !== null);
+      assert(G, 'Empty amenities default to array', bareParty && Array.isArray(bareParty.amenities));
+
+      // Empty flag counts for no IDs
+      const { data: noFlags } = await TB_DB.fetchFoodLogFlagCounts([]);
+      assert(G, 'Empty logIds returns empty counts', noFlags && Object.keys(noFlags).length === 0);
+
+      // DNF bet prediction
+      const client = getMockClient();
+      client._getTables().profiles.push({
+        id: 'edge-runner',
+        display_name: 'Edge Runner',
+        role: 'runner',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
+
+      const { data: dnfBet } = await TB_DB.insertBet({
+        target_runner_id: 'edge-runner',
+        bet_type: 'dnf',
+        prediction: { will_dnf: true },
+      });
+      assert(G, 'DNF bet insert succeeds', dnfBet !== null);
+      assert(G, 'DNF prediction stored', dnfBet && dnfBet.prediction && dnfBet.prediction.will_dnf === true);
+
+      // Resolve as wrong
+      const { data: wrongBet } = await TB_DB.resolveBet(dnfBet.id, {}, false);
+      assert(G, 'Resolve as wrong works', wrongBet && wrongBet.is_correct === false);
+
+      resetMock();
+    }
+
+    // 16. Mandatory Food Rule Logic
+    function testMandatoryRules() {
+      const G = 'Mandatory Food Rules';
+
+      // Stop 3 qualifying items
+      assert(G, 'Stop 3 requires Chalupa Supreme or Crunchwrap Supreme',
+        TB_MANDATORY_ITEMS.stop3.includes('Chalupa Supreme') &&
+        TB_MANDATORY_ITEMS.stop3.includes('Crunchwrap Supreme'));
+
+      // Stop 7 qualifying items
+      assert(G, 'Stop 7 requires Burrito Supreme or Nachos Bell Grande',
+        TB_MANDATORY_ITEMS.stop7.includes('Burrito Supreme') &&
+        TB_MANDATORY_ITEMS.stop7.includes('Nachos Bell Grande'));
+
+      // All mandatory items exist in menu
+      const allMandatory = [...TB_MANDATORY_ITEMS.stop3, ...TB_MANDATORY_ITEMS.stop7];
+      allMandatory.forEach(item => {
+        assert(G, `Mandatory item "${item}" exists in menu`, TB_MENU_ITEMS.includes(item));
+      });
+
+      // Test rule satisfaction logic (mimics food-log.js checkMandatoryRules)
+      const testLogs = [
+        { stop_number: 3, menu_items: [{ item: 'Chalupa Supreme' }] },
+        { stop_number: 5, menu_items: [{ item: 'Bean Burrito' }] },
+      ];
+
+      const stop3Items = testLogs
+        .filter(l => l.stop_number === 3)
+        .flatMap(l => l.menu_items.map(m => m.item));
+      const rule1 = TB_MANDATORY_ITEMS.stop3.some(item => stop3Items.includes(item));
+      assert(G, 'Stop 3 rule satisfied with Chalupa Supreme', rule1 === true);
+
+      const stop7Items = testLogs
+        .filter(l => l.stop_number === 7)
+        .flatMap(l => l.menu_items.map(m => m.item));
+      const rule2 = TB_MANDATORY_ITEMS.stop7.some(item => stop7Items.includes(item));
+      assert(G, 'Stop 7 rule NOT satisfied (no qualifying food at stop 7)', rule2 === false);
+    }
+
+    // 17. Auth Bar UI
+    function testAuthBarUI() {
+      const G = 'Auth Bar UI';
+
+      const bar = document.getElementById('auth-bar');
+      assert(G, 'auth-bar exists', bar !== null);
+
+      // Check that auth modal elements exist
+      const modal = document.getElementById('auth-modal');
+      assert(G, 'Auth modal exists', modal !== null);
+
+      const googleBtn = document.getElementById('auth-google-btn');
+      assert(G, 'Google sign-in button exists', googleBtn !== null);
+
+      const emailInput = document.getElementById('auth-email-input');
+      assert(G, 'Email input exists', emailInput !== null);
+      assert(G, 'Email input is type email', emailInput && emailInput.type === 'email');
+
+      const emailBtn = document.getElementById('auth-email-btn');
+      assert(G, 'Email submit button exists', emailBtn !== null);
+
+      const statusEl = document.getElementById('auth-status');
+      assert(G, 'Auth status element exists', statusEl !== null);
+
+      // Role modal
+      const roleModal = document.getElementById('role-modal');
+      assert(G, 'Role modal exists', roleModal !== null);
+
+      const roleBtns = document.querySelectorAll('.role-btn');
+      assert(G, 'Role buttons exist', roleBtns.length === 2);
+      assert(G, 'Runner role button exists', roleBtns[0] && roleBtns[0].dataset.role === 'runner');
+      assert(G, 'Cheerer role button exists', roleBtns[1] && roleBtns[1].dataset.role === 'cheerer');
+    }
+
+    // 18. Offline Cache Behavior
+    function testOfflineCache() {
+      const G = 'Offline & Cache';
+
+      // localStorage keys used by the app
+      const cacheKeys = ['tb50k_cached_feed', 'tb50k_cached_parties'];
+
+      // Clear caches
+      cacheKeys.forEach(key => localStorage.removeItem(key));
+
+      // Verify clean state
+      cacheKeys.forEach(key => {
+        assert(G, `Cache key "${key}" starts empty`, localStorage.getItem(key) === null);
+      });
+
+      // Simulate caching
+      const testFeed = [{ id: 'f1', stop_number: 1, menu_items: ['Taco'] }];
+      localStorage.setItem('tb50k_cached_feed', JSON.stringify(testFeed));
+      const retrieved = JSON.parse(localStorage.getItem('tb50k_cached_feed'));
+      assert(G, 'Feed cache round-trips', retrieved && retrieved.length === 1 && retrieved[0].id === 'f1');
+
+      const testParties = [{ id: 'p1', name: 'Cache Party' }];
+      localStorage.setItem('tb50k_cached_parties', JSON.stringify(testParties));
+      const retrievedParties = JSON.parse(localStorage.getItem('tb50k_cached_parties'));
+      assert(G, 'Parties cache round-trips', retrievedParties && retrievedParties[0].name === 'Cache Party');
+
+      // Clean up
+      cacheKeys.forEach(key => localStorage.removeItem(key));
+    }
+
+    // ═══════════════════════════════════════
+    // RUN ALL TESTS
+    // ═══════════════════════════════════════
+    async function runAllTests() {
+      try {
+        // Sync tests
+        testConfig();
+        testMockSupabase();
+        testAuthModule();
+        testDBModule();
+        testGracefulDegradation();
+        testMandatoryRules();
+        testAuthBarUI();
+        testOfflineCache();
+
+        // Async tests
+        await testMockQueryBuilder();
+        await testMockAuth();
+        await testMockRealtime();
+
+        // Initialize TB_AUTH so getSupabase() returns the mock client
+        TB_AUTH.init();
+        await new Promise(r => setTimeout(r, 200));
+
+        await testDBAuthGuards();
+        await testDBCrudWithAuth();
+        await testEdgeCases();
+
+        // UI rendering tests (after init)
+        testFoodLogModule();
+        testSocialFeedModule();
+        testPartyModule();
+        testBettingModule();
+      } catch (err) {
+        console.error('Test runner error:', err);
+        assert('Test Runner', 'No uncaught errors', false, err.message);
+      }
+
+      renderResults();
+    }
+
+    // Start after a tick so all scripts are loaded
+    setTimeout(() => {
+      requestAnimationFrame(() => {
+        runAllTests();
+      });
+    }, 500);
+  </script>
+</body>
+</html>

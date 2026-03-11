@@ -8,6 +8,8 @@
 - **FOUC prevention for themes:** Apply saved theme via inline `<script>` in `<head>` (before body renders) to avoid flash of default theme. Read `localStorage` and set `data-theme` attribute immediately.
 - **Leaflet init without setView:** For flex layouts, create the map without `setView()` and use `requestAnimationFrame` + `fitBounds({ animate: false })`. Avoids visible map jump on load. Don't use CSS `visibility`/`opacity` to hide the map container — Leaflet needs it visible for size calculations.
 - **Stale file copies on dev server:** When serving from `/tmp` via a copy-on-start script, edits to source files in iCloud Drive aren't reflected until you manually re-copy. Always re-copy all changed files after edits, then force reload with cache-bust params (`?v=N`) on `<link>` and `<script>` tags.
+- **Testing without a live backend:** For BaaS-dependent features (Supabase, Firebase), create a mock client that implements the same chained query API (`.from().select().eq().order()`) with in-memory storage. Override the global SDK (`window.supabase = MockSupabase`) before loading app modules, and set config to non-placeholder values so initialization proceeds. Test helpers (`_reset`, `_seedTable`, `_setSession`) enable isolated test scenarios.
+- **Graceful degradation pattern:** Check `typeof MODULE !== 'undefined'` before calling `.init()` on each backend module. Inside each module, check `typeof supabase !== 'undefined'` and whether config has placeholder values. This allows the static site to function fully without backend scripts loaded.
 
 ---
 
