@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Taco Bell DC 50K Route Planner</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link rel="stylesheet" href="style.css?v=2" />
+  <link rel="stylesheet" href="style.css?v=3" />
   <script>
     // Apply saved theme before render to prevent flash of default theme
     (function() {
@@ -25,6 +25,9 @@
       <div class="theme-picker" id="theme-picker">
         <span class="theme-picker-label">Theme</span>
         <!-- Swatches injected by app.js -->
+      </div>
+      <div id="auth-bar" class="auth-bar">
+        <!-- Rendered by auth.js -->
       </div>
     </div>
 
@@ -58,6 +61,42 @@
       <div class="section-body">
         <p class="hint">Race rules — check off when completed:</p>
         <div id="food-tracker"></div>
+      </div>
+    </div>
+
+    <div class="section collapsed" id="section-food-log">
+      <h2>Food Log &#127790; <span class="section-toggle">&#9660;</span></h2>
+      <div class="section-body">
+        <div id="food-log-content">
+          <p class="auth-locked-msg">Sign in to log your food at each stop.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="section collapsed" id="section-social">
+      <h2>Live Feed &#128172; <span class="section-toggle">&#9660;</span></h2>
+      <div class="section-body">
+        <div id="social-feed-content">
+          <p class="auth-locked-msg">Sign in to see the live food feed.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="section collapsed" id="section-parties">
+      <h2>Party Spots &#127881; <span class="section-toggle">&#9660;</span></h2>
+      <div class="section-body">
+        <div id="parties-content">
+          <p class="auth-locked-msg">Sign in to see and host parties along the route.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="section collapsed" id="section-betting">
+      <h2>Bets &#127922; <span class="section-toggle">&#9660;</span></h2>
+      <div class="section-body">
+        <div id="betting-content">
+          <p class="auth-locked-msg">Sign in to place bets on your friends.</p>
+        </div>
       </div>
     </div>
 
@@ -110,8 +149,44 @@
     <button id="ctx-cancel">Cancel</button>
   </div>
 
+  <!-- Auth Modal -->
+  <div id="auth-modal" class="auth-modal hidden">
+    <div class="auth-modal-content">
+      <button class="auth-close" title="Close">&times;</button>
+      <h3>Sign In to TB DC 50K</h3>
+      <button id="auth-google-btn" class="auth-btn auth-google">Sign in with Google</button>
+      <div class="auth-divider"><span>or</span></div>
+      <div class="auth-email-form">
+        <input type="email" id="auth-email-input" placeholder="your@email.com" />
+        <button id="auth-email-btn" class="auth-btn">Send Magic Link</button>
+      </div>
+      <p id="auth-status" class="auth-status"></p>
+    </div>
+  </div>
+
+  <!-- Role Picker Modal -->
+  <div id="role-modal" class="auth-modal hidden">
+    <div class="auth-modal-content">
+      <h3>How are you participating?</h3>
+      <div class="role-picker-buttons">
+        <button class="role-btn" data-role="runner">I'm Running 🏃</button>
+        <button class="role-btn" data-role="cheerer">I'm Cheering 📣</button>
+      </div>
+    </div>
+  </div>
+
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="gpx_data.js"></script>
-  <script src="app.js?v=2"></script>
+  <script src="app.js?v=3"></script>
+
+  <!-- Supabase + Backend Features -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="config.js"></script>
+  <script src="auth.js"></script>
+  <script src="db.js"></script>
+  <script src="food-log.js"></script>
+  <script src="social-feed.js"></script>
+  <script src="party.js"></script>
+  <script src="betting.js"></script>
 </body>
 </html>

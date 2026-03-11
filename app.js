@@ -186,6 +186,13 @@ document.addEventListener('DOMContentLoaded', () => {
   resetAddButton();
   buildFoodTracker();
   restorePaceInputs();
+
+  // Initialize backend features (graceful degradation — works without these scripts)
+  if (typeof TB_AUTH !== 'undefined') TB_AUTH.init();
+  if (typeof TB_FOOD_LOG !== 'undefined') TB_FOOD_LOG.init();
+  if (typeof TB_SOCIAL_FEED !== 'undefined') TB_SOCIAL_FEED.init();
+  if (typeof TB_PARTIES !== 'undefined') TB_PARTIES.init();
+  if (typeof TB_BETTING !== 'undefined') TB_BETTING.init();
 });
 
 function initMap() {
