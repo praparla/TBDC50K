@@ -273,6 +273,7 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="../gpx_data.js"></script>
+  <script src="../config.js"></script>
   <script src="../app.js?v=8"></script>
   <script>
     // ── Test Runner ──
@@ -1813,15 +1814,16 @@
       // BUG-008: escapeHtml function exists and works
       assert(G, 'escapeHtml function exists', typeof escapeHtml === 'function');
       if (typeof escapeHtml === 'function') {
-        const escaped = escapeHtml('<script>alert("xss")</script>');
+        const testTag = String.fromCharCode(60) + 'script' + String.fromCharCode(62);
+        const escaped = escapeHtml(testTag + 'alert("xss")');
         assert(G, 'escapeHtml blocks script tags',
-          !escaped.includes('<script>'), `got: ${escaped}`);
+          !escaped.includes(testTag), 'got: ' + escaped);
         assert(G, 'escapeHtml preserves safe text',
           escapeHtml('Hello World') === 'Hello World');
         assert(G, 'escapeHtml escapes ampersands',
           escapeHtml('A & B') === 'A &amp; B');
         assert(G, 'escapeHtml escapes angle brackets',
-          escapeHtml('<b>bold</b>').includes('&lt;'));
+          escapeHtml(String.fromCharCode(60) + 'b>bold').includes('&lt;'));
       }
 
       // BUG-009: TACO_BELL_STOPS count matches production (8 stops, indices 0-7)
