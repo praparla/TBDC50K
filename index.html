@@ -35,6 +35,10 @@
       <div id="auth-bar" class="auth-bar">
         <!-- Rendered by auth.js -->
       </div>
+      <div class="view-toggle" id="view-toggle">
+        <button class="view-toggle-btn active" data-view="runner">🏃 Runner</button>
+        <button class="view-toggle-btn" data-view="crew">🧑‍🤝‍🧑 Crew</button>
+      </div>
     </div>
 
     <div class="section collapsed" id="section-stops">
@@ -256,6 +260,11 @@
     </div>
   </div>
 
+  <!-- Account Settings Panel -->
+  <div id="account-settings-panel" class="account-settings-panel hidden">
+    <!-- Rendered by auth.js showAccountPanel() -->
+  </div>
+
   <script>
     // Register service worker for PWA
     if ('serviceWorker' in navigator) {
@@ -273,6 +282,7 @@
   <script src="config.js"></script>
   <script src="auth.js"></script>
   <script src="db.js"></script>
+  <script src="prefs-sync.js"></script>
   <script src="food-log.js"></script>
   <script src="social-feed.js"></script>
   <script src="party.js"></script>

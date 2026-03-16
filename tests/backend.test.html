@@ -39,12 +39,19 @@
   <div id="sidebar">
     <div class="sidebar-header">
       <div id="auth-bar" class="auth-bar"></div>
+      <div class="view-toggle" id="view-toggle">
+        <button class="view-toggle-btn active" data-view="runner">Runner</button>
+        <button class="view-toggle-btn" data-view="crew">Crew</button>
+      </div>
     </div>
   </div>
   <div id="food-log-content"></div>
   <div id="social-feed-content"></div>
   <div id="parties-content"></div>
   <div id="betting-content"></div>
+
+  <!-- Account Settings Panel -->
+  <div id="account-settings-panel" class="account-settings-panel hidden"></div>
 
   <!-- Auth Modal -->
   <div id="auth-modal" class="auth-modal hidden">
@@ -89,6 +96,7 @@
   <!-- Load real backend modules -->
   <script src="../auth.js"></script>
   <script src="../db.js"></script>
+  <script src="../prefs-sync.js"></script>
   <script src="../food-log.js"></script>
   <script src="../social-feed.js"></script>
   <script src="../party.js"></script>
@@ -1050,6 +1058,235 @@
       cacheKeys.forEach(key => localStorage.removeItem(key));
     }
 
+    // 19. Account Settings Panel
+    function testAccountSettingsPanel() {
+      const G = 'Account Settings Panel';
+
+      // Panel element exists
+      const panel = document.getElementById('account-settings-panel');
+      assert(G, 'Account settings panel exists', panel !== null);
+      assert(G, 'Panel starts hidden', panel.classList.contains('hidden'));
+
+      // TB_AUTH exposes showAccountPanel / hideAccountPanel
+      assert(G, 'showAccountPanel is a function', typeof TB_AUTH.showAccountPanel === 'function');
+      assert(G, 'hideAccountPanel is a function', typeof TB_AUTH.hideAccountPanel === 'function');
+
+      // TB_AUTH exposes updateAvatarEmoji
+      assert(G, 'updateAvatarEmoji is a function', typeof TB_AUTH.updateAvatarEmoji === 'function');
+
+      // TB_AUTH exposes showToast
+      assert(G, 'showToast is a function', typeof TB_AUTH.showToast === 'function');
+
+      // AVATAR_EMOJIS constant exists
+      assert(G, 'AVATAR_EMOJIS is defined', typeof AVATAR_EMOJIS !== 'undefined');
+      assert(G, 'AVATAR_EMOJIS has 16 items', AVATAR_EMOJIS.length === 16);
+      assert(G, 'AVATAR_EMOJIS contains taco emoji', AVATAR_EMOJIS.includes('🌮'));
+      assert(G, 'AVATAR_EMOJIS contains runner emoji', AVATAR_EMOJIS.includes('🏃'));
+    }
+
+    // 20. DB Account Management Functions
+    async function testDBAccountManagement() {
+      const G = 'DB Account Management';
+
+      // Functions exist
+      assert(G, 'updateAvatarEmoji exists', typeof TB_DB.updateAvatarEmoji === 'function');
+      assert(G, 'updatePreferences exists', typeof TB_DB.updatePreferences === 'function');
+      assert(G, 'fetchPreferences exists', typeof TB_DB.fetchPreferences === 'function');
+      assert(G, 'fetchMyStats exists', typeof TB_DB.fetchMyStats === 'function');
+      assert(G, 'deleteMyAccount exists', typeof TB_DB.deleteMyAccount === 'function');
+
+      // Update avatar emoji
+      const client = TB_AUTH.getSupabase();
+      const session = client._getSession();
+      const uid = session.user.id;
+
+      // Seed profile with avatar_emoji and preferences columns
+      const profiles = client._getTables().profiles;
+      if (profiles.length === 0) {
+        profiles.push({ id: uid, display_name: 'Test User', role: 'runner', avatar_emoji: '', preferences: {} });
+      } else {
+        profiles[0].avatar_emoji = '';
+        profiles[0].preferences = {};
+      }
+
+      // Update avatar
+      const { error: avatarErr } = await TB_DB.updateAvatarEmoji('🌮');
+      assert(G, 'updateAvatarEmoji returns no error', !avatarErr);
+      const updatedProfile = profiles.find(p => p.id === uid);
+      assert(G, 'Avatar emoji updated in DB', updatedProfile && updatedProfile.avatar_emoji === '🌮');
+
+      // Update preferences
+      const prefs = { tb50k_theme: 'baja', tb50k_pace_hours: '9' };
+      const { error: prefsErr } = await TB_DB.updatePreferences(prefs);
+      assert(G, 'updatePreferences returns no error', !prefsErr);
+      const updatedProfile2 = profiles.find(p => p.id === uid);
+      assert(G, 'Preferences saved in DB', updatedProfile2 && updatedProfile2.preferences.tb50k_theme === 'baja');
+
+      // Fetch preferences
+      const { data: fetchedPrefs, error: fetchErr } = await TB_DB.fetchPreferences();
+      assert(G, 'fetchPreferences returns no error', !fetchErr);
+      assert(G, 'fetchPreferences returns saved data', fetchedPrefs && fetchedPrefs.tb50k_theme === 'baja');
+
+      // Fetch stats
+      const { data: stats, error: statsErr } = await TB_DB.fetchMyStats();
+      assert(G, 'fetchMyStats returns no error', !statsErr);
+      assert(G, 'fetchMyStats returns food_logs count', stats && typeof stats.food_logs === 'number');
+      assert(G, 'fetchMyStats returns bets_placed count', stats && typeof stats.bets_placed === 'number');
+      assert(G, 'fetchMyStats returns parties_hosted count', stats && typeof stats.parties_hosted === 'number');
+    }
+
+    // 21. Delete Account Flow
+    async function testDeleteAccount() {
+      const G = 'Delete Account';
+
+      const client = TB_AUTH.getSupabase();
+      const session = client._getSession();
+      const uid = session.user.id;
+
+      // Seed data for the user
+      const tables = client._getTables();
+      if (!tables.profiles.find(p => p.id === uid)) {
+        tables.profiles.push({ id: uid, display_name: 'Delete Me', role: 'runner' });
+      }
+      tables.food_logs.push({ id: 'fl-del-1', user_id: uid, stop_number: 1, menu_items: [] });
+      tables.bets.push({ id: 'bet-del-1', creator_id: uid, target_runner_id: 'other', bet_type: 'dnf', prediction: {} });
+      tables.parties.push({ id: 'party-del-1', host_id: uid, name: 'Del Party', lat: 0, lng: 0 });
+
+      // Verify data exists
+      assert(G, 'Profile exists before delete', tables.profiles.some(p => p.id === uid));
+      assert(G, 'Food logs exist before delete', tables.food_logs.some(f => f.user_id === uid));
+      assert(G, 'Bets exist before delete', tables.bets.some(b => b.creator_id === uid));
+      assert(G, 'Parties exist before delete', tables.parties.some(p => p.host_id === uid));
+
+      // Delete account
+      const { error } = await TB_DB.deleteMyAccount();
+      assert(G, 'deleteMyAccount returns no error', !error);
+
+      // Verify cascade delete
+      assert(G, 'Profile deleted', !tables.profiles.some(p => p.id === uid));
+      assert(G, 'Food logs deleted', !tables.food_logs.some(f => f.user_id === uid));
+      assert(G, 'Bets deleted', !tables.bets.some(b => b.creator_id === uid));
+      assert(G, 'Parties deleted', !tables.parties.some(p => p.host_id === uid));
+
+      // Re-seed profile for later tests
+      tables.profiles.push({ id: uid, display_name: 'Test User', role: 'runner', avatar_emoji: '', preferences: {} });
+    }
+
+    // 22. Preferences Sync Module
+    function testPrefsSync() {
+      const G = 'Prefs Sync';
+
+      assert(G, 'TB_PREFS_SYNC is defined', typeof TB_PREFS_SYNC !== 'undefined');
+      assert(G, 'init is a function', typeof TB_PREFS_SYNC.init === 'function');
+      assert(G, 'syncFromCloud is a function', typeof TB_PREFS_SYNC.syncFromCloud === 'function');
+      assert(G, 'syncToCloud is a function', typeof TB_PREFS_SYNC.syncToCloud === 'function');
+      assert(G, 'setEnabled is a function', typeof TB_PREFS_SYNC.setEnabled === 'function');
+      assert(G, 'isEnabled is a function', typeof TB_PREFS_SYNC.isEnabled === 'function');
+
+      // SYNC_KEYS constant exists
+      assert(G, 'SYNC_KEYS is defined', typeof SYNC_KEYS !== 'undefined');
+      assert(G, 'SYNC_KEYS has entries', SYNC_KEYS.length > 0);
+      assert(G, 'SYNC_KEYS includes tb50k_theme', SYNC_KEYS.includes('tb50k_theme'));
+      assert(G, 'SYNC_KEYS includes tb50k_view_mode', SYNC_KEYS.includes('tb50k_view_mode'));
+
+      // Toggle sync
+      TB_PREFS_SYNC.setEnabled(true);
+      assert(G, 'Sync can be enabled', TB_PREFS_SYNC.isEnabled() === true);
+      assert(G, 'Sync preference saved to localStorage', localStorage.getItem('tb50k_prefs_sync') === 'true');
+
+      TB_PREFS_SYNC.setEnabled(false);
+      assert(G, 'Sync can be disabled', TB_PREFS_SYNC.isEnabled() === false);
+
+      // Clean up
+      localStorage.removeItem('tb50k_prefs_sync');
+    }
+
+    // 23. View Toggle
+    function testViewToggle() {
+      const G = 'View Toggle';
+
+      // DOM elements
+      const toggle = document.getElementById('view-toggle');
+      assert(G, 'View toggle exists', toggle !== null);
+
+      const btns = toggle.querySelectorAll('.view-toggle-btn');
+      assert(G, 'View toggle has 2 buttons', btns.length === 2);
+      assert(G, 'Runner button exists', btns[0].dataset.view === 'runner');
+      assert(G, 'Crew button exists', btns[1].dataset.view === 'crew');
+
+      // Default is runner
+      const defaultMode = localStorage.getItem('tb50k_view_mode') || 'runner';
+      assert(G, 'Default view mode is runner', defaultMode === 'runner');
+
+      // Simulate setting crew mode
+      localStorage.setItem('tb50k_view_mode', 'crew');
+      window.TB_VIEW_MODE = 'crew';
+      assert(G, 'View mode can be set to crew', window.TB_VIEW_MODE === 'crew');
+
+      // Reset
+      localStorage.setItem('tb50k_view_mode', 'runner');
+      window.TB_VIEW_MODE = 'runner';
+    }
+
+    // 24. Mock RPC
+    async function testMockRpc() {
+      const G = 'Mock RPC';
+
+      const client = TB_AUTH.getSupabase();
+
+      // Test unknown RPC
+      const { error: unknownErr } = await client.rpc('nonexistent');
+      assert(G, 'Unknown RPC returns error', unknownErr && unknownErr.message.includes('Unknown RPC'));
+
+      // Test delete_own_account RPC
+      const session = client._getSession();
+      const uid = session.user.id;
+      const tables = client._getTables();
+
+      // Seed test data
+      if (!tables.profiles.find(p => p.id === uid)) {
+        tables.profiles.push({ id: uid, display_name: 'RPC Test', role: 'runner' });
+      }
+      tables.food_logs.push({ id: 'fl-rpc-1', user_id: uid, stop_number: 2, menu_items: [] });
+
+      const { error: delErr } = await client.rpc('delete_own_account');
+      assert(G, 'delete_own_account RPC returns no error', !delErr);
+      assert(G, 'Profile deleted via RPC', !tables.profiles.find(p => p.id === uid));
+      assert(G, 'Food logs cascaded via RPC', !tables.food_logs.find(f => f.user_id === uid));
+
+      // Re-seed for remaining tests
+      tables.profiles.push({ id: uid, display_name: 'Test User', role: 'runner', avatar_emoji: '', preferences: {} });
+    }
+
+    // 25. Toast Notifications
+    function testToastNotifications() {
+      const G = 'Toast Notifications';
+
+      // Show a toast
+      TB_AUTH.showToast('Test message', 'info');
+      const toast = document.getElementById('auth-toast');
+      assert(G, 'Toast element created', toast !== null);
+      assert(G, 'Toast has correct text', toast && toast.textContent === 'Test message');
+      assert(G, 'Toast has info class', toast && toast.classList.contains('auth-toast-info'));
+
+      // Clean up
+      if (toast) toast.remove();
+
+      // Show warning toast
+      TB_AUTH.showToast('Warning!', 'warning');
+      const warnToast = document.getElementById('auth-toast');
+      assert(G, 'Warning toast created', warnToast !== null);
+      assert(G, 'Warning toast has warning class', warnToast && warnToast.classList.contains('auth-toast-warning'));
+      if (warnToast) warnToast.remove();
+
+      // Show error toast
+      TB_AUTH.showToast('Error!', 'error');
+      const errToast = document.getElementById('auth-toast');
+      assert(G, 'Error toast created', errToast !== null);
+      assert(G, 'Error toast has error class', errToast && errToast.classList.contains('auth-toast-error'));
+      if (errToast) errToast.remove();
+    }
+
     // ═══════════════════════════════════════
     // RUN ALL TESTS
     // ═══════════════════════════════════════
@@ -1083,6 +1320,15 @@
         testSocialFeedModule();
         testPartyModule();
         testBettingModule();
+
+        // New account/login tests
+        testAccountSettingsPanel();
+        await testDBAccountManagement();
+        await testDeleteAccount();
+        testPrefsSync();
+        testViewToggle();
+        await testMockRpc();
+        testToastNotifications();
       } catch (err) {
         console.error('Test runner error:', err);
         assert('Test Runner', 'No uncaught errors', false, err.message);

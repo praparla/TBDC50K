@@ -141,6 +141,16 @@ These features require user authentication and a persistent backend. **Implement
 
 - [x] **Friend betting system** — Pre-race wagers on: finish time (over/under), food items consumed, bathroom stops, DNF prediction. Runner search with debounced typeahead. Target runners resolve bets with Correct/Wrong buttons. Leaderboard sorted by accuracy with medal emojis. No real money — bragging rights only. Stored in `bets` table.
 
+- [x] **Account settings panel** — Replace auth dropdown + `prompt()` with a slide-in settings panel. Emoji avatar picker (16 choices, no file storage), inline display name editing, role toggle, cloud sync toggle, profile stats (food logs, bets, parties, badges, member since), delete account with "type DELETE" confirmation. Panel reuses stop-detail-panel pattern.
+
+- [x] **Cloud preferences sync** — `prefs-sync.js` module syncs localStorage preferences (theme, pace, food tracker, passport, pins, view mode) to `profiles.preferences` JSONB column. Cloud → local on login, local → cloud on 30-second debounced interval. Zero additional tables or storage cost.
+
+- [x] **Delete account** — Type "DELETE" confirmation → Postgres function `delete_own_account()` cascades to all child records (food_logs, bets, parties, party_subscribers, food_log_flags). Signs out after deletion. No Edge Functions needed.
+
+- [x] **Session expiry handling** — Tracks `wasSignedIn` state to distinguish intentional sign-out from expired sessions. Shows toast notification on unexpected session loss. Toast notification system with slide-up animation, auto-dismiss, info/warning/error variants.
+
+- [x] **Runner vs. Crew view toggle** — Two-button pill in sidebar header (🏃 Runner / 🧑‍🤝‍🧑 Crew). Runner view: block party popups show name, mile marker, runner note, runner-relevant amenities only. Crew view: full address, parking notes, all amenities, crew-specific notes. Spectator spots: parking info only shown in crew view. Auto-set based on auth role. Persisted to localStorage.
+
 ---
 
 ### P3 - Extras
@@ -403,6 +413,12 @@ Working through remaining backlog in priority order. Skipping features requiring
 - [x] **Shareable pin sets via URL** (2026-03-15) — Encode custom pins into URL hash fragment. "Share Pins" button in Tools copies shareable URL. `encodePinsToURL()` / `loadPinsFromURL()`. Pure client-side, no backend.
 - [x] **Block parties data layer + sidebar** (2026-03-15) — `block_parties.json` with 5 sample parties. Toggleable 🎉 marker layer, sidebar "Block Parties" section sorted by mile marker with amenity emoji badges. 1-hour localStorage cache. `loadBlockParties()`, `renderBlockPartySidebar()`, `toggleBlockParties()`.
 - [x] **Test suite update** (2026-03-15) — Added 7 new test groups (206 assertions) to `tests/responsive.test.html`: Course Sections, Stop Detail Panel, TB Passport, Pin Filters, Spectator Spots, GPX Export, Block Parties. Updated existing tests for 10-button tools grid and new DOM sections. 524/527 total assertions pass.
+- [x] **Account settings panel** (2026-03-15) — Slide-in panel replacing auth dropdown. Emoji avatar picker (16 choices), inline display name editing, role toggle, cloud sync toggle, profile stats, delete account with confirmation. `auth.js` rewrite.
+- [x] **Cloud preferences sync** (2026-03-15) — `prefs-sync.js` module. Syncs 10 localStorage keys to `profiles.preferences` JSONB. Cloud-first merge on login, debounced 30s auto-sync.
+- [x] **Delete account flow** (2026-03-15) — "Type DELETE" confirmation → `delete_own_account()` Postgres function → CASCADE delete → sign out. Schema migration in `schema.sql`.
+- [x] **Session expiry handling** (2026-03-15) — `wasSignedIn` tracking, toast on unexpected SIGNED_OUT, TOKEN_REFRESHED logging. Toast notification system with 3 variants.
+- [x] **Runner vs. Crew view toggle** (2026-03-15) — Sidebar header pill toggle. Runner view: filtered amenities, no parking. Crew view: full info. Auto-set from auth role. Persisted to localStorage.
+- [x] **Backend test suite update** (2026-03-15) — Added 7 new test groups to `tests/backend.test.html`: Account Settings Panel, DB Account Management, Delete Account, Prefs Sync, View Toggle, Mock RPC, Toast Notifications. Updated mock with `rpc()` method.
 
 ---
 
@@ -428,3 +444,20 @@ Working through remaining backlog in priority order. Skipping features requiring
 9. **Shareable pin sets via URL** — Encode pins into URL hash.
 10. **Block parties data layer** — `block_parties.json` + toggleable 🎉 marker layer + sidebar section.
 11. **Shareable race card image** — CSS-styled div for screenshots.
+
+---
+
+## Implementation Plan (2026-03-15 Session #2 — Login/Accounts)
+
+Filling gaps in the login/accounts functionality. Design goals: $0 additional cost (Supabase free tier), no file storage, no Edge Functions, minimal schema changes.
+
+### Changes Implemented
+1. **Schema migration** — `profiles.preferences` JSONB + `profiles.avatar_emoji` TEXT + `delete_own_account()` Postgres function
+2. **Config constants** — `AVATAR_EMOJIS` (16 emoji choices), `SYNC_KEYS` (10 localStorage keys to sync)
+3. **DB layer** — `updateAvatarEmoji()`, `updatePreferences()`, `fetchPreferences()`, `fetchMyStats()`, `deleteMyAccount()`
+4. **Prefs sync module** — `prefs-sync.js`: cloud ↔ localStorage sync, 30s debounced auto-sync, enable/disable toggle
+5. **Account settings panel** — Slide-in panel with emoji avatar, inline name edit, role toggle, sync toggle, stats grid, delete flow
+6. **Session expiry handling** — `wasSignedIn` tracking, toast on unexpected SIGNED_OUT
+7. **Toast notification system** — `showToast()` with 3 variants (info/warning/error), slide-up animation, auto-dismiss
+8. **Runner/Crew view toggle** — Sidebar header pill, view-aware block party + spectator spot popups
+9. **Tests** — 7 new test groups in backend.test.html, mock `rpc()` method, 60+ new assertions

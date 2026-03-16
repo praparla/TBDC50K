@@ -297,12 +297,16 @@ document.addEventListener('DOMContentLoaded', () => {
   loadPinsFromURL();
   loadBlockParties();
 
+  // Initialize view toggle
+  initViewToggle();
+
   // Initialize backend features (graceful degradation — works without these scripts)
   if (typeof TB_AUTH !== 'undefined') TB_AUTH.init();
   if (typeof TB_FOOD_LOG !== 'undefined') TB_FOOD_LOG.init();
   if (typeof TB_SOCIAL_FEED !== 'undefined') TB_SOCIAL_FEED.init();
   if (typeof TB_PARTIES !== 'undefined') TB_PARTIES.init();
   if (typeof TB_BETTING !== 'undefined') TB_BETTING.init();
+  if (typeof TB_PREFS_SYNC !== 'undefined') TB_PREFS_SYNC.init();
 });
 
 function initMap() {
@@ -1440,13 +1444,19 @@ function toggleSpectatorSpots() {
     });
 
     const marker = L.marker([spot.lat, spot.lng], { icon });
-    marker.bindPopup(`<div class="popup-content">
-      <h3>👀 ${spot.name}</h3>
-      <p><strong>Mile ${spot.mile}</strong></p>
-      <p>${spot.note}</p>
-      <p><em>🅿️ ${spot.parking}</em></p>
-      <button class="popup-directions-btn" onclick="openInMaps(${spot.lat}, ${spot.lng}, '${spot.name.replace(/'/g, "\\'")}')">🧭 Directions</button>
-    </div>`);
+    marker.bindPopup(() => {
+      const isCrew = getViewMode() === 'crew';
+      let html = `<div class="popup-content">
+        <h3>👀 ${spot.name}</h3>
+        <p><strong>Mile ${spot.mile}</strong></p>
+        <p>${spot.note}</p>`;
+      if (isCrew) {
+        html += `<p><em>🅿️ ${spot.parking}</em></p>`;
+      }
+      html += `<button class="popup-directions-btn" onclick="openInMaps(${spot.lat}, ${spot.lng}, '${spot.name.replace(/'/g, "\\'")}')">🧭 Directions</button>
+      </div>`;
+      return html;
+    });
     spectatorLayer.addLayer(marker);
   });
 
@@ -1603,6 +1613,62 @@ function encodePinsToURL() {
 
 window.encodePinsToURL = encodePinsToURL;
 
+// ── Runner / Crew View Toggle ──
+window.TB_VIEW_MODE = localStorage.getItem('tb50k_view_mode') || 'runner';
+
+function getViewMode() {
+  return window.TB_VIEW_MODE;
+}
+
+function initViewToggle() {
+  const toggle = document.getElementById('view-toggle');
+  if (!toggle) return;
+
+  // Restore saved state
+  const saved = localStorage.getItem('tb50k_view_mode') || 'runner';
+  window.TB_VIEW_MODE = saved;
+  toggle.querySelectorAll('.view-toggle-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.view === saved);
+  });
+
+  // Wire up click handlers
+  toggle.querySelectorAll('.view-toggle-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const mode = btn.dataset.view;
+      window.TB_VIEW_MODE = mode;
+      localStorage.setItem('tb50k_view_mode', mode);
+      toggle.querySelectorAll('.view-toggle-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      // Refresh block party and spectator popups if layers are on
+      if (blockPartyToggleOn) {
+        toggleBlockParties(); // off
+        toggleBlockParties(); // re-create with new view mode
+      }
+      if (spectatorToggleOn) {
+        toggleSpectatorSpots(); // off
+        toggleSpectatorSpots(); // re-create with new view mode
+      }
+    });
+  });
+
+  // Auto-set based on auth role when signed in
+  if (typeof TB_AUTH !== 'undefined') {
+    TB_AUTH.onAuthChange(({ profile }) => {
+      if (profile && !localStorage.getItem('tb50k_view_mode')) {
+        const autoMode = profile.role === 'cheerer' ? 'crew' : 'runner';
+        window.TB_VIEW_MODE = autoMode;
+        toggle.querySelectorAll('.view-toggle-btn').forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.view === autoMode);
+        });
+      }
+    });
+  }
+}
+
+// Runner-facing amenity subset
+const RUNNER_AMENITIES = ['water', 'snacks', 'music', 'ice', 'porta-potty', 'medical'];
+
 // ── Block Parties ──
 const BLOCK_PARTY_CACHE_KEY = 'tb50k_block_parties';
 const BLOCK_PARTY_CACHE_TTL = 60 * 60 * 1000; // 1 hour
@@ -1703,15 +1769,8 @@ function toggleBlockParties() {
       iconAnchor: [14, 14],
     });
 
-    const amenityBadges = (party.amenities || []).map(a => AMENITY_EMOJI[a] || '').join(' ');
     const marker = L.marker([party.lat, party.lng], { icon });
-    marker.bindPopup(`<div class="popup-content">
-      <h3>🎉 ${party.name}</h3>
-      <p><strong>Mile ${party.mile_marker}</strong> — Hosted by ${party.host}</p>
-      <p>${party.runner_note}</p>
-      <p>${amenityBadges}</p>
-      <button class="popup-directions-btn" onclick="openInMaps(${party.lat}, ${party.lng}, '${party.name.replace(/'/g, "\\'")}')">🧭 Directions</button>
-    </div>`);
+    marker.bindPopup(() => buildBlockPartyPopup(party));
     blockPartyLayer.addLayer(marker);
   });
 
@@ -1719,6 +1778,35 @@ function toggleBlockParties() {
 }
 
 window.toggleBlockParties = toggleBlockParties;
+
+function buildBlockPartyPopup(party) {
+  const isCrew = getViewMode() === 'crew';
+  const amenities = party.amenities || [];
+
+  // Runner view: only show runner-relevant amenities
+  const filteredAmenities = isCrew ? amenities : amenities.filter(a => RUNNER_AMENITIES.includes(a));
+  const amenityBadges = filteredAmenities.map(a => AMENITY_EMOJI[a] || '').join(' ');
+
+  let html = `<div class="popup-content">
+    <h3>🎉 ${party.name}</h3>
+    <p><strong>Mile ${party.mile_marker}</strong> — Hosted by ${party.host}</p>`;
+
+  if (party.runner_note) {
+    html += `<p>${party.runner_note}</p>`;
+  }
+
+  if (isCrew && party.crew_note) {
+    html += `<p><em>🧑‍🤝‍🧑 ${party.crew_note}</em></p>`;
+  }
+
+  if (amenityBadges) {
+    html += `<p>${amenityBadges}</p>`;
+  }
+
+  html += `<button class="popup-directions-btn" onclick="openInMaps(${party.lat}, ${party.lng}, '${party.name.replace(/'/g, "\\'")}')">🧭 Directions</button>
+  </div>`;
+  return html;
+}
 
 function loadPinsFromURL() {
   const hash = window.location.hash;

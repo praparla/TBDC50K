@@ -1,5 +1,6 @@
 // ── Taco Bell DC 50K — Authentication Module ──
 // Manages Supabase auth lifecycle, session, UI rendering.
+// Includes account settings panel, emoji avatar, cloud sync toggle, delete account.
 // Exposes TB_AUTH global for use by other modules.
 
 const TB_AUTH = (function () {
@@ -7,6 +8,7 @@ const TB_AUTH = (function () {
   let currentUser = null;
   let currentProfile = null;
   let authChangeListeners = [];
+  let wasSignedIn = false; // Track for session expiry detection
 
   // ── Initialize ──
   function init() {
@@ -38,6 +40,7 @@ const TB_AUTH = (function () {
       if (event === 'SIGNED_IN' && session) {
         currentUser = session.user;
         currentProfile = await ensureProfile(session.user);
+        wasSignedIn = true;
         renderAuthBar();
         notifyListeners();
 
@@ -46,10 +49,17 @@ const TB_AUTH = (function () {
           showRoleModal();
         }
       } else if (event === 'SIGNED_OUT') {
+        // Detect unexpected session expiry vs intentional sign-out
+        if (wasSignedIn && currentUser) {
+          showToast('Session expired. Sign in again to continue.', 'warning');
+        }
         currentUser = null;
         currentProfile = null;
+        wasSignedIn = false;
         renderAuthBar();
         notifyListeners();
+      } else if (event === 'TOKEN_REFRESHED') {
+        console.log('Auth token refreshed.');
       }
     });
 
@@ -58,6 +68,7 @@ const TB_AUTH = (function () {
       if (session) {
         currentUser = session.user;
         currentProfile = await ensureProfile(session.user);
+        wasSignedIn = true;
       }
       renderAuthBar();
       notifyListeners();
@@ -148,6 +159,7 @@ const TB_AUTH = (function () {
   }
 
   async function signOut() {
+    wasSignedIn = false; // Intentional sign-out — don't show expiry toast
     if (!supabaseClient) return;
     await supabaseClient.auth.signOut();
     currentUser = null;
@@ -167,6 +179,7 @@ const TB_AUTH = (function () {
 
     if (!error && currentProfile) {
       currentProfile.role = role;
+      renderAuthBar();
       notifyListeners();
     }
     return { error };
@@ -190,6 +203,16 @@ const TB_AUTH = (function () {
     return { error };
   }
 
+  async function updateAvatarEmoji(emoji) {
+    if (!supabaseClient || !currentUser) return;
+    const { error } = await TB_DB.updateAvatarEmoji(emoji);
+    if (!error && currentProfile) {
+      currentProfile.avatar_emoji = emoji;
+      renderAuthBar();
+    }
+    return { error };
+  }
+
   // ── Pub/Sub for auth changes ──
   function onAuthChange(callback) {
     authChangeListeners.push(callback);
@@ -204,13 +227,33 @@ const TB_AUTH = (function () {
     });
   }
 
-  // ── UI Rendering ──
+  // ── Toast Notification ──
+  function showToast(msg, type) {
+    // Remove any existing toast
+    const old = document.getElementById('auth-toast');
+    if (old) old.remove();
+
+    const toast = document.createElement('div');
+    toast.id = 'auth-toast';
+    toast.className = 'auth-toast auth-toast-' + (type || 'info');
+    toast.textContent = msg;
+    document.body.appendChild(toast);
+
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+      toast.classList.add('auth-toast-fade');
+      setTimeout(() => toast.remove(), 500);
+    }, 5000);
+  }
+
+  // ── UI Rendering: Auth Bar ──
   function renderAuthBar() {
     const bar = document.getElementById('auth-bar');
     if (!bar) return;
 
     if (currentUser && currentProfile) {
-      const initial = (currentProfile.display_name || currentUser.email || '?')[0].toUpperCase();
+      const avatarEmoji = currentProfile.avatar_emoji || '';
+      const initial = avatarEmoji || (currentProfile.display_name || currentUser.email || '?')[0].toUpperCase();
       const displayName = currentProfile.display_name || currentUser.email;
       const roleEmoji = currentProfile.role === 'runner' ? '🏃' : '📣';
 
@@ -219,49 +262,14 @@ const TB_AUTH = (function () {
           <span class="auth-avatar">${initial}</span>
           <span class="auth-name">${displayName}</span>
           <span class="auth-role-badge" title="${currentProfile.role}">${roleEmoji}</span>
-          <button class="auth-menu-btn" id="auth-menu-btn" title="Account menu">⋮</button>
-        </div>
-        <div class="auth-dropdown hidden" id="auth-dropdown">
-          <button class="auth-dropdown-item" id="auth-switch-role">
-            Switch to ${currentProfile.role === 'runner' ? 'Cheerer 📣' : 'Runner 🏃'}
-          </button>
-          <button class="auth-dropdown-item" id="auth-edit-name">Edit Display Name</button>
-          <button class="auth-dropdown-item auth-sign-out" id="auth-sign-out-btn">Sign Out</button>
+          <button class="auth-menu-btn" id="auth-menu-btn" title="Account settings">⚙</button>
         </div>
       `;
 
-      // Dropdown toggle
+      // Open account settings panel
       bar.querySelector('#auth-menu-btn').addEventListener('click', (e) => {
         e.stopPropagation();
-        document.getElementById('auth-dropdown').classList.toggle('hidden');
-      });
-
-      // Close dropdown on outside click
-      document.addEventListener('click', () => {
-        const dd = document.getElementById('auth-dropdown');
-        if (dd) dd.classList.add('hidden');
-      });
-
-      // Switch role
-      bar.querySelector('#auth-switch-role').addEventListener('click', () => {
-        const newRole = currentProfile.role === 'runner' ? 'cheerer' : 'runner';
-        setRole(newRole);
-        document.getElementById('auth-dropdown').classList.add('hidden');
-      });
-
-      // Edit name
-      bar.querySelector('#auth-edit-name').addEventListener('click', () => {
-        const newName = prompt('Enter your display name:', currentProfile.display_name);
-        if (newName !== null) {
-          updateDisplayName(newName);
-        }
-        document.getElementById('auth-dropdown').classList.add('hidden');
-      });
-
-      // Sign out
-      bar.querySelector('#auth-sign-out-btn').addEventListener('click', () => {
-        signOut();
-        document.getElementById('auth-dropdown').classList.add('hidden');
+        showAccountPanel();
       });
     } else {
       const isConfigured = supabaseClient !== null;
@@ -274,6 +282,221 @@ const TB_AUTH = (function () {
     }
   }
 
+  // ── Account Settings Panel ──
+  async function showAccountPanel() {
+    const panel = document.getElementById('account-settings-panel');
+    if (!panel || !currentProfile) return;
+
+    const avatarEmoji = currentProfile.avatar_emoji || '';
+    const displayName = currentProfile.display_name || '';
+    const role = currentProfile.role || 'runner';
+    const memberSince = currentProfile.created_at
+      ? new Date(currentProfile.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+      : 'N/A';
+    const syncOn = typeof TB_PREFS_SYNC !== 'undefined' && TB_PREFS_SYNC.isEnabled();
+
+    panel.innerHTML = `
+      <div class="acct-panel-header">
+        <h3>Account Settings</h3>
+        <button class="acct-panel-close" id="acct-panel-close" title="Close">&times;</button>
+      </div>
+
+      <div class="acct-section">
+        <label class="acct-label">Avatar</label>
+        <div class="acct-avatar-grid" id="acct-avatar-grid">
+          ${AVATAR_EMOJIS.map(e =>
+            `<button class="acct-avatar-btn${e === avatarEmoji ? ' selected' : ''}" data-emoji="${e}">${e}</button>`
+          ).join('')}
+          <button class="acct-avatar-btn acct-avatar-clear${!avatarEmoji ? ' selected' : ''}" data-emoji="" title="Use initial">Aa</button>
+        </div>
+      </div>
+
+      <div class="acct-section">
+        <label class="acct-label" for="acct-display-name">Display Name</label>
+        <div class="acct-name-row">
+          <input type="text" id="acct-display-name" class="acct-input" value="${displayName}" maxlength="50" />
+          <button class="acct-save-btn" id="acct-save-name">Save</button>
+        </div>
+      </div>
+
+      <div class="acct-section">
+        <label class="acct-label">Role</label>
+        <div class="acct-role-toggle">
+          <button class="acct-role-btn${role === 'runner' ? ' active' : ''}" data-role="runner">🏃 Runner</button>
+          <button class="acct-role-btn${role === 'cheerer' ? ' active' : ''}" data-role="cheerer">📣 Cheerer</button>
+        </div>
+      </div>
+
+      <div class="acct-section">
+        <label class="acct-label">Cloud Sync</label>
+        <div class="acct-sync-row">
+          <label class="acct-toggle-label">
+            <input type="checkbox" id="acct-sync-toggle" ${syncOn ? 'checked' : ''} />
+            <span>Sync preferences across devices</span>
+          </label>
+          <p class="acct-hint">Theme, pace, food tracker, passport, and pins.</p>
+        </div>
+      </div>
+
+      <div class="acct-section acct-stats">
+        <label class="acct-label">Your Stats</label>
+        <div id="acct-stats-content" class="acct-stats-grid">
+          <div class="acct-stat"><span class="acct-stat-val">...</span><span class="acct-stat-lbl">Food Logs</span></div>
+          <div class="acct-stat"><span class="acct-stat-val">...</span><span class="acct-stat-lbl">Bets Placed</span></div>
+          <div class="acct-stat"><span class="acct-stat-val">...</span><span class="acct-stat-lbl">Parties Hosted</span></div>
+          <div class="acct-stat"><span class="acct-stat-val">${memberSince}</span><span class="acct-stat-lbl">Member Since</span></div>
+        </div>
+      </div>
+
+      <div class="acct-section acct-danger">
+        <button class="acct-delete-btn" id="acct-delete-btn">Delete Account</button>
+        <p class="acct-hint acct-danger-hint">Permanently deletes your profile, food logs, bets, and parties.</p>
+      </div>
+
+      <div id="acct-delete-confirm" class="acct-delete-confirm hidden">
+        <p>Type <strong>DELETE</strong> to confirm:</p>
+        <input type="text" id="acct-delete-input" class="acct-input" placeholder="DELETE" autocomplete="off" />
+        <div class="acct-delete-actions">
+          <button class="acct-cancel-btn" id="acct-delete-cancel">Cancel</button>
+          <button class="acct-confirm-delete-btn" id="acct-confirm-delete" disabled>Delete Forever</button>
+        </div>
+      </div>
+    `;
+
+    panel.classList.remove('hidden');
+
+    // ── Wire up event listeners ──
+
+    // Close panel
+    panel.querySelector('#acct-panel-close').addEventListener('click', hideAccountPanel);
+    panel.addEventListener('click', (e) => {
+      if (e.target === panel) hideAccountPanel();
+    });
+
+    // Avatar selection
+    panel.querySelectorAll('.acct-avatar-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const emoji = btn.dataset.emoji;
+        panel.querySelectorAll('.acct-avatar-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        await updateAvatarEmoji(emoji);
+      });
+    });
+
+    // Display name save
+    const nameInput = panel.querySelector('#acct-display-name');
+    const saveBtn = panel.querySelector('#acct-save-name');
+    saveBtn.addEventListener('click', async () => {
+      const val = nameInput.value.trim();
+      if (val && val !== currentProfile.display_name) {
+        saveBtn.textContent = '...';
+        await updateDisplayName(val);
+        saveBtn.textContent = 'Saved!';
+        setTimeout(() => { saveBtn.textContent = 'Save'; }, 1500);
+      }
+    });
+    nameInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') saveBtn.click();
+    });
+
+    // Role toggle
+    panel.querySelectorAll('.acct-role-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const newRole = btn.dataset.role;
+        if (newRole !== currentProfile.role) {
+          panel.querySelectorAll('.acct-role-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          await setRole(newRole);
+        }
+      });
+    });
+
+    // Cloud sync toggle
+    panel.querySelector('#acct-sync-toggle').addEventListener('change', (e) => {
+      if (typeof TB_PREFS_SYNC !== 'undefined') {
+        TB_PREFS_SYNC.setEnabled(e.target.checked);
+      }
+    });
+
+    // Delete account flow
+    const deleteBtn = panel.querySelector('#acct-delete-btn');
+    const deleteConfirm = panel.querySelector('#acct-delete-confirm');
+    const deleteInput = panel.querySelector('#acct-delete-input');
+    const confirmBtn = panel.querySelector('#acct-confirm-delete');
+    const cancelBtn = panel.querySelector('#acct-delete-cancel');
+
+    deleteBtn.addEventListener('click', () => {
+      deleteConfirm.classList.remove('hidden');
+      deleteBtn.classList.add('hidden');
+      deleteInput.focus();
+    });
+
+    cancelBtn.addEventListener('click', () => {
+      deleteConfirm.classList.add('hidden');
+      deleteBtn.classList.remove('hidden');
+      deleteInput.value = '';
+      confirmBtn.disabled = true;
+    });
+
+    deleteInput.addEventListener('input', () => {
+      confirmBtn.disabled = deleteInput.value.trim() !== 'DELETE';
+    });
+
+    confirmBtn.addEventListener('click', async () => {
+      if (deleteInput.value.trim() !== 'DELETE') return;
+      confirmBtn.textContent = 'Deleting...';
+      confirmBtn.disabled = true;
+
+      const { error } = await TB_DB.deleteMyAccount();
+      if (error) {
+        showToast('Failed to delete account: ' + error, 'error');
+        confirmBtn.textContent = 'Delete Forever';
+        confirmBtn.disabled = false;
+        return;
+      }
+
+      hideAccountPanel();
+      await signOut();
+      showToast('Account deleted successfully.', 'info');
+    });
+
+    // Load stats asynchronously
+    loadAccountStats();
+  }
+
+  async function loadAccountStats() {
+    const { data } = await TB_DB.fetchMyStats();
+    if (!data) return;
+
+    const container = document.getElementById('acct-stats-content');
+    if (!container) return;
+
+    const memberSince = currentProfile && currentProfile.created_at
+      ? new Date(currentProfile.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+      : 'N/A';
+
+    // Count passport badges from localStorage
+    let passportCount = 0;
+    try {
+      const passport = JSON.parse(localStorage.getItem('tb50k_passport') || '{}');
+      passportCount = Object.values(passport).filter(Boolean).length;
+    } catch (e) { /* ignore */ }
+
+    container.innerHTML = `
+      <div class="acct-stat"><span class="acct-stat-val">${data.food_logs}</span><span class="acct-stat-lbl">Food Logs</span></div>
+      <div class="acct-stat"><span class="acct-stat-val">${data.bets_placed}</span><span class="acct-stat-lbl">Bets Placed</span></div>
+      <div class="acct-stat"><span class="acct-stat-val">${data.parties_hosted}</span><span class="acct-stat-lbl">Parties Hosted</span></div>
+      <div class="acct-stat"><span class="acct-stat-val">${passportCount}</span><span class="acct-stat-lbl">Badges Earned</span></div>
+      <div class="acct-stat"><span class="acct-stat-val">${memberSince}</span><span class="acct-stat-lbl">Member Since</span></div>
+    `;
+  }
+
+  function hideAccountPanel() {
+    const panel = document.getElementById('account-settings-panel');
+    if (panel) panel.classList.add('hidden');
+  }
+
+  // ── Auth Modal ──
   function showAuthModal() {
     const modal = document.getElementById('auth-modal');
     if (modal) modal.classList.remove('hidden');
@@ -388,6 +611,10 @@ const TB_AUTH = (function () {
     signOut,
     setRole,
     updateDisplayName,
+    updateAvatarEmoji,
+    showAccountPanel,
+    hideAccountPanel,
+    showToast,
     getSupabase() { return supabaseClient; },
   };
 })();

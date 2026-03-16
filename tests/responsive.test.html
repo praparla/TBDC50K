@@ -286,6 +286,8 @@
       testSpectatorSpots();
       testGPXExport();
       testBlockParties();
+      testAccountUI();
+      testViewToggle();
     }
 
     // ── DOM Structure ──
@@ -1323,6 +1325,95 @@
 
       const btn = document.getElementById('btn-block-parties');
       assert(G, 'block-parties toggle button exists', !!btn);
+    }
+
+    // ── Account UI ──
+    function testAccountUI() {
+      const G = 'Account UI';
+
+      // Account settings panel
+      const panel = document.getElementById('account-settings-panel');
+      assert(G, 'Account settings panel exists', !!panel);
+      assert(G, 'Account panel starts hidden', panel && panel.classList.contains('hidden'));
+
+      // Auth bar
+      const authBar = document.getElementById('auth-bar');
+      assert(G, 'Auth bar exists', !!authBar);
+
+      // Auth modal
+      const authModal = document.getElementById('auth-modal');
+      assert(G, 'Auth modal exists', !!authModal);
+      assert(G, 'Auth modal starts hidden', authModal && authModal.classList.contains('hidden'));
+
+      // CSS class existence
+      const styles = document.styleSheets;
+      let hasAcctPanel = false;
+      let hasToast = false;
+      try {
+        for (const sheet of styles) {
+          try {
+            for (const rule of sheet.cssRules) {
+              if (rule.selectorText && rule.selectorText.includes('.account-settings-panel')) hasAcctPanel = true;
+              if (rule.selectorText && rule.selectorText.includes('.auth-toast')) hasToast = true;
+            }
+          } catch (e) { /* cross-origin sheet */ }
+        }
+      } catch (e) { /* fallback */ }
+      assert(G, 'Account panel CSS exists', hasAcctPanel);
+      assert(G, 'Toast CSS exists', hasToast);
+
+      // AVATAR_EMOJIS constant (if loaded)
+      if (typeof AVATAR_EMOJIS !== 'undefined') {
+        assert(G, 'AVATAR_EMOJIS has 16 items', AVATAR_EMOJIS.length === 16);
+      }
+
+      // initViewToggle exists
+      assert(G, 'initViewToggle is a function', typeof initViewToggle === 'function');
+
+      // getViewMode exists or TB_VIEW_MODE global
+      assert(G, 'TB_VIEW_MODE global exists', typeof window.TB_VIEW_MODE !== 'undefined');
+
+      // RUNNER_AMENITIES exists
+      assert(G, 'RUNNER_AMENITIES array exists', typeof RUNNER_AMENITIES !== 'undefined' && Array.isArray(RUNNER_AMENITIES));
+
+      // buildBlockPartyPopup exists
+      assert(G, 'buildBlockPartyPopup is a function', typeof buildBlockPartyPopup === 'function');
+    }
+
+    // ── View Toggle ──
+    function testViewToggle() {
+      const G = 'View Toggle';
+
+      const toggle = document.getElementById('view-toggle');
+      assert(G, 'View toggle exists', !!toggle);
+
+      if (toggle) {
+        const btns = toggle.querySelectorAll('.view-toggle-btn');
+        assert(G, 'Has 2 toggle buttons', btns.length === 2);
+        assert(G, 'Runner button has data-view=runner', btns[0] && btns[0].dataset.view === 'runner');
+        assert(G, 'Crew button has data-view=crew', btns[1] && btns[1].dataset.view === 'crew');
+
+        // One should be active
+        const activeCount = toggle.querySelectorAll('.view-toggle-btn.active').length;
+        assert(G, 'Exactly one button is active', activeCount === 1);
+      }
+
+      // View toggle CSS exists
+      let hasViewToggle = false;
+      try {
+        for (const sheet of document.styleSheets) {
+          try {
+            for (const rule of sheet.cssRules) {
+              if (rule.selectorText && rule.selectorText.includes('.view-toggle')) hasViewToggle = true;
+            }
+          } catch (e) { /* cross-origin */ }
+        }
+      } catch (e) { /* fallback */ }
+      assert(G, 'View toggle CSS exists', hasViewToggle);
+
+      // Default view mode
+      const mode = window.TB_VIEW_MODE || 'runner';
+      assert(G, 'Default view mode is runner', mode === 'runner');
     }
   </script>
 </body>

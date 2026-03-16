@@ -48,6 +48,27 @@ const BET_TYPES = {
   dnf: { label: 'DNF Prediction', unit: 'yes/no' },
 };
 
+// Avatar emoji choices (no file storage needed)
+const AVATAR_EMOJIS = [
+  '🌮', '🏃', '📣', '🔥', '🌊', '🎉',
+  '💀', '🦖', '🍕', '🎵', '🧊', '⚡',
+  '🌶️', '🏆', '🐶', '🦅',
+];
+
+// localStorage keys synced to cloud preferences
+const SYNC_KEYS = [
+  'tb50k_theme',
+  'tb50k_pace_hours',
+  'tb50k_pace_minutes',
+  'tb50k_countdown_start_h',
+  'tb50k_countdown_start_m',
+  'tb50k_food_rule_stop3',
+  'tb50k_food_rule_stop7',
+  'tb50k_passport',
+  'tb50k_pins',
+  'tb50k_view_mode',
+];
+
 // Party amenity definitions
 const PARTY_AMENITIES = [
   { id: 'beer', emoji: '🍺', label: 'Beer' },

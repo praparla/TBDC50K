@@ -378,6 +378,90 @@ const TB_DB = (function () {
   }
 
   // ═══════════════════════════════════════
+  // ACCOUNT MANAGEMENT
+  // ═══════════════════════════════════════
+
+  async function updateAvatarEmoji(emoji) {
+    if (!sb() || !userId()) return notAuth();
+    try {
+      const { error } = await sb()
+        .from('profiles')
+        .update({ avatar_emoji: emoji || '', updated_at: new Date().toISOString() })
+        .eq('id', userId());
+      if (error) return { data: null, error: error.message };
+      return { data: true, error: null };
+    } catch (err) {
+      return { data: null, error: 'Network error.' };
+    }
+  }
+
+  async function updatePreferences(prefs) {
+    if (!sb() || !userId()) return notAuth();
+    try {
+      const { error } = await sb()
+        .from('profiles')
+        .update({ preferences: prefs || {}, updated_at: new Date().toISOString() })
+        .eq('id', userId());
+      if (error) return { data: null, error: error.message };
+      return { data: true, error: null };
+    } catch (err) {
+      return { data: null, error: 'Network error.' };
+    }
+  }
+
+  async function fetchPreferences() {
+    if (!sb() || !userId()) return notAuth();
+    try {
+      const { data, error } = await sb()
+        .from('profiles')
+        .select('preferences')
+        .eq('id', userId())
+        .single();
+      if (error) return { data: null, error: error.message };
+      return { data: data ? data.preferences || {} : {}, error: null };
+    } catch (err) {
+      return { data: null, error: 'Network error.' };
+    }
+  }
+
+  async function fetchMyStats() {
+    if (!sb() || !userId()) return notAuth();
+    try {
+      const uid = userId();
+      const [foodRes, betsRes, partiesRes] = await Promise.all([
+        sb().from('food_logs').select('id', { count: 'exact', head: true }).eq('user_id', uid),
+        sb().from('bets').select('id', { count: 'exact', head: true }).eq('creator_id', uid),
+        sb().from('parties').select('id', { count: 'exact', head: true }).eq('host_id', uid),
+      ]);
+      return {
+        data: {
+          food_logs: foodRes.count || 0,
+          bets_placed: betsRes.count || 0,
+          parties_hosted: partiesRes.count || 0,
+        },
+        error: null,
+      };
+    } catch (err) {
+      return { data: { food_logs: 0, bets_placed: 0, parties_hosted: 0 }, error: 'Network error.' };
+    }
+  }
+
+  async function deleteMyAccount() {
+    if (!sb() || !userId()) return notAuth();
+    try {
+      const { error } = await sb().rpc('delete_own_account');
+      if (error) {
+        console.error('deleteMyAccount error:', error);
+        return { data: null, error: error.message };
+      }
+      return { data: true, error: null };
+    } catch (err) {
+      console.error('deleteMyAccount network error:', err);
+      return { data: null, error: 'Network error.' };
+    }
+  }
+
+  // ═══════════════════════════════════════
   // REALTIME SUBSCRIPTIONS
   // ═══════════════════════════════════════
 
@@ -434,6 +518,12 @@ const TB_DB = (function () {
     fetchLeaderboard,
     // Profiles
     searchRunners,
+    // Account management
+    updateAvatarEmoji,
+    updatePreferences,
+    fetchPreferences,
+    fetchMyStats,
+    deleteMyAccount,
     // Realtime
     subscribeFoodLogs,
     subscribeParties,

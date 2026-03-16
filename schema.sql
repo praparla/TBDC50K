@@ -137,6 +137,24 @@ LEFT JOIN (
 ) fc ON fc.food_log_id = fl.id
 ORDER BY fl.created_at DESC;
 
+-- ══════════════════════════════════════════════════════════════
+-- Migration: Account Settings & Preferences Sync (2026-03-15)
+-- ══════════════════════════════════════════════════════════════
+
+-- Add preferences JSONB for cloud sync of localStorage data
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS preferences JSONB DEFAULT '{}';
+
+-- Add emoji avatar (no file storage needed)
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS avatar_emoji TEXT DEFAULT '';
+
+-- Function to delete own account (cascades to all child records)
+CREATE OR REPLACE FUNCTION delete_own_account()
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER AS $$
+BEGIN
+  DELETE FROM profiles WHERE id = auth.uid();
+END;
+$$;
+
 -- ── Enable Realtime on key tables ──
 -- Run these in the Supabase dashboard under Database > Replication:
 -- ALTER PUBLICATION supabase_realtime ADD TABLE food_logs;

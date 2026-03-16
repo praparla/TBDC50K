@@ -321,6 +321,24 @@ const MockSupabase = (function () {
       removeChannel(channel) {
         // No-op for mock
       },
+      async rpc(fnName, args) {
+        // Mock RPC functions
+        if (fnName === 'delete_own_account') {
+          if (!currentSession || !currentSession.user) {
+            return { error: { message: 'Not authenticated' } };
+          }
+          const uid = currentSession.user.id;
+          // Delete profile and cascade
+          tables.profiles = tables.profiles.filter(p => p.id !== uid);
+          tables.food_logs = tables.food_logs.filter(f => f.user_id !== uid);
+          tables.bets = tables.bets.filter(b => b.creator_id !== uid && b.target_runner_id !== uid);
+          tables.parties = tables.parties.filter(p => p.host_id !== uid);
+          tables.party_subscribers = tables.party_subscribers.filter(s => s.user_id !== uid);
+          tables.food_log_flags = tables.food_log_flags.filter(f => f.flagged_by !== uid);
+          return { data: null, error: null };
+        }
+        return { data: null, error: { message: 'Unknown RPC: ' + fnName } };
+      },
       auth,
 
       // Test helpers (not part of real Supabase API)
