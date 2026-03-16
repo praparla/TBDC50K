@@ -2934,3 +2934,352 @@ body {
   line-height: 28px;
   text-align: center;
 }
+
+/* ── Elevation Profile ── */
+#elevation-content {
+  position: relative;
+}
+
+#elevation-canvas {
+  display: block;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.elevation-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  margin-top: 8px;
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+}
+
+.elevation-stats span {
+  white-space: nowrap;
+}
+
+.elevation-tooltip {
+  position: absolute;
+  background: var(--color-bg-secondary);
+  color: var(--color-text);
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  pointer-events: none;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  z-index: 10;
+  border: 1px solid var(--color-border);
+}
+
+.elevation-tooltip.hidden {
+  display: none;
+}
+
+/* GAP toggle */
+.pace-options {
+  margin-bottom: 8px;
+}
+
+.gap-toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.gap-toggle-label input[type="checkbox"] {
+  accent-color: var(--color-accent);
+}
+
+/* Grade color legend (shown in elevation stats) */
+.grade-legend {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+  font-size: 0.68rem;
+  color: var(--color-text-muted);
+}
+
+.grade-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.grade-legend-swatch {
+  width: 12px;
+  height: 4px;
+  border-radius: 2px;
+  display: inline-block;
+}
+
+/* ── Race Card Overlay ── */
+.race-card-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 20px;
+}
+
+.race-card {
+  background: linear-gradient(135deg, var(--color-bg) 0%, var(--color-bg-secondary) 100%);
+  border: 3px solid var(--color-accent);
+  border-radius: 16px;
+  padding: 28px 24px;
+  max-width: 380px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.race-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.race-card-header h2 {
+  font-size: 1.3rem;
+  color: var(--color-text);
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+
+.race-card-emoji {
+  font-size: 1.5rem;
+}
+
+.race-card-date {
+  font-size: 0.85rem;
+  color: var(--color-accent);
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.race-card-route {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin-bottom: 16px;
+}
+
+.race-card-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.race-card-stat-value {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.race-card-stat-label {
+  font-size: 0.65rem;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.race-card-goal {
+  background: var(--color-accent);
+  color: #fff;
+  padding: 10px 16px;
+  border-radius: 10px;
+  margin-bottom: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.race-card-goal-label {
+  font-size: 0.78rem;
+  opacity: 0.9;
+}
+
+.race-card-goal-value {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.race-card-stops {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.race-card-stop {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.race-card-footer {
+  font-size: 0.68rem;
+  color: var(--color-text-muted);
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.race-card-tagline {
+  font-size: 0.82rem;
+  color: var(--color-text);
+  font-style: italic;
+  margin-top: 8px;
+  opacity: 0.85;
+}
+
+.race-card-hint {
+  font-size: 0.65rem;
+  color: var(--color-text-muted);
+  margin-top: 10px;
+  opacity: 0.6;
+}
+
+/* ── Location Search ── */
+.search-box {
+  margin-bottom: 10px;
+  position: relative;
+}
+
+.search-box input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-bg-secondary);
+  color: var(--color-text);
+  font-size: 0.82rem;
+  box-sizing: border-box;
+}
+
+#search-results {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.search-result {
+  padding: 8px 10px;
+  cursor: pointer;
+  font-size: 0.78rem;
+  color: var(--color-text);
+  border-bottom: 1px solid var(--color-border);
+  transition: background 0.15s;
+}
+
+.search-result:hover {
+  background: var(--color-bg-secondary);
+}
+
+.search-result-name {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Split History ── */
+.split-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.split-row {
+  display: grid;
+  grid-template-columns: 1fr 0.6fr 0.7fr 0.7fr;
+  gap: 4px;
+  font-size: 0.78rem;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.split-label {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.split-dist,
+.split-time,
+.split-elapsed {
+  color: var(--color-text-muted);
+  text-align: right;
+}
+
+.split-elapsed {
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
+/* ── Finisher Wall ── */
+.finisher-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.finisher-row {
+  display: grid;
+  grid-template-columns: 30px 1fr 70px;
+  gap: 8px;
+  align-items: start;
+  padding: 8px;
+  background: var(--color-bg-secondary);
+  border-radius: 6px;
+}
+
+.finisher-rank {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.finisher-name {
+  font-size: 0.82rem;
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.finisher-time {
+  font-size: 0.78rem;
+  color: var(--color-accent);
+  font-weight: 600;
+  text-align: right;
+}
+
+.finisher-note {
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+  grid-column: 1 / -1;
+  font-style: italic;
+}

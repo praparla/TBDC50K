@@ -23,15 +23,15 @@
 ---
 
 ### P1 - Route & Visualization
-- [ ] **Elevation profile** - Show interactive elevation chart (via `leaflet-elevation` plugin) below the map. Hover/scrub to move a dot along the route. Shows grade, elevation, and cumulative distance. Already have GPX data — zero new network requests needed.
-- [ ] **Grade-colored route polyline** - Segment the `GPX_TRACK` array and color each segment by steepness: green (flat), yellow (moderate), red (steep). Lets runners instantly spot hard sections without reading a chart.
+- [x] **Elevation profile** - Show interactive elevation chart (via `leaflet-elevation` plugin) below the map. Hover/scrub to move a dot along the route. Shows grade, elevation, and cumulative distance. Already have GPX data — zero new network requests needed.
+- [x] **Grade-colored route polyline** - Segment the `GPX_TRACK` array and color each segment by steepness: green (flat), yellow (moderate), red (steep). Lets runners instantly spot hard sections without reading a chart.
 - [x] **Turn-by-turn segments** - Break route into named stop-to-stop segments with individual distances and elevation change per leg.
 - [x] **Named course sections** - Define and highlight named sub-sections ("The Georgetown Climb," "Capitol Hill Push," "Final 5K") as clickable overlays with character notes. Storytelling for the course.
 - [ ] **Offline map support** - Service worker pre-fetches CARTO dark tiles for the route corridor at zoom 13–16 (~3–8 MB). The `gpx_data.js` embedded data is already offline; only tile layer needs caching.
 
 ### P1 - Race Planning & Pacing
 - [x] **Pace calculator with aid station splits** - Enter goal finish time → get estimated arrival at each of the 8 Taco Bell stops accounting for cumulative distances. Includes 4% fatigue decay factor for miles 20–32. Pure client-side JS math, persisted to localStorage.
-- [ ] **Grade-adjusted pace estimator (GAP)** - Slider for user's flat-road pace + Minetti GAP model (~3.5% time penalty per 1% grade uphill). Refines the aid station split calculator for hilly sections like the Georgetown climb.
+- [x] **Grade-adjusted pace estimator (GAP)** - Slider for user's flat-road pace + Minetti GAP model (~3.5% time penalty per 1% grade uphill). Refines the aid station split calculator for hilly sections like the Georgetown climb.
 - [x] **Mandatory food requirement tracker** - Checklist panel for the two race rules (Chalupa Supreme OR Crunchwrap by Stop 3; Burrito Supreme OR Nachos Bell Grande by Stop 7). Checkboxes turn green with strikethrough when satisfied; persisted to localStorage.
 - [x] **Race day countdown clock** - User enters their start time (e.g., 7:00 AM); a panel shows: time elapsed, estimated current position at target pace, and time remaining before the 11-hour cutoff. Runs via `setInterval`; start time persisted to localStorage.
 - [x] **Time-of-day estimator** - Show estimated arrival time at each stop based on entered start time + pace, so runners know "I should be at Stop 4 by 11:45 AM."
@@ -54,20 +54,20 @@
 - [x] **Live location tracker (Race Mode)** - "Start Race Mode" toggle using the Geolocation API (`navigator.geolocation.watchPosition`). Shows user's live position as a pulsing dot on the map. ~20 lines of Leaflet + JS.
 - [x] **Distance-to-next-stop banner** - In race mode: persistent heads-up display showing "Next: Stop 4 - Columbia Heights | 2.3 mi away." Uses Haversine already in `app.js` + live geolocation.
 - [ ] **Race-day GPS tracking** - Full GPS tracking with live position logged and split times recorded at each stop.
-- [ ] **Split history** - Log actual splits at each stop during the race.
+- [x] **Split history** - Log actual splits at each stop during the race.
 
 ### P2 - Sharing & Export
 - [x] **Printable pace card** - "Print" button generates a clean single-page pace card (stop names, cumulative distances, goal arrivals, mandatory food notes) via `window.print()` with print-specific CSS. Runners can laminate and carry in their vest.
 - [x] **GPX export** - Export the route with custom pins as a GPX file for Garmin/Wahoo.
 - [ ] **Strava integration** - Import training runs, overlay on race route.
 - [x] **Add to Calendar (.ics)** - One-click `.ics` download for Nov 27, 2026 race day with event details pre-filled. Works in Apple Calendar, Google Calendar, and Outlook — no API keys needed.
-- [ ] **Shareable race card image** - CSS-styled `<div>` showing route thumbnail, goal time, name, and Taco Bell branding — screenshottable for Instagram/social hype.
+- [x] **Shareable race card image** - CSS-styled `<div>` showing route thumbnail, goal time, name, and Taco Bell branding — screenshottable for Instagram/social hype.
 
 ### P2 - UI/UX
 - [x] **Theme switcher** - ~~See detailed plan below.~~ **DONE.** 6 TB-era themes (Live Más Modern, Retro '85, Purple Reign '94, Baja Blast, Cantina Night, Sauce Packet) switchable from swatch picker in sidebar header. CSS custom properties, tile layer swap, route color swap, themed sidebar background patterns, persisted to localStorage. See "Taco Bell Theme System" section for original plan.
 - [x] **Mobile-first redesign** - Collapsible sidebar sections on all viewports, proper touch targets, responsive tools grid
-- [ ] **Search for locations** - Geocoding to search and add pins by address
-- [ ] **Drag to reposition pins** - Allow dragging placed pins to adjust location
+- [x] **Search for locations** - Geocoding to search and add pins by address
+- [x] **Drag to reposition pins** - Allow dragging placed pins to adjust location
 - [x] **Course preview flythrough animation** - "Preview Route" button animates the map camera panning along the GPX track start-to-finish using `setInterval` + `map.panTo()`. Toggle to start/stop.
 
 ### P2 - PWA & Offline
@@ -158,10 +158,10 @@ These features require user authentication and a persistent backend. **Implement
 - [ ] **Calorie tracker** - Track calories consumed vs burned during the race
 - [ ] **Photo gallery** - Race-day photo upload tied to map locations
 - [ ] **Street-level photo pins** - Community-contributed photos geotagged to route points (static GeoJSON with image URLs)
-- [ ] **Finisher wall / results panel** - Static JSON-driven list of past finishers with times and notes. Committed JSON file updated after each race.
+- [x] **Finisher wall / results panel** - Static JSON-driven list of past finishers with times and notes. Committed JSON file updated after each race.
 - [ ] **KOM/QOM leaderboard per segment** - Fastest times between each Taco Bell pair, pulled from a static results JSON.
 - [ ] **Community training heatmap overlay** - Static pre-rendered semi-transparent heatmap image showing high-activity corridors on the route from Strava's public Global Heatmap.
-- [ ] **Taco Bell-themed audio cheers** - Optional Web Audio API sound effects (Taco Bell "bong") when checking off stops or mandatory food items. RaceJoy-inspired.
+- [x] **Taco Bell-themed audio cheers** - Optional Web Audio API sound effects (Taco Bell "bong") when checking off stops or mandatory food items. RaceJoy-inspired.
 - [ ] **Strava segment deep-links** - Links from named route sections to corresponding Strava segment pages for leaderboard comparison.
 
 ---
@@ -461,3 +461,41 @@ Filling gaps in the login/accounts functionality. Design goals: $0 additional co
 7. **Toast notification system** — `showToast()` with 3 variants (info/warning/error), slide-up animation, auto-dismiss
 8. **Runner/Crew view toggle** — Sidebar header pill, view-aware block party + spectator spot popups
 9. **Tests** — 7 new test groups in backend.test.html, mock `rpc()` method, 60+ new assertions
+
+---
+
+## Implementation Plan (2026-03-16 Session)
+
+Working through remaining backlog in priority order. Skipping features requiring user accounts, external API keys with costs, or unavailable third-party data.
+
+### Architecture Decisions
+- **Elevation data**: Use Open-Meteo Elevation API (free, no API key) to fetch elevations for ~100 sampled track points at runtime. Cache in localStorage for 30 days. Interpolate between samples. Follows same caching pattern as bathroom finder (Overpass API).
+- **Elevation profile chart**: Pure canvas rendering — no new dependencies. Resides in a collapsible panel below the map.
+- **Audio cheers**: Web Audio API with oscillator-generated tones (no audio files to host/cache).
+- **Location search**: Nominatim (OpenStreetMap) geocoding API — free, no key, 1 req/sec rate limit.
+
+### Batch 1 — P1 Elevation Features
+1. **Elevation profile** — Fetch from Open-Meteo, render interactive canvas chart. Hover/scrub shows dot on route. New sidebar section.
+2. **Grade-colored route polyline** — Color segments green/yellow/red by steepness using elevation data.
+3. **Grade-adjusted pace estimator (GAP)** — Minetti model slider refining aid station splits.
+
+### Batch 2 — P2 UX & Planning
+4. **Shareable race card image** — CSS-styled `<div>` for social screenshots.
+5. **Search for locations** — Nominatim geocoder in pin form.
+6. **Drag to reposition pins** — Leaflet `draggable: true`.
+7. **Split history** — Record actual splits at each stop during race mode.
+
+### Batch 3 — P3 Fun
+8. **Taco Bell-themed audio cheers** — Web Audio API bong on checkoffs.
+9. **Finisher wall / results panel** — Static JSON-driven list.
+
+### Changes Implemented
+1. **Elevation profile** (2026-03-16) — Open-Meteo Elevation API (free, no key) for ~96 sampled track points. 30-day localStorage cache. Interactive canvas chart with grade-colored segments, hover/scrub shows marker on map. Stats: gain/loss/max/min. TB stop markers on chart.
+2. **Grade-colored route polyline** (2026-03-16) — "Color by Grade" toggle in Tools. Replaces route with multi-segment polyline: green (flat <2%), yellow (moderate 2-4%), orange (steep 4-7%), red (very steep >7%).
+3. **Grade-adjusted pace estimator (GAP)** (2026-03-16) — Checkbox in Pace Calculator. Simplified Minetti model: +3.5% per 1% uphill grade, -1.5% mild downhill benefit, +2% steep downhill penalty. Per-segment average grade applied to split calculations.
+4. **Shareable race card image** (2026-03-16) — "Race Card" button in Tools. Full-screen overlay with CSS-styled card: event name, date, stats (miles, stops, max elevation), goal time from pace calculator, 8 stop circles, route path, theme name, tagline. Tap to close. Screenshottable for social media.
+5. **Search for locations** (2026-03-16) — Nominatim geocoding in Custom Pins section. Debounced 500ms, bounded to DC/Arlington area. Results clickable → fly to location, offer to add pin. Rate-limited 1 req/sec per Nominatim policy.
+6. **Drag to reposition pins** (2026-03-16) — All custom pins now draggable via Leaflet `draggable: true`. `dragend` handler updates pin coordinates and popup content. Persisted to localStorage.
+7. **Split history** (2026-03-16) — New sidebar section. Splits auto-recorded when Race Mode detects user within 80m of a stop. Shows stop, distance, wall clock time, and elapsed time. Persisted to localStorage. Clear button.
+8. **Taco Bell audio cheers** (2026-03-16) — Web Audio API bell "bong" on food tracker checkbox + stop proximity in race mode. Achievement arpeggio on badge unlock. "Cheers On/Off" toggle in Tools. Oscillator-based — no audio files.
+9. **Finisher wall / results panel** (2026-03-16) — New sidebar section with placeholder entries (route survey + race day 2026). Ranked list with name, time, note. Will be populated with real results after race day.

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Responsive Layout Tests — TB DC 50K</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link rel="stylesheet" href="../style.css?v=4" />
+  <link rel="stylesheet" href="../style.css?v=8" />
   <style>
     /* Test overlay */
     #test-overlay {
@@ -74,6 +74,12 @@
             <input type="number" id="pace-minutes" min="0" max="59" placeholder="min" />
             <button id="btn-calc-pace" onclick="calculatePace()">Calculate</button>
           </div>
+        </div>
+        <div class="pace-options">
+          <label class="gap-toggle-label">
+            <input type="checkbox" id="gap-toggle" onchange="calculatePace()" />
+            Grade-Adjusted Pace (GAP)
+          </label>
         </div>
         <div id="pace-results">
           <p class="hint">Enter a goal time to see splits.</p>
@@ -150,6 +156,9 @@
           <button id="btn-spectators" class="tool-btn" onclick="toggleSpectatorSpots()">&#128064; Spectator Spots</button>
           <button class="tool-btn" onclick="exportGPX()">&#128229; Export GPX</button>
           <button id="btn-share-pins" class="tool-btn" onclick="encodePinsToURL()">&#128279; Share Pins</button>
+          <button id="btn-grade-color" class="tool-btn" onclick="toggleGradeColor()">&#127752; Color by Grade</button>
+          <button class="tool-btn" onclick="showRaceCard()">&#128247; Race Card</button>
+          <button id="btn-audio-toggle" class="tool-btn active" onclick="toggleAudio()">&#128276; Cheers On</button>
         </div>
       </div>
     </div>
@@ -165,7 +174,11 @@
     <div class="section collapsed" id="section-pins">
       <h2>Custom Pins <span class="section-toggle">&#9660;</span></h2>
       <div class="section-body">
-        <p class="hint">Tap the map to add a pin, or use the form below.</p>
+        <p class="hint" data-sauce-id="pins-hint" data-default-hint="Tap the map to add a pin, or search for a location. Drag pins to reposition.">Tap the map to add a pin, or search for a location. Drag pins to reposition.</p>
+        <div class="search-box">
+          <input type="text" id="search-input" placeholder="Search for a location..." oninput="searchLocation(this.value)" />
+          <div id="search-results"></div>
+        </div>
         <div id="pin-filters"></div>
         <div id="pin-form">
           <input type="text" id="pin-name" placeholder="Name (e.g. Jake's House)" />
@@ -184,11 +197,35 @@
       </div>
     </div>
 
+    <div class="section collapsed" id="section-splits">
+      <h2>Split History &#9201; <span class="section-toggle">&#9660;</span></h2>
+      <div class="section-body">
+        <p class="hint" data-sauce-id="splits-hint" data-default-hint="Splits are auto-recorded when Race Mode detects you near a stop.">Splits are auto-recorded when Race Mode detects you near a stop.</p>
+        <div id="split-history-content"><p class="hint">No splits recorded yet. Start Race Mode and approach a stop.</p></div>
+      </div>
+    </div>
+
+    <div class="section collapsed" id="section-finishers">
+      <h2>Finisher Wall &#127942; <span class="section-toggle">&#9660;</span></h2>
+      <div class="section-body">
+        <p class="hint" data-sauce-id="finisher-hint" data-default-hint="Past finishers and race results.">Past finishers and race results.</p>
+        <div id="finisher-content"><p class="hint">Loading...</p></div>
+      </div>
+    </div>
+
     <div class="section collapsed" id="section-segments">
       <h2>Leg-by-Leg &#128099; <span class="section-toggle">&#9660;</span></h2>
       <div class="section-body">
         <p class="hint" data-sauce-id="segments-hint" data-default-hint="Distance between each stop.">Distance between each stop.</p>
         <div id="segments-list"></div>
+      </div>
+    </div>
+
+    <div class="section collapsed" id="section-elevation">
+      <h2>Elevation Profile &#9968; <span class="section-toggle">&#9660;</span></h2>
+      <div class="section-body">
+        <p class="hint" data-sauce-id="elevation-hint" data-default-hint="Elevation along the 32.4-mile course. Hover to see position on map.">Elevation along the 32.4-mile course. Hover to see position on map.</p>
+        <div id="elevation-content"><p class="hint">Loading elevation data...</p></div>
       </div>
     </div>
 
@@ -236,7 +273,7 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="../gpx_data.js"></script>
-  <script src="../app.js?v=5"></script>
+  <script src="../app.js?v=8"></script>
   <script>
     // ── Test Runner ──
     const _tests = [];
@@ -313,6 +350,15 @@
       testBlockParties();
       testAccountUI();
       testViewToggle();
+      testElevationProfile();
+      testGradeColor();
+      testGAPEstimator();
+      testRaceCard();
+      testLocationSearch();
+      testDraggablePins();
+      testSplitHistory();
+      testAudioCheers();
+      testFinisherWall();
     }
 
     // ── DOM Structure ──
@@ -342,11 +388,20 @@
       assert(G, 'stop-detail-panel exists', document.getElementById('stop-detail-panel'));
       assert(G, 'pin-filters exists', document.getElementById('pin-filters'));
 
+      // New sections from Session #4
+      assert(G, 'section-elevation exists', document.getElementById('section-elevation'));
+      assert(G, 'section-splits exists', document.getElementById('section-splits'));
+      assert(G, 'section-finishers exists', document.getElementById('section-finishers'));
+      assert(G, 'search-input exists', document.getElementById('search-input'));
+      assert(G, 'gap-toggle exists', document.getElementById('gap-toggle'));
+
       // Each section has section-body and section-toggle
       const sectionIds = ['section-stops', 'section-pace', 'section-food',
                           'section-countdown', 'section-weather',
                           'section-course-sections', 'section-block-parties',
-                          'section-tools', 'section-passport', 'section-pins', 'section-segments', 'section-route'];
+                          'section-tools', 'section-passport', 'section-pins',
+                          'section-splits', 'section-finishers',
+                          'section-segments', 'section-elevation', 'section-route'];
       sectionIds.forEach(id => {
         const sec = document.getElementById(id);
         assert(G, `${id} has .section-body`, sec && sec.querySelector('.section-body'));
@@ -478,7 +533,8 @@
       // All start collapsed (class is in HTML)
       const sectionIds = ['section-stops', 'section-pace', 'section-food',
                           'section-countdown', 'section-weather',
-                          'section-tools', 'section-pins', 'section-segments', 'section-route'];
+                          'section-tools', 'section-pins', 'section-splits',
+                          'section-finishers', 'section-segments', 'section-elevation', 'section-route'];
       sectionIds.forEach(id => {
         assert(G, `${id} starts collapsed`,
           document.getElementById(id).classList.contains('collapsed'));
@@ -790,7 +846,7 @@
       const grid = document.querySelector('.tools-grid');
       assert(G, 'tools-grid exists', !!grid);
       const buttons = grid ? grid.querySelectorAll('.tool-btn') : [];
-      assert(G, '10 tool buttons', buttons.length === 10, `found ${buttons.length}`);
+      assert(G, '13 tool buttons', buttons.length === 13, `found ${buttons.length}`);
 
       // Specific buttons
       assert(G, 'bathrooms button exists', !!document.getElementById('btn-bathrooms'));
@@ -799,6 +855,8 @@
       assert(G, 'course-sections button exists', !!document.getElementById('btn-course-sections'));
       assert(G, 'spectators button exists', !!document.getElementById('btn-spectators'));
       assert(G, 'share-pins button exists', !!document.getElementById('btn-share-pins'));
+      assert(G, 'grade-color button exists', !!document.getElementById('btn-grade-color'));
+      assert(G, 'audio-toggle button exists', !!document.getElementById('btn-audio-toggle'));
 
       // Functions exist
       assert(G, 'toggleBathrooms is a function', typeof toggleBathrooms === 'function');
@@ -811,6 +869,9 @@
       assert(G, 'toggleSpectatorSpots is a function', typeof toggleSpectatorSpots === 'function');
       assert(G, 'exportGPX is a function', typeof exportGPX === 'function');
       assert(G, 'encodePinsToURL is a function', typeof encodePinsToURL === 'function');
+      assert(G, 'toggleGradeColor is a function', typeof toggleGradeColor === 'function');
+      assert(G, 'showRaceCard is a function', typeof showRaceCard === 'function');
+      assert(G, 'toggleAudio is a function', typeof toggleAudio === 'function');
 
       // Bathroom state starts off
       assert(G, 'bathroomToggleOn starts false', bathroomToggleOn === false);
@@ -1061,7 +1122,8 @@
 
       // Has expected keys
       const expectedKeys = ['pace-hint', 'food-hint', 'tools-hint', 'pins-hint',
-                            'route-hint', 'countdown-hint', 'weather-hint', 'segments-hint'];
+                            'route-hint', 'countdown-hint', 'weather-hint', 'segments-hint',
+                            'elevation-hint', 'splits-hint', 'finisher-hint'];
       expectedKeys.forEach(key => {
         assert(G, `SAUCE_COPY has "${key}"`, typeof SAUCE_COPY[key] === 'string' && SAUCE_COPY[key].length > 0);
       });
@@ -1439,6 +1501,294 @@
       // Default view mode
       const mode = window.TB_VIEW_MODE || 'runner';
       assert(G, 'Default view mode is runner', mode === 'runner');
+    }
+
+    // ── Elevation Profile ──
+    function testElevationProfile() {
+      const G = 'Elevation Profile';
+
+      // DOM
+      assert(G, 'elevation-content exists', !!document.getElementById('elevation-content'));
+      assert(G, 'section-elevation exists', !!document.getElementById('section-elevation'));
+
+      // Functions exist
+      assert(G, 'fetchElevation is a function', typeof fetchElevation === 'function');
+      assert(G, 'renderElevationProfile is a function', typeof renderElevationProfile === 'function');
+      assert(G, 'drawElevationChart is a function', typeof drawElevationChart === 'function');
+      assert(G, 'setupElevationHover is a function', typeof setupElevationHover === 'function');
+      assert(G, 'updateRouteInfoWithElevation is a function', typeof updateRouteInfoWithElevation === 'function');
+
+      // Constants
+      assert(G, 'ELEVATION_CACHE_KEY defined', typeof ELEVATION_CACHE_KEY === 'string');
+      assert(G, 'ELEVATION_CACHE_TTL is 30 days',
+        ELEVATION_CACHE_TTL === 30 * 24 * 60 * 60 * 1000,
+        `${ELEVATION_CACHE_TTL}ms`);
+      assert(G, 'ELEVATION_SAMPLE_STEP defined', typeof ELEVATION_SAMPLE_STEP === 'number');
+
+      // Helper functions
+      assert(G, 'getGrade is a function', typeof getGrade === 'function');
+      assert(G, 'gradeToColor is a function', typeof gradeToColor === 'function');
+
+      // gradeToColor returns expected colors
+      assert(G, 'gradeToColor(1) is green', gradeToColor(1) === '#34d399');
+      assert(G, 'gradeToColor(3) is yellow', gradeToColor(3) === '#fbbf24');
+      assert(G, 'gradeToColor(5) is orange', gradeToColor(5) === '#fb923c');
+      assert(G, 'gradeToColor(8) is red', gradeToColor(8) === '#ef4444');
+    }
+
+    // ── Grade-Colored Route ──
+    function testGradeColor() {
+      const G = 'Grade Color';
+
+      assert(G, 'toggleGradeColor is a function', typeof toggleGradeColor === 'function');
+      assert(G, 'buildGradedPolyline is a function', typeof buildGradedPolyline === 'function');
+      assert(G, 'removeGradedPolyline is a function', typeof removeGradedPolyline === 'function');
+
+      // State variable
+      assert(G, 'gradeColorActive starts false', gradeColorActive === false);
+      assert(G, 'gradeColorLayers starts null', gradeColorLayers === null);
+
+      // Grade color button exists
+      const btn = document.getElementById('btn-grade-color');
+      assert(G, 'grade color button exists', !!btn);
+      assert(G, 'button text contains Grade', btn && btn.textContent.includes('Grade'));
+
+      // CSS: grade legend styles exist
+      let hasGradeLegend = false;
+      try {
+        for (const sheet of document.styleSheets) {
+          try {
+            for (const rule of sheet.cssRules) {
+              if (rule.selectorText && rule.selectorText.includes('.grade-legend')) hasGradeLegend = true;
+            }
+          } catch (e) { /* cross-origin */ }
+        }
+      } catch (e) {}
+      assert(G, 'grade legend CSS exists', hasGradeLegend);
+    }
+
+    // ── GAP Estimator ──
+    function testGAPEstimator() {
+      const G = 'GAP Estimator';
+
+      // DOM
+      const toggle = document.getElementById('gap-toggle');
+      assert(G, 'gap-toggle checkbox exists', !!toggle);
+      assert(G, 'gap-toggle is checkbox', toggle && toggle.type === 'checkbox');
+      assert(G, 'gap-toggle starts unchecked', toggle && !toggle.checked);
+
+      // Function
+      assert(G, 'getGAPFactors is a function', typeof getGAPFactors === 'function');
+
+      // getGAPFactors returns array
+      const factors = getGAPFactors();
+      assert(G, 'getGAPFactors returns array', Array.isArray(factors));
+      assert(G, 'GAP factors has 8 entries (8 legs)',
+        factors.length === 8, `found ${factors.length}`);
+
+      // All factors are positive numbers close to 1
+      const allValid = factors.every(f => typeof f === 'number' && f > 0.5 && f < 2.0);
+      assert(G, 'all GAP factors are reasonable (0.5-2.0)', allValid);
+
+      // CSS: gap-toggle-label style exists
+      let hasGAPCSS = false;
+      try {
+        for (const sheet of document.styleSheets) {
+          try {
+            for (const rule of sheet.cssRules) {
+              if (rule.selectorText && rule.selectorText.includes('.gap-toggle-label')) hasGAPCSS = true;
+            }
+          } catch (e) { /* cross-origin */ }
+        }
+      } catch (e) {}
+      assert(G, 'GAP toggle CSS exists', hasGAPCSS);
+    }
+
+    // ── Race Card ──
+    function testRaceCard() {
+      const G = 'Race Card';
+
+      assert(G, 'showRaceCard is a function', typeof showRaceCard === 'function');
+
+      // Show card and verify overlay
+      showRaceCard();
+      const overlay = document.querySelector('.race-card-overlay');
+      assert(G, 'race-card-overlay created', !!overlay);
+
+      if (overlay) {
+        assert(G, 'overlay has race-card child', !!overlay.querySelector('.race-card'));
+        assert(G, 'card has header', !!overlay.querySelector('.race-card-header'));
+        assert(G, 'card has tagline', !!overlay.querySelector('.race-card-tagline'));
+
+        // Close by clicking overlay
+        overlay.click();
+      }
+
+      // Clean up: remove any remaining overlays
+      const remaining = document.querySelector('.race-card-overlay');
+      if (remaining && remaining.parentNode) remaining.parentNode.removeChild(remaining);
+
+      // CSS: race-card styles exist
+      let hasRaceCardCSS = false;
+      try {
+        for (const sheet of document.styleSheets) {
+          try {
+            for (const rule of sheet.cssRules) {
+              if (rule.selectorText && rule.selectorText.includes('.race-card-overlay')) hasRaceCardCSS = true;
+            }
+          } catch (e) { /* cross-origin */ }
+        }
+      } catch (e) {}
+      assert(G, 'race card CSS exists', hasRaceCardCSS);
+    }
+
+    // ── Location Search ──
+    function testLocationSearch() {
+      const G = 'Location Search';
+
+      // DOM
+      const input = document.getElementById('search-input');
+      assert(G, 'search-input exists', !!input);
+      assert(G, 'search-input is text type', input && input.type === 'text');
+      assert(G, 'search-input has placeholder', input && input.placeholder.includes('Search'));
+
+      const results = document.getElementById('search-results');
+      assert(G, 'search-results container exists', !!results);
+
+      // Function
+      assert(G, 'searchLocation is a function', typeof searchLocation === 'function');
+      assert(G, 'searchLocation on window', typeof window.searchLocation === 'function');
+
+      // CSS: search-box style exists
+      let hasSearchCSS = false;
+      try {
+        for (const sheet of document.styleSheets) {
+          try {
+            for (const rule of sheet.cssRules) {
+              if (rule.selectorText && rule.selectorText.includes('.search-box')) hasSearchCSS = true;
+            }
+          } catch (e) { /* cross-origin */ }
+        }
+      } catch (e) {}
+      assert(G, 'search box CSS exists', hasSearchCSS);
+    }
+
+    // ── Draggable Pins ──
+    function testDraggablePins() {
+      const G = 'Draggable Pins';
+
+      assert(G, 'makePinDraggable is a function', typeof makePinDraggable === 'function');
+
+      // Hint text mentions drag
+      const pinsHint = document.querySelector('[data-sauce-id="pins-hint"]');
+      assert(G, 'pins hint mentions drag',
+        pinsHint && pinsHint.dataset.defaultHint.includes('Drag'));
+    }
+
+    // ── Split History ──
+    function testSplitHistory() {
+      const G = 'Split History';
+
+      // DOM
+      assert(G, 'section-splits exists', !!document.getElementById('section-splits'));
+      assert(G, 'split-history-content exists', !!document.getElementById('split-history-content'));
+
+      // Functions
+      assert(G, 'recordSplit is a function', typeof recordSplit === 'function');
+      assert(G, 'renderSplitHistory is a function', typeof renderSplitHistory === 'function');
+      assert(G, 'formatElapsed is a function', typeof formatElapsed === 'function');
+      assert(G, 'clearSplits is a function', typeof clearSplits === 'function');
+      assert(G, 'loadSplitHistory is a function', typeof loadSplitHistory === 'function');
+
+      // formatElapsed takes two ISO strings, returns "Xh Ym" or "Ym"
+      var t0 = '2026-11-27T07:00:00.000Z';
+      var t60 = '2026-11-27T08:00:00.000Z';
+      var t90 = '2026-11-27T08:30:00.000Z';
+      assert(G, 'formatElapsed(same time) = "0m"', formatElapsed(t0, t0) === '0m');
+      assert(G, 'formatElapsed(1h) = "1h 0m"', formatElapsed(t0, t60) === '1h 0m');
+      assert(G, 'formatElapsed(1.5h) = "1h 30m"', formatElapsed(t0, t90) === '1h 30m');
+
+      // recordSplit takes a stop index
+      var beforeLen = splitHistory.length;
+      recordSplit(1);
+      assert(G, 'recordSplit adds to splitHistory',
+        splitHistory.length === beforeLen + 1);
+
+      var lastSplit = splitHistory[splitHistory.length - 1];
+      assert(G, 'split has stopIndex', lastSplit && lastSplit.stopIndex === 1);
+      assert(G, 'split has dist', lastSplit && lastSplit.dist === STOP_DISTANCES[1]);
+      assert(G, 'split has time ISO string', lastSplit && typeof lastSplit.time === 'string');
+
+      // Clean up
+      clearSplits();
+      assert(G, 'clearSplits empties localStorage',
+        JSON.parse(localStorage.getItem('tb50k_splits') || '[]').length === 0);
+
+      // CSS: split-list style
+      let hasSplitCSS = false;
+      try {
+        for (const sheet of document.styleSheets) {
+          try {
+            for (const rule of sheet.cssRules) {
+              if (rule.selectorText && rule.selectorText.includes('.split-list')) hasSplitCSS = true;
+            }
+          } catch (e) { /* cross-origin */ }
+        }
+      } catch (e) {}
+      assert(G, 'split list CSS exists', hasSplitCSS);
+    }
+
+    // ── Audio Cheers ──
+    function testAudioCheers() {
+      const G = 'Audio Cheers';
+
+      // Functions
+      assert(G, 'playTacoBellBong is a function', typeof playTacoBellBong === 'function');
+      assert(G, 'playAchievementSound is a function', typeof playAchievementSound === 'function');
+      assert(G, 'toggleAudio is a function', typeof toggleAudio === 'function');
+
+      // State
+      assert(G, 'audioEnabled variable exists', typeof audioEnabled !== 'undefined');
+
+      // Toggle button
+      const btn = document.getElementById('btn-audio-toggle');
+      assert(G, 'audio toggle button exists', !!btn);
+      assert(G, 'button text contains Cheers', btn && btn.textContent.includes('Cheers'));
+
+      // Toggle on/off
+      const wasEnabled = audioEnabled;
+      toggleAudio();
+      assert(G, 'toggleAudio flips state', audioEnabled !== wasEnabled);
+      toggleAudio();
+      assert(G, 'toggleAudio flips back', audioEnabled === wasEnabled);
+    }
+
+    // ── Finisher Wall ──
+    function testFinisherWall() {
+      const G = 'Finisher Wall';
+
+      // DOM
+      assert(G, 'section-finishers exists', !!document.getElementById('section-finishers'));
+      assert(G, 'finisher-content exists', !!document.getElementById('finisher-content'));
+
+      // Function
+      assert(G, 'buildFinisherWall is a function', typeof buildFinisherWall === 'function');
+
+      // FINISHER_DATA exists
+      assert(G, 'FINISHER_DATA array exists', Array.isArray(FINISHER_DATA));
+      assert(G, 'FINISHER_DATA has entries', FINISHER_DATA.length > 0);
+
+      // Each entry has required fields
+      if (FINISHER_DATA.length > 0) {
+        const first = FINISHER_DATA[0];
+        assert(G, 'finisher has name', typeof first.name === 'string');
+        assert(G, 'finisher has time', typeof first.time === 'string');
+      }
+
+      // Content rendered
+      const content = document.getElementById('finisher-content');
+      const rows = content ? content.querySelectorAll('.finisher-row') : [];
+      assert(G, 'finisher rows rendered', rows.length > 0, `found ${rows.length}`);
     }
   </script>
 </body>

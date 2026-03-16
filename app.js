@@ -296,6 +296,9 @@ document.addEventListener('DOMContentLoaded', () => {
   buildPinFilters();
   loadPinsFromURL();
   loadBlockParties();
+  fetchElevation();
+  loadSplitHistory();
+  buildFinisherWall();
 
   // Initialize view toggle
   initViewToggle();
@@ -533,7 +536,7 @@ function addPinToMap(pin) {
     iconAnchor: [14, 14],
   });
 
-  const marker = L.marker([pin.lat, pin.lng], { icon }).addTo(map);
+  const marker = L.marker([pin.lat, pin.lng], { icon, draggable: true }).addTo(map);
   marker.bindPopup(`<div class="popup-content">
     <h3>${emoji} ${pin.name}</h3>
     <p>${pin.lat.toFixed(5)}, ${pin.lng.toFixed(5)}</p>
@@ -542,6 +545,9 @@ function addPinToMap(pin) {
 
   marker.pinId = pin.id;
   pinMarkers.push(marker);
+
+  // Enable drag-to-reposition
+  makePinDraggable(marker, pin);
 }
 
 function addPinToSidebar(pin) {
@@ -797,6 +803,8 @@ function calculatePace() {
 
   const totalDist = STOP_DISTANCES[STOP_DISTANCES.length - 1]; // 32.4
   const pacePerMile = totalMinutes / totalDist;
+  const gapEnabled = document.getElementById('gap-toggle')?.checked && elevationData;
+  const gapFactors = gapEnabled ? getGAPFactors() : null;
 
   // Get start time for time-of-day estimates
   const startH = parseInt(localStorage.getItem('tb50k_race_start_h')) || 0;
@@ -811,23 +819,39 @@ function calculatePace() {
     ${hasStartTime ? '<span class="pace-split-clock">ETA</span>' : ''}
   </div>`;
 
+  let cumulativeMinutes = 0;
+
   TACO_BELL_STOPS.forEach((stop, i) => {
     const dist = STOP_DISTANCES[i];
-    // Apply mild fatigue factor after mile 20: +2% per mile over 20
-    let adjustedMinutes;
-    if (dist <= 20) {
-      adjustedMinutes = dist * pacePerMile;
+    if (i === 0) {
+      // Start — 0 elapsed
+      cumulativeMinutes = 0;
     } else {
-      const baseMins = 20 * pacePerMile;
-      const extraMiles = dist - 20;
-      const fatiguePerMile = pacePerMile * 1.04; // 4% slower
-      adjustedMinutes = baseMins + extraMiles * fatiguePerMile;
+      const legDist = STOP_DISTANCES[i] - STOP_DISTANCES[i - 1];
+      let legPace = pacePerMile;
+
+      // Fatigue factor after mile 20
+      if (STOP_DISTANCES[i - 1] >= 20) {
+        legPace *= 1.04;
+      } else if (dist > 20) {
+        const preWallDist = 20 - STOP_DISTANCES[i - 1];
+        const postWallDist = dist - 20;
+        legPace = ((preWallDist * pacePerMile) + (postWallDist * pacePerMile * 1.04)) / legDist;
+      }
+
+      // GAP adjustment
+      if (gapFactors && gapFactors[i - 1]) {
+        legPace *= gapFactors[i - 1];
+      }
+
+      cumulativeMinutes += legDist * legPace;
     }
-    const hrs = Math.floor(adjustedMinutes / 60);
-    const mins = Math.round(adjustedMinutes % 60);
+
+    const hrs = Math.floor(cumulativeMinutes / 60);
+    const mins = Math.round(cumulativeMinutes % 60);
     const timeStr = hrs > 0 ? `${hrs}h ${mins}m` : `${mins}m`;
     const mandatory = stop.mandatory ? ' 🌮' : '';
-    const clockStr = hasStartTime ? addMinutesToTime(startH, startM, adjustedMinutes) : '';
+    const clockStr = hasStartTime ? addMinutesToTime(startH, startM, cumulativeMinutes) : '';
 
     html += `<div class="pace-split-row">
       <span class="pace-split-label">${i === 0 ? 'Start' : 'Stop ' + stop.num}${mandatory}</span>
@@ -839,7 +863,12 @@ function calculatePace() {
 
   // Add finish line
   const finishDist = STOP_DISTANCES[STOP_DISTANCES.length - 1];
-  const finishMins = 20 * pacePerMile + (finishDist - 20) * pacePerMile * 1.04;
+  const lastLegDist = finishDist - STOP_DISTANCES[STOP_DISTANCES.length - 2];
+  let lastLegPace = pacePerMile * 1.04; // all post-20
+  if (gapFactors && gapFactors[gapFactors.length - 1]) {
+    lastLegPace *= gapFactors[gapFactors.length - 1];
+  }
+  const finishMins = cumulativeMinutes + lastLegDist * lastLegPace;
   const fHrs = Math.floor(finishMins / 60);
   const fMins = Math.round(finishMins % 60);
   const finishClockStr = hasStartTime ? addMinutesToTime(startH, startM, finishMins) : '';
@@ -850,7 +879,14 @@ function calculatePace() {
     ${hasStartTime ? `<span class="pace-split-clock">${finishClockStr}</span>` : ''}
   </div>`;
 
-  html += `<p class="pace-note">Pace: ${pacePerMile.toFixed(1)} min/mi (with 4% fatigue after mi 20)</p>`;
+  let noteText = `Pace: ${pacePerMile.toFixed(1)} min/mi (with 4% fatigue after mi 20)`;
+  if (gapEnabled) {
+    noteText += ' + grade-adjusted';
+  }
+  html += `<p class="pace-note">${noteText}</p>`;
+  if (gapEnabled && !elevationData) {
+    html += '<p class="pace-note">Waiting for elevation data to load...</p>';
+  }
   if (!hasStartTime) {
     html += '<p class="pace-note">Set a start time in the Countdown section to see arrival times.</p>';
   }
@@ -885,6 +921,7 @@ function buildFoodTracker() {
     row.querySelector('input').addEventListener('change', (e) => {
       localStorage.setItem(rule.key, e.target.checked);
       row.classList.toggle('completed', e.target.checked);
+      if (e.target.checked && audioEnabled) playTacoBellBong();
     });
     container.appendChild(row);
   });
@@ -1191,6 +1228,12 @@ function updateDistanceBanner(lat, lng) {
     <span class="race-banner-dist">${distMiles} mi away</span>
   `;
   raceBanner.classList.remove('hidden');
+
+  // Auto-record split when within ~0.05 miles (80m) of a stop
+  if (nearestDist < 80) {
+    recordSplit(nearest.index);
+    if (audioEnabled) playTacoBellBong();
+  }
 }
 
 function hideDistanceBanner() {
@@ -1264,6 +1307,470 @@ function renderWeather(periods) {
   container.innerHTML = html;
 }
 
+// ── Elevation Profile ──
+const ELEVATION_CACHE_KEY = 'tb50k_elevation';
+const ELEVATION_CACHE_TTL = 30 * 24 * 60 * 60 * 1000; // 30 days
+const ELEVATION_SAMPLE_STEP = 20; // Sample every Nth track point
+
+let elevationData = null; // { distances: [], elevations: [], trackIndices: [] }
+let elevationMarker = null;
+let gradeColorActive = false;
+let gradeColorLayers = null;
+
+function fetchElevation() {
+  const container = document.getElementById('elevation-content');
+  if (!container) return;
+
+  // Check localStorage cache
+  try {
+    const cached = JSON.parse(localStorage.getItem(ELEVATION_CACHE_KEY));
+    if (cached && Date.now() - cached.ts < ELEVATION_CACHE_TTL) {
+      elevationData = cached.data;
+      onElevationLoaded();
+      return;
+    }
+  } catch (e) { /* cache miss */ }
+
+  container.innerHTML = '<p class="hint">Loading elevation data...</p>';
+
+  // Sample track points (max 100 for API limit)
+  const maxPts = 100;
+  const step = Math.max(ELEVATION_SAMPLE_STEP, Math.ceil(GPX_TRACK.length / (maxPts - 1)));
+  const lats = [];
+  const lons = [];
+  const indices = [];
+  for (let i = 0; i < GPX_TRACK.length; i += step) {
+    lats.push(GPX_TRACK[i][0].toFixed(4));
+    lons.push(GPX_TRACK[i][1].toFixed(4));
+    indices.push(i);
+  }
+  // Include last point if not already included
+  const lastIdx = GPX_TRACK.length - 1;
+  if (indices[indices.length - 1] !== lastIdx && lats.length < maxPts) {
+    lats.push(GPX_TRACK[lastIdx][0].toFixed(4));
+    lons.push(GPX_TRACK[lastIdx][1].toFixed(4));
+    indices.push(lastIdx);
+  }
+
+  const url = `https://api.open-meteo.com/v1/elevation?latitude=${lats.join(',')}&longitude=${lons.join(',')}`;
+
+  fetch(url, { headers: { 'User-Agent': 'TacoBellDC50K-RoutePlanner' } })
+    .then(r => {
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      return r.json();
+    })
+    .then(data => {
+      if (!data.elevation || !Array.isArray(data.elevation)) throw new Error('Bad elevation response');
+
+      // Build cumulative distances for sampled points (in miles)
+      const distances = [0];
+      let cumDist = 0;
+      for (let j = 1; j < indices.length; j++) {
+        for (let k = indices[j - 1]; k < indices[j]; k++) {
+          cumDist += haversine(GPX_TRACK[k], GPX_TRACK[k + 1]);
+        }
+        distances.push(cumDist / 1609.34); // meters to miles
+      }
+
+      elevationData = {
+        distances: distances,
+        elevations: data.elevation.map(e => e * 3.28084), // meters to feet
+        trackIndices: indices,
+      };
+
+      localStorage.setItem(ELEVATION_CACHE_KEY, JSON.stringify({ ts: Date.now(), data: elevationData }));
+      onElevationLoaded();
+    })
+    .catch(err => {
+      console.warn('Elevation fetch failed:', err);
+      container.innerHTML = '<p class="hint">Elevation data unavailable. Try refreshing later.</p>';
+    });
+}
+
+function onElevationLoaded() {
+  renderElevationProfile();
+  updateRouteInfoWithElevation();
+}
+
+function renderElevationProfile() {
+  const container = document.getElementById('elevation-content');
+  if (!container || !elevationData) return;
+
+  const { distances, elevations } = elevationData;
+  const minElev = Math.min(...elevations);
+  const maxElev = Math.max(...elevations);
+
+  // Calculate total gain/loss
+  let totalGain = 0;
+  let totalLoss = 0;
+  for (let i = 1; i < elevations.length; i++) {
+    const diff = elevations[i] - elevations[i - 1];
+    if (diff > 0) totalGain += diff;
+    else totalLoss += Math.abs(diff);
+  }
+
+  container.innerHTML = '';
+
+  // Canvas
+  const canvas = document.createElement('canvas');
+  canvas.id = 'elevation-canvas';
+  canvas.style.width = '100%';
+  canvas.style.cursor = 'crosshair';
+  container.appendChild(canvas);
+
+  // Stats row
+  const statsDiv = document.createElement('div');
+  statsDiv.className = 'elevation-stats';
+  statsDiv.innerHTML = `
+    <span>↑ ${Math.round(totalGain)} ft gain</span>
+    <span>↓ ${Math.round(totalLoss)} ft loss</span>
+    <span>⬆ ${Math.round(maxElev)} ft max</span>
+    <span>⬇ ${Math.round(minElev)} ft min</span>
+  `;
+  container.appendChild(statsDiv);
+
+  // Tooltip
+  const tooltip = document.createElement('div');
+  tooltip.id = 'elevation-tooltip';
+  tooltip.className = 'elevation-tooltip hidden';
+  container.appendChild(tooltip);
+
+  drawElevationChart(canvas);
+  setupElevationHover(canvas, tooltip);
+
+  // Redraw on resize
+  const resizeObs = new ResizeObserver(() => drawElevationChart(canvas));
+  resizeObs.observe(container);
+}
+
+function drawElevationChart(canvas) {
+  if (!elevationData) return;
+
+  const { distances, elevations } = elevationData;
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * dpr;
+  canvas.height = 120 * dpr;
+  canvas.style.height = '120px';
+
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  const w = rect.width;
+  const h = 120;
+  const pad = { top: 10, bottom: 20, left: 35, right: 10 };
+  const plotW = w - pad.left - pad.right;
+  const plotH = h - pad.top - pad.bottom;
+
+  const minElev = Math.min(...elevations) - 5;
+  const maxElev = Math.max(...elevations) + 15;
+  const maxDist = distances[distances.length - 1];
+
+  const xScale = (d) => pad.left + (d / maxDist) * plotW;
+  const yScale = (e) => pad.top + plotH - ((e - minElev) / (maxElev - minElev)) * plotH;
+
+  // Clear
+  ctx.clearRect(0, 0, w, h);
+
+  // Grid lines
+  const cs = getComputedStyle(document.documentElement);
+  const textColor = cs.getPropertyValue('--color-text-secondary').trim() || '#999';
+  const borderColor = cs.getPropertyValue('--color-border').trim() || '#333';
+
+  ctx.strokeStyle = borderColor;
+  ctx.lineWidth = 0.5;
+  ctx.setLineDash([2, 3]);
+  const elevStep = Math.ceil((maxElev - minElev) / 4 / 25) * 25;
+  for (let e = Math.ceil(minElev / elevStep) * elevStep; e <= maxElev; e += elevStep) {
+    const y = yScale(e);
+    ctx.beginPath();
+    ctx.moveTo(pad.left, y);
+    ctx.lineTo(w - pad.right, y);
+    ctx.stroke();
+
+    ctx.fillStyle = textColor;
+    ctx.font = '9px system-ui';
+    ctx.textAlign = 'right';
+    ctx.fillText(`${Math.round(e)}`, pad.left - 4, y + 3);
+  }
+  ctx.setLineDash([]);
+
+  // Distance labels on x-axis
+  ctx.fillStyle = textColor;
+  ctx.font = '9px system-ui';
+  ctx.textAlign = 'center';
+  for (let d = 0; d <= maxDist; d += 5) {
+    ctx.fillText(`${d}`, xScale(d), h - 4);
+  }
+  ctx.fillText('mi', w - pad.right + 2, h - 4);
+
+  // Fill gradient under the curve
+  const gradient = ctx.createLinearGradient(0, pad.top, 0, pad.top + plotH);
+  gradient.addColorStop(0, 'rgba(168,85,247,0.4)');
+  gradient.addColorStop(1, 'rgba(168,85,247,0.05)');
+
+  ctx.beginPath();
+  ctx.moveTo(xScale(distances[0]), yScale(elevations[0]));
+  for (let i = 1; i < distances.length; i++) {
+    ctx.lineTo(xScale(distances[i]), yScale(elevations[i]));
+  }
+  ctx.lineTo(xScale(distances[distances.length - 1]), pad.top + plotH);
+  ctx.lineTo(xScale(distances[0]), pad.top + plotH);
+  ctx.closePath();
+  ctx.fillStyle = gradient;
+  ctx.fill();
+
+  // Grade-colored line segments
+  for (let i = 1; i < distances.length; i++) {
+    const grade = getGrade(i - 1, i);
+    ctx.beginPath();
+    ctx.moveTo(xScale(distances[i - 1]), yScale(elevations[i - 1]));
+    ctx.lineTo(xScale(distances[i]), yScale(elevations[i]));
+    ctx.strokeStyle = gradeToColor(grade);
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+
+  // Mark TB stops on the chart
+  ctx.fillStyle = textColor;
+  STOP_DISTANCES.forEach((sd, i) => {
+    if (i === 0 || i === STOP_DISTANCES.length - 1) return;
+    const x = xScale(sd);
+    ctx.beginPath();
+    ctx.setLineDash([1, 2]);
+    ctx.strokeStyle = borderColor;
+    ctx.lineWidth = 0.5;
+    ctx.moveTo(x, pad.top);
+    ctx.lineTo(x, pad.top + plotH);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  });
+}
+
+function getGrade(i, j) {
+  if (!elevationData) return 0;
+  const { distances, elevations } = elevationData;
+  const dDist = (distances[j] - distances[i]) * 5280; // miles to feet
+  if (dDist === 0) return 0;
+  const dElev = elevations[j] - elevations[i];
+  return (dElev / dDist) * 100; // percent grade
+}
+
+function gradeToColor(grade) {
+  const absGrade = Math.abs(grade);
+  if (absGrade < 2) return '#34d399'; // flat - green
+  if (absGrade < 4) return '#fbbf24'; // moderate - yellow
+  if (absGrade < 7) return '#fb923c'; // steep - orange
+  return '#ef4444'; // very steep - red
+}
+
+function setupElevationHover(canvas, tooltip) {
+  if (!elevationData) return;
+
+  const { distances, elevations, trackIndices } = elevationData;
+  const maxDist = distances[distances.length - 1];
+
+  function getDataAtX(clientX) {
+    const rect = canvas.getBoundingClientRect();
+    const pad = { left: 35, right: 10 };
+    const plotW = rect.width - pad.left - pad.right;
+    const relX = clientX - rect.left - pad.left;
+    const dist = (relX / plotW) * maxDist;
+
+    // Find nearest sampled point
+    let idx = 0;
+    for (let i = 1; i < distances.length; i++) {
+      if (Math.abs(distances[i] - dist) < Math.abs(distances[idx] - dist)) idx = i;
+    }
+    return { dist: distances[idx], elev: elevations[idx], trackIdx: trackIndices[idx] };
+  }
+
+  canvas.addEventListener('mousemove', (e) => {
+    const data = getDataAtX(e.clientX);
+    tooltip.classList.remove('hidden');
+    tooltip.innerHTML = `${data.dist.toFixed(1)} mi · ${Math.round(data.elev)} ft`;
+
+    const rect = canvas.getBoundingClientRect();
+    tooltip.style.left = `${e.clientX - rect.left}px`;
+    tooltip.style.top = '-20px';
+
+    // Show marker on map
+    const trackPt = GPX_TRACK[data.trackIdx];
+    if (!elevationMarker) {
+      elevationMarker = L.circleMarker([trackPt[0], trackPt[1]], {
+        radius: 6, color: '#fff', fillColor: '#a855f7', fillOpacity: 1, weight: 2,
+      }).addTo(map);
+    } else {
+      elevationMarker.setLatLng([trackPt[0], trackPt[1]]);
+    }
+  });
+
+  canvas.addEventListener('mouseleave', () => {
+    tooltip.classList.add('hidden');
+    if (elevationMarker) {
+      map.removeLayer(elevationMarker);
+      elevationMarker = null;
+    }
+  });
+
+  // Touch support
+  canvas.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    const touch = e.touches[0];
+    const data = getDataAtX(touch.clientX);
+    tooltip.classList.remove('hidden');
+    tooltip.innerHTML = `${data.dist.toFixed(1)} mi · ${Math.round(data.elev)} ft`;
+    const rect = canvas.getBoundingClientRect();
+    tooltip.style.left = `${touch.clientX - rect.left}px`;
+    tooltip.style.top = '-20px';
+
+    const trackPt = GPX_TRACK[data.trackIdx];
+    if (!elevationMarker) {
+      elevationMarker = L.circleMarker([trackPt[0], trackPt[1]], {
+        radius: 6, color: '#fff', fillColor: '#a855f7', fillOpacity: 1, weight: 2,
+      }).addTo(map);
+    } else {
+      elevationMarker.setLatLng([trackPt[0], trackPt[1]]);
+    }
+  }, { passive: false });
+
+  canvas.addEventListener('touchend', () => {
+    tooltip.classList.add('hidden');
+    if (elevationMarker) {
+      map.removeLayer(elevationMarker);
+      elevationMarker = null;
+    }
+  });
+}
+
+function updateRouteInfoWithElevation() {
+  if (!elevationData) return;
+  const info = document.getElementById('route-info');
+  if (!info) return;
+
+  const { elevations } = elevationData;
+  let totalGain = 0;
+  let totalLoss = 0;
+  for (let i = 1; i < elevations.length; i++) {
+    const diff = elevations[i] - elevations[i - 1];
+    if (diff > 0) totalGain += diff;
+    else totalLoss += Math.abs(diff);
+  }
+
+  // Append elevation stats to route info
+  const existingElevDiv = info.querySelector('.route-elev-info');
+  if (existingElevDiv) existingElevDiv.remove();
+
+  const elevDiv = document.createElement('div');
+  elevDiv.className = 'route-elev-info';
+  elevDiv.innerHTML = `
+    <strong>Elevation Gain:</strong> ${Math.round(totalGain)} ft<br>
+    <strong>Elevation Loss:</strong> ${Math.round(totalLoss)} ft<br>
+    <strong>Max Elevation:</strong> ${Math.round(Math.max(...elevations))} ft<br>
+    <strong>Min Elevation:</strong> ${Math.round(Math.min(...elevations))} ft
+  `;
+  info.appendChild(elevDiv);
+}
+
+// ── Grade-Colored Route Polyline ──
+function toggleGradeColor() {
+  if (!elevationData) {
+    alert('Elevation data not loaded yet. Please wait...');
+    return;
+  }
+
+  gradeColorActive = !gradeColorActive;
+  const btn = document.getElementById('btn-grade-color');
+  if (btn) btn.classList.toggle('active', gradeColorActive);
+
+  if (gradeColorActive) {
+    buildGradedPolyline();
+    if (routeLayer) routeLayer.setStyle({ opacity: 0 });
+  } else {
+    removeGradedPolyline();
+    if (routeLayer) {
+      const theme = getTheme(currentThemeId);
+      routeLayer.setStyle({ opacity: 0.85, color: theme.routeColor });
+    }
+  }
+}
+
+window.toggleGradeColor = toggleGradeColor;
+
+function buildGradedPolyline() {
+  if (!elevationData || !gradeColorActive) return;
+  removeGradedPolyline();
+
+  const { trackIndices, elevations } = elevationData;
+  gradeColorLayers = L.layerGroup().addTo(map);
+
+  for (let i = 1; i < trackIndices.length; i++) {
+    const startIdx = trackIndices[i - 1];
+    const endIdx = trackIndices[i];
+    const grade = getGrade(i - 1, i);
+    const color = gradeToColor(grade);
+
+    const segPts = [];
+    for (let k = startIdx; k <= endIdx && k < GPX_TRACK.length; k++) {
+      segPts.push(GPX_TRACK[k]);
+    }
+
+    L.polyline(segPts, {
+      color: color,
+      weight: 5,
+      opacity: 0.9,
+    }).addTo(gradeColorLayers);
+  }
+}
+
+function removeGradedPolyline() {
+  if (gradeColorLayers) {
+    map.removeLayer(gradeColorLayers);
+    gradeColorLayers = null;
+  }
+}
+
+// ── Grade-Adjusted Pace (GAP) Estimator ──
+// Simplified Minetti model: ~3.5% time penalty per 1% uphill grade
+// Mild downhill benefit up to -5% grade, then penalty
+function getGAPFactors() {
+  if (!elevationData) return null;
+
+  const { distances, elevations } = elevationData;
+  // Calculate average grade per stop-to-stop segment
+  const gapFactors = [];
+
+  for (let s = 0; s < STOP_DISTANCES.length - 1; s++) {
+    const segStart = STOP_DISTANCES[s];
+    const segEnd = STOP_DISTANCES[s + 1];
+
+    // Find elevation samples in this segment range
+    let totalGradePenalty = 0;
+    let segCount = 0;
+
+    for (let i = 1; i < distances.length; i++) {
+      const midDist = (distances[i - 1] + distances[i]) / 2;
+      if (midDist >= segStart && midDist < segEnd) {
+        const grade = getGrade(i - 1, i);
+        let factor;
+        if (grade > 0) {
+          factor = 1 + 0.035 * grade; // uphill penalty
+        } else if (grade > -5) {
+          factor = 1 + 0.015 * grade; // mild downhill benefit (grade is negative)
+        } else {
+          factor = 1 + 0.02 * Math.abs(grade); // steep downhill penalty
+        }
+        totalGradePenalty += factor;
+        segCount++;
+      }
+    }
+
+    gapFactors.push(segCount > 0 ? totalGradePenalty / segCount : 1.0);
+  }
+
+  return gapFactors;
+}
+
 // ── Sauce Packet Wisdom Copy ──
 const SAUCE_COPY = {
   'pace-hint': 'Will you marry me?',
@@ -1274,6 +1781,9 @@ const SAUCE_COPY = {
   'countdown-hint': "If you never do, you'll never know.",
   'weather-hint': "Is it hot in here, or is it just me?",
   'segments-hint': "Together, we could do great things. Or at least finish.",
+  'elevation-hint': "What goes up must come down. Except your heart rate.",
+  'splits-hint': "I knew you'd come back for me.",
+  'finisher-hint': "Nice to finally meet you.",
 };
 
 function applySaucePacketCopy() {
@@ -1550,7 +2060,9 @@ function buildPassport() {
 
 // Track achievement triggers
 function trackAchievement(key) {
+  const wasBefore = localStorage.getItem(key) === 'true';
   localStorage.setItem(key, 'true');
+  if (!wasBefore && audioEnabled) playAchievementSound();
 }
 
 // ── Pin Category Filtering ──
@@ -1806,6 +2318,331 @@ function buildBlockPartyPopup(party) {
   html += `<button class="popup-directions-btn" onclick="openInMaps(${party.lat}, ${party.lng}, '${party.name.replace(/'/g, "\\'")}')">🧭 Directions</button>
   </div>`;
   return html;
+}
+
+// ── Shareable Race Card Image ──
+function showRaceCard() {
+  // Remove existing if any
+  const existing = document.getElementById('race-card-overlay');
+  if (existing) { existing.remove(); return; }
+
+  const paceH = localStorage.getItem('tb50k_pace_hours') || '';
+  const paceM = localStorage.getItem('tb50k_pace_minutes') || '';
+  const goalTime = (paceH || paceM) ? `${paceH || 0}h ${paceM || 0}m` : 'Not set';
+  const themeName = getTheme(currentThemeId).name;
+
+  const overlay = document.createElement('div');
+  overlay.id = 'race-card-overlay';
+  overlay.className = 'race-card-overlay';
+  overlay.innerHTML = `
+    <div class="race-card">
+      <div class="race-card-header">
+        <span class="race-card-emoji">🌮</span>
+        <h2>Taco Bell DC 50K</h2>
+        <span class="race-card-emoji">🌮</span>
+      </div>
+      <div class="race-card-date">November 27, 2026</div>
+      <div class="race-card-route">
+        <div class="race-card-stat">
+          <span class="race-card-stat-value">32.4</span>
+          <span class="race-card-stat-label">Miles</span>
+        </div>
+        <div class="race-card-stat">
+          <span class="race-card-stat-value">8</span>
+          <span class="race-card-stat-label">TB Stops</span>
+        </div>
+        <div class="race-card-stat">
+          <span class="race-card-stat-value">${elevationData ? Math.round(Math.max(...elevationData.elevations)) + ' ft' : '~400 ft'}</span>
+          <span class="race-card-stat-label">Max Elev</span>
+        </div>
+      </div>
+      <div class="race-card-goal">
+        <span class="race-card-goal-label">Goal Time</span>
+        <span class="race-card-goal-value">${goalTime}</span>
+      </div>
+      <div class="race-card-stops">
+        ${TACO_BELL_STOPS.map((s, i) => `<span class="race-card-stop">${i === 0 ? 'S' : s.num}</span>`).join('')}
+      </div>
+      <div class="race-card-footer">
+        <span>Alexandria → Arlington → DC → Alexandria</span>
+        <span class="race-card-theme">Theme: ${themeName}</span>
+      </div>
+      <div class="race-card-tagline">Run 32 miles. Eat 8 Taco Bells. No regrets.</div>
+      <p class="race-card-hint">Screenshot this card to share! Tap to close.</p>
+    </div>
+  `;
+
+  overlay.addEventListener('click', () => overlay.remove());
+  document.body.appendChild(overlay);
+}
+
+window.showRaceCard = showRaceCard;
+
+// ── Location Search (Nominatim Geocoding) ──
+let searchTimeout = null;
+
+function searchLocation(query) {
+  if (!query || query.length < 3) return;
+
+  const resultsDiv = document.getElementById('search-results');
+  if (!resultsDiv) return;
+  resultsDiv.innerHTML = '<p class="hint">Searching...</p>';
+
+  // Rate limit: 1 req/sec for Nominatim
+  if (searchTimeout) clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => {
+    const bbox = '38.75,-77.20,38.95,-76.95'; // DC/Arlington/Alexandria area
+    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&viewbox=-77.20,38.75,-76.95,38.95&bounded=1&limit=5`;
+
+    fetch(url, {
+      headers: { 'User-Agent': 'TacoBellDC50K-RoutePlanner' },
+    })
+      .then(r => r.json())
+      .then(results => {
+        if (!results.length) {
+          resultsDiv.innerHTML = '<p class="hint">No results found.</p>';
+          return;
+        }
+
+        let html = '';
+        results.forEach(r => {
+          const shortName = r.display_name.split(',').slice(0, 3).join(',');
+          html += `<div class="search-result" data-lat="${r.lat}" data-lon="${r.lon}" data-name="${shortName}">
+            <span class="search-result-name">${shortName}</span>
+          </div>`;
+        });
+        resultsDiv.innerHTML = html;
+
+        resultsDiv.querySelectorAll('.search-result').forEach(item => {
+          item.addEventListener('click', () => {
+            const lat = parseFloat(item.dataset.lat);
+            const lon = parseFloat(item.dataset.lon);
+            const name = item.dataset.name;
+            map.flyTo([lat, lon], 16, { duration: 1.2 });
+            resultsDiv.innerHTML = '';
+            document.getElementById('search-input').value = '';
+
+            // Offer to add a pin
+            if (confirm(`Add a pin at "${name}"?`)) {
+              const pin = {
+                id: Date.now(),
+                name: name.split(',')[0],
+                iconType: 'custom',
+                lat: lat,
+                lng: lon,
+              };
+              customPins.push(pin);
+              addPinToMap(pin);
+              addPinToSidebar(pin);
+              saveCustomPins();
+              buildPinFilters();
+            }
+          });
+        });
+      })
+      .catch(err => {
+        console.warn('Geocoding failed:', err);
+        resultsDiv.innerHTML = '<p class="hint">Search failed. Try again.</p>';
+      });
+  }, 500); // debounce
+}
+
+window.searchLocation = searchLocation;
+
+// ── Draggable Pins ──
+function makePinDraggable(marker, pin) {
+  marker.dragging.enable();
+
+  marker.on('dragend', () => {
+    const newPos = marker.getLatLng();
+    pin.lat = newPos.lat;
+    pin.lng = newPos.lng;
+    saveCustomPins();
+
+    // Update popup content
+    const emoji = PIN_ICONS[pin.iconType];
+    marker.setPopupContent(`<div class="popup-content">
+      <h3>${emoji} ${pin.name}</h3>
+      <p>${pin.lat.toFixed(5)}, ${pin.lng.toFixed(5)}</p>
+      <button class="popup-directions-btn" onclick="openInMaps(${pin.lat}, ${pin.lng}, '${pin.name.replace(/'/g, "\\'")}')">🧭 Directions</button>
+    </div>`);
+  });
+}
+
+// ── Split History (Race Mode) ──
+let splitHistory = [];
+
+function recordSplit(stopIndex) {
+  const now = new Date();
+  const existing = splitHistory.find(s => s.stopIndex === stopIndex);
+  if (existing) return; // Already recorded
+
+  splitHistory.push({
+    stopIndex: stopIndex,
+    time: now.toISOString(),
+    timeStr: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    dist: STOP_DISTANCES[stopIndex],
+  });
+
+  localStorage.setItem('tb50k_splits', JSON.stringify(splitHistory));
+  renderSplitHistory();
+}
+
+function renderSplitHistory() {
+  const container = document.getElementById('split-history-content');
+  if (!container) return;
+
+  if (splitHistory.length === 0) {
+    container.innerHTML = '<p class="hint">No splits recorded yet. Start Race Mode and approach a stop.</p>';
+    return;
+  }
+
+  let html = '<div class="split-list">';
+  splitHistory.sort((a, b) => a.stopIndex - b.stopIndex).forEach((split, i) => {
+    const label = split.stopIndex === 0 ? 'Start' : `Stop ${split.stopIndex}`;
+    const elapsed = i > 0 ? formatElapsed(splitHistory[0].time, split.time) : '0:00';
+    html += `<div class="split-row">
+      <span class="split-label">${label}</span>
+      <span class="split-dist">${split.dist} mi</span>
+      <span class="split-time">${split.timeStr}</span>
+      <span class="split-elapsed">${elapsed}</span>
+    </div>`;
+  });
+  html += '</div>';
+
+  if (splitHistory.length > 1) {
+    html += '<button class="tool-btn" style="margin-top:8px;font-size:0.72rem;" onclick="clearSplits()">Clear Splits</button>';
+  }
+
+  container.innerHTML = html;
+}
+
+function formatElapsed(startISO, endISO) {
+  const diff = (new Date(endISO) - new Date(startISO)) / 60000; // minutes
+  const h = Math.floor(diff / 60);
+  const m = Math.round(diff % 60);
+  return h > 0 ? `${h}h ${m}m` : `${m}m`;
+}
+
+function clearSplits() {
+  splitHistory = [];
+  localStorage.removeItem('tb50k_splits');
+  renderSplitHistory();
+}
+
+window.clearSplits = clearSplits;
+
+function loadSplitHistory() {
+  try {
+    splitHistory = JSON.parse(localStorage.getItem('tb50k_splits') || '[]');
+  } catch (e) { splitHistory = []; }
+  renderSplitHistory();
+}
+
+// ── Taco Bell Audio Cheers ──
+let audioCtx = null;
+
+function playTacoBellBong() {
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    // Create a fun "bong" sound like the TB bell
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
+    osc.frequency.exponentialRampToValueAtTime(261.63, audioCtx.currentTime + 0.3); // C4
+
+    gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.6);
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(audioCtx.currentTime);
+    osc.stop(audioCtx.currentTime + 0.6);
+
+    // Second harmonic for richness
+    const osc2 = audioCtx.createOscillator();
+    const gain2 = audioCtx.createGain();
+    osc2.type = 'triangle';
+    osc2.frequency.setValueAtTime(784.0, audioCtx.currentTime); // G5
+    osc2.frequency.exponentialRampToValueAtTime(392.0, audioCtx.currentTime + 0.2);
+    gain2.gain.setValueAtTime(0.15, audioCtx.currentTime);
+    gain2.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
+    osc2.connect(gain2);
+    gain2.connect(audioCtx.destination);
+    osc2.start(audioCtx.currentTime);
+    osc2.stop(audioCtx.currentTime + 0.4);
+  } catch (e) {
+    // Audio not supported — silent fail
+  }
+}
+
+function playAchievementSound() {
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    // Quick ascending arpeggio
+    const notes = [523.25, 659.25, 783.99, 1046.50]; // C5 E5 G5 C6
+    notes.forEach((freq, i) => {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.2, audioCtx.currentTime + i * 0.1);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + i * 0.1 + 0.3);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(audioCtx.currentTime + i * 0.1);
+      osc.stop(audioCtx.currentTime + i * 0.1 + 0.3);
+    });
+  } catch (e) { /* silent */ }
+}
+
+// Audio preference toggle
+let audioEnabled = localStorage.getItem('tb50k_audio') !== 'false'; // default on
+
+function toggleAudio() {
+  audioEnabled = !audioEnabled;
+  localStorage.setItem('tb50k_audio', audioEnabled);
+  const btn = document.getElementById('btn-audio-toggle');
+  if (btn) {
+    btn.textContent = audioEnabled ? '🔔 Cheers On' : '🔕 Cheers Off';
+    btn.classList.toggle('active', audioEnabled);
+  }
+}
+
+window.toggleAudio = toggleAudio;
+
+// ── Finisher Wall ──
+const FINISHER_DATA = [
+  { name: 'The Route Itself', year: 2025, time: 'Surveyed', note: 'Test run — the 8 Taco Bell route was mapped and verified by the organizing crew.' },
+  { name: 'Race Day 2026', year: 2026, time: 'Nov 27', note: 'Inaugural event! Be one of the first finishers.' },
+];
+
+function buildFinisherWall() {
+  const container = document.getElementById('finisher-content');
+  if (!container) return;
+
+  if (FINISHER_DATA.length === 0) {
+    container.innerHTML = '<p class="hint">No finishers yet — be the first!</p>';
+    return;
+  }
+
+  let html = '<div class="finisher-list">';
+  FINISHER_DATA.forEach((f, i) => {
+    html += `<div class="finisher-row">
+      <span class="finisher-rank">${i + 1}</span>
+      <span class="finisher-name">${f.name}</span>
+      <span class="finisher-time">${f.time}</span>
+      <span class="finisher-note">${f.note}</span>
+    </div>`;
+  });
+  html += '</div>';
+  html += '<p class="hint" style="margin-top:8px;">Results will be posted after the Nov 27, 2026 race.</p>';
+
+  container.innerHTML = html;
 }
 
 function loadPinsFromURL() {

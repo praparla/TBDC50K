@@ -11,7 +11,7 @@
   <meta name="apple-mobile-web-app-title" content="TB DC 50K" />
   <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌮</text></svg>" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link rel="stylesheet" href="style.css?v=5" />
+  <link rel="stylesheet" href="style.css?v=8" />
   <script>
     // Apply saved theme before render to prevent flash of default theme
     (function() {
@@ -59,6 +59,12 @@
             <input type="number" id="pace-minutes" min="0" max="59" placeholder="min" />
             <button id="btn-calc-pace" onclick="calculatePace()">Calculate</button>
           </div>
+        </div>
+        <div class="pace-options">
+          <label class="gap-toggle-label">
+            <input type="checkbox" id="gap-toggle" onchange="calculatePace()" />
+            Grade-Adjusted Pace (GAP)
+          </label>
         </div>
         <div id="pace-results">
           <p class="hint">Enter a goal time to see splits.</p>
@@ -172,6 +178,9 @@
           <button id="btn-spectators" class="tool-btn" onclick="toggleSpectatorSpots()">&#128064; Spectator Spots</button>
           <button class="tool-btn" onclick="exportGPX()">&#128229; Export GPX</button>
           <button id="btn-share-pins" class="tool-btn" onclick="encodePinsToURL()">&#128279; Share Pins</button>
+          <button id="btn-grade-color" class="tool-btn" onclick="toggleGradeColor()">&#127752; Color by Grade</button>
+          <button class="tool-btn" onclick="showRaceCard()">&#128247; Race Card</button>
+          <button id="btn-audio-toggle" class="tool-btn active" onclick="toggleAudio()">&#128276; Cheers On</button>
         </div>
       </div>
     </div>
@@ -187,7 +196,11 @@
     <div class="section collapsed" id="section-pins">
       <h2>Custom Pins <span class="section-toggle">&#9660;</span></h2>
       <div class="section-body">
-        <p class="hint" data-sauce-id="pins-hint" data-default-hint="Tap the map to add a pin, or use the form below.">Tap the map to add a pin, or use the form below.</p>
+        <p class="hint" data-sauce-id="pins-hint" data-default-hint="Tap the map to add a pin, or search for a location. Drag pins to reposition.">Tap the map to add a pin, or search for a location. Drag pins to reposition.</p>
+        <div class="search-box">
+          <input type="text" id="search-input" placeholder="Search for a location..." oninput="searchLocation(this.value)" />
+          <div id="search-results"></div>
+        </div>
         <div id="pin-filters"></div>
         <div id="pin-form">
           <input type="text" id="pin-name" placeholder="Name (e.g. Jake's House)" />
@@ -206,11 +219,35 @@
       </div>
     </div>
 
+    <div class="section collapsed" id="section-splits">
+      <h2>Split History &#9201; <span class="section-toggle">&#9660;</span></h2>
+      <div class="section-body">
+        <p class="hint" data-sauce-id="splits-hint" data-default-hint="Splits are auto-recorded when Race Mode detects you near a stop.">Splits are auto-recorded when Race Mode detects you near a stop.</p>
+        <div id="split-history-content"><p class="hint">No splits recorded yet. Start Race Mode and approach a stop.</p></div>
+      </div>
+    </div>
+
+    <div class="section collapsed" id="section-finishers">
+      <h2>Finisher Wall &#127942; <span class="section-toggle">&#9660;</span></h2>
+      <div class="section-body">
+        <p class="hint" data-sauce-id="finisher-hint" data-default-hint="Past finishers and race results.">Past finishers and race results.</p>
+        <div id="finisher-content"><p class="hint">Loading...</p></div>
+      </div>
+    </div>
+
     <div class="section collapsed" id="section-segments">
       <h2>Leg-by-Leg &#128099; <span class="section-toggle">&#9660;</span></h2>
       <div class="section-body">
         <p class="hint" data-sauce-id="segments-hint" data-default-hint="Distance between each stop.">Distance between each stop.</p>
         <div id="segments-list"></div>
+      </div>
+    </div>
+
+    <div class="section collapsed" id="section-elevation">
+      <h2>Elevation Profile &#9968; <span class="section-toggle">&#9660;</span></h2>
+      <div class="section-body">
+        <p class="hint" data-sauce-id="elevation-hint" data-default-hint="Elevation along the 32.4-mile course. Hover to see position on map.">Elevation along the 32.4-mile course. Hover to see position on map.</p>
+        <div id="elevation-content"><p class="hint">Loading elevation data...</p></div>
       </div>
     </div>
 
@@ -275,7 +312,7 @@
   </script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="gpx_data.js"></script>
-  <script src="app.js?v=5"></script>
+  <script src="app.js?v=8"></script>
 
   <!-- Supabase + Backend Features -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
