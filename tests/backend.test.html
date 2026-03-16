@@ -230,9 +230,9 @@
       client._setSession({ user });
     }
 
-    function resetMock() {
+    function resetMock(keepAuthListeners) {
       const client = getMockClient();
-      if (client && client._reset) client._reset();
+      if (client && client._reset) client._reset(keepAuthListeners);
     }
 
     // ═══════════════════════════════════════
@@ -726,7 +726,7 @@
       const { data: noMatch } = await TB_DB.searchRunners('zzzzzzz');
       assert(G, 'searchRunners returns empty for no match', noMatch && noMatch.length === 0);
 
-      resetMock();
+      resetMock(true); // Keep auth listeners for subsequent tests
     }
 
     // 10. Food Log UI Module
@@ -952,7 +952,7 @@
       const { data: wrongBet } = await TB_DB.resolveBet(dnfBet.id, {}, false);
       assert(G, 'Resolve as wrong works', wrongBet && wrongBet.is_correct === false);
 
-      resetMock();
+      resetMock(true); // Keep auth listeners for account management tests
     }
 
     // 16. Mandatory Food Rule Logic
@@ -1095,32 +1095,33 @@
       assert(G, 'fetchMyStats exists', typeof TB_DB.fetchMyStats === 'function');
       assert(G, 'deleteMyAccount exists', typeof TB_DB.deleteMyAccount === 'function');
 
-      // Update avatar emoji
-      const client = TB_AUTH.getSupabase();
-      const session = client._getSession();
-      const uid = session.user.id;
+      // Sign in for account management tests
+      simulateSignIn('acct-user', 'acct@test.com', 'Account Tester');
+      await new Promise(r => setTimeout(r, 100));
 
-      // Seed profile with avatar_emoji and preferences columns
+      // Use effective user ID (TB_AUTH.user.id) — this is what TB_DB functions use
+      const client = TB_AUTH.getSupabase();
+      const effectiveUid = TB_AUTH.user ? TB_AUTH.user.id : client._getSession().user.id;
+
+      // Seed profile for the effective user with avatar_emoji and preferences columns
       const profiles = client._getTables().profiles;
-      if (profiles.length === 0) {
-        profiles.push({ id: uid, display_name: 'Test User', role: 'runner', avatar_emoji: '', preferences: {} });
-      } else {
-        profiles[0].avatar_emoji = '';
-        profiles[0].preferences = {};
+      if (!profiles.find(p => p.id === effectiveUid)) {
+        profiles.push({ id: effectiveUid, display_name: 'Account Tester', role: 'runner', avatar_emoji: '', preferences: {} });
       }
+      const targetProfile = profiles.find(p => p.id === effectiveUid);
+      targetProfile.avatar_emoji = '';
+      targetProfile.preferences = {};
 
       // Update avatar
       const { error: avatarErr } = await TB_DB.updateAvatarEmoji('🌮');
       assert(G, 'updateAvatarEmoji returns no error', !avatarErr);
-      const updatedProfile = profiles.find(p => p.id === uid);
-      assert(G, 'Avatar emoji updated in DB', updatedProfile && updatedProfile.avatar_emoji === '🌮');
+      assert(G, 'Avatar emoji updated in DB', targetProfile.avatar_emoji === '🌮');
 
       // Update preferences
       const prefs = { tb50k_theme: 'baja', tb50k_pace_hours: '9' };
       const { error: prefsErr } = await TB_DB.updatePreferences(prefs);
       assert(G, 'updatePreferences returns no error', !prefsErr);
-      const updatedProfile2 = profiles.find(p => p.id === uid);
-      assert(G, 'Preferences saved in DB', updatedProfile2 && updatedProfile2.preferences.tb50k_theme === 'baja');
+      assert(G, 'Preferences saved in DB', targetProfile.preferences && targetProfile.preferences.tb50k_theme === 'baja');
 
       // Fetch preferences
       const { data: fetchedPrefs, error: fetchErr } = await TB_DB.fetchPreferences();
@@ -1140,36 +1141,40 @@
       const G = 'Delete Account';
 
       const client = TB_AUTH.getSupabase();
-      const session = client._getSession();
-      const uid = session.user.id;
+      // RPC uses session user ID for cascade; TB_DB auth guard uses TB_AUTH.user.id
+      const sessionUid = client._getSession().user.id;
 
-      // Seed data for the user
+      // Seed data for the session user (what RPC will target)
       const tables = client._getTables();
-      if (!tables.profiles.find(p => p.id === uid)) {
-        tables.profiles.push({ id: uid, display_name: 'Delete Me', role: 'runner' });
+      if (!tables.profiles.find(p => p.id === sessionUid)) {
+        tables.profiles.push({ id: sessionUid, display_name: 'Delete Me', role: 'runner' });
       }
-      tables.food_logs.push({ id: 'fl-del-1', user_id: uid, stop_number: 1, menu_items: [] });
-      tables.bets.push({ id: 'bet-del-1', creator_id: uid, target_runner_id: 'other', bet_type: 'dnf', prediction: {} });
-      tables.parties.push({ id: 'party-del-1', host_id: uid, name: 'Del Party', lat: 0, lng: 0 });
+      tables.food_logs.push({ id: 'fl-del-1', user_id: sessionUid, stop_number: 1, menu_items: [] });
+      tables.bets.push({ id: 'bet-del-1', creator_id: sessionUid, target_runner_id: 'other', bet_type: 'dnf', prediction: {} });
+      tables.parties.push({ id: 'party-del-1', host_id: sessionUid, name: 'Del Party', lat: 0, lng: 0 });
 
       // Verify data exists
-      assert(G, 'Profile exists before delete', tables.profiles.some(p => p.id === uid));
-      assert(G, 'Food logs exist before delete', tables.food_logs.some(f => f.user_id === uid));
-      assert(G, 'Bets exist before delete', tables.bets.some(b => b.creator_id === uid));
-      assert(G, 'Parties exist before delete', tables.parties.some(p => p.host_id === uid));
+      assert(G, 'Profile exists before delete', tables.profiles.some(p => p.id === sessionUid));
+      assert(G, 'Food logs exist before delete', tables.food_logs.some(f => f.user_id === sessionUid));
+      assert(G, 'Bets exist before delete', tables.bets.some(b => b.creator_id === sessionUid));
+      assert(G, 'Parties exist before delete', tables.parties.some(p => p.host_id === sessionUid));
 
-      // Delete account
+      // Delete account (TB_DB checks TB_AUTH.user for auth guard, RPC uses session)
       const { error } = await TB_DB.deleteMyAccount();
       assert(G, 'deleteMyAccount returns no error', !error);
 
       // Verify cascade delete
-      assert(G, 'Profile deleted', !tables.profiles.some(p => p.id === uid));
-      assert(G, 'Food logs deleted', !tables.food_logs.some(f => f.user_id === uid));
-      assert(G, 'Bets deleted', !tables.bets.some(b => b.creator_id === uid));
-      assert(G, 'Parties deleted', !tables.parties.some(p => p.host_id === uid));
+      assert(G, 'Profile deleted', !tables.profiles.some(p => p.id === sessionUid));
+      assert(G, 'Food logs deleted', !tables.food_logs.some(f => f.user_id === sessionUid));
+      assert(G, 'Bets deleted', !tables.bets.some(b => b.creator_id === sessionUid));
+      assert(G, 'Parties deleted', !tables.parties.some(p => p.host_id === sessionUid));
 
-      // Re-seed profile for later tests
-      tables.profiles.push({ id: uid, display_name: 'Test User', role: 'runner', avatar_emoji: '', preferences: {} });
+      // Re-seed profile for later tests (both session user and effective user)
+      const effectiveUid = TB_AUTH.user ? TB_AUTH.user.id : sessionUid;
+      tables.profiles.push({ id: sessionUid, display_name: 'Test User', role: 'runner', avatar_emoji: '', preferences: {} });
+      if (effectiveUid !== sessionUid) {
+        tables.profiles.push({ id: effectiveUid, display_name: 'Test User', role: 'runner', avatar_emoji: '', preferences: {} });
+      }
     }
 
     // 22. Preferences Sync Module

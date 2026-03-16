@@ -47,6 +47,13 @@
         <span class="theme-picker-label">Theme</span>
         <!-- Swatches injected by app.js -->
       </div>
+      <div id="auth-bar" class="auth-bar">
+        <!-- Rendered by auth.js -->
+      </div>
+      <div class="view-toggle" id="view-toggle">
+        <button class="view-toggle-btn active" data-view="runner">🏃 Runner</button>
+        <button class="view-toggle-btn" data-view="crew">🧑‍🤝‍🧑 Crew</button>
+      </div>
     </div>
 
     <div class="section collapsed" id="section-stops">
@@ -202,6 +209,24 @@
     <button id="ctx-add-pin">Add Pin Here</button>
     <button id="ctx-cancel">Cancel</button>
   </div>
+
+  <!-- Auth Modal -->
+  <div id="auth-modal" class="auth-modal hidden">
+    <div class="auth-modal-content">
+      <button class="auth-close" title="Close">&times;</button>
+      <h3>Sign In to TB DC 50K</h3>
+      <button id="auth-google-btn" class="auth-btn auth-google">Sign in with Google</button>
+      <div class="auth-divider"><span>or</span></div>
+      <div class="auth-email-form">
+        <input type="email" id="auth-email-input" placeholder="your@email.com" />
+        <button id="auth-email-btn" class="auth-btn">Send Magic Link</button>
+      </div>
+      <p id="auth-status" class="auth-status"></p>
+    </div>
+  </div>
+
+  <!-- Account Settings Panel -->
+  <div id="account-settings-panel" class="account-settings-panel hidden"></div>
 
   <!-- Test overlay (renders on top) -->
   <div id="test-overlay">

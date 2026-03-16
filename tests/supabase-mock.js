@@ -342,11 +342,11 @@ const MockSupabase = (function () {
       auth,
 
       // Test helpers (not part of real Supabase API)
-      _reset() {
+      _reset(keepAuthListeners) {
         Object.keys(tables).forEach(t => { tables[t] = []; });
         autoIncrement = 1;
         currentSession = null;
-        authListeners = [];
+        if (!keepAuthListeners) authListeners = [];
         channelListeners = {};
       },
       _getTables() { return tables; },
@@ -362,6 +362,7 @@ const MockSupabase = (function () {
           tables[tableName] = [...rows];
         }
       },
+      _getAuthListenerCount() { return authListeners.length; },
     };
   }
 
