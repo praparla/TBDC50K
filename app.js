@@ -181,6 +181,14 @@ let raceBanner = null;
 // ── Countdown State ──
 let countdownInterval = null;
 
+// ── HTML Sanitization ──
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.appendChild(document.createTextNode(str));
+  return div.innerHTML;
+}
+window.escapeHtml = escapeHtml;
+
 // ── Device Detection ──
 function isMobile() {
   return window.matchMedia('(max-width: 768px)').matches;
@@ -537,10 +545,11 @@ function addPinToMap(pin) {
   });
 
   const marker = L.marker([pin.lat, pin.lng], { icon, draggable: true }).addTo(map);
+  const safeName = escapeHtml(pin.name);
   marker.bindPopup(`<div class="popup-content">
-    <h3>${emoji} ${pin.name}</h3>
+    <h3>${emoji} ${safeName}</h3>
     <p>${pin.lat.toFixed(5)}, ${pin.lng.toFixed(5)}</p>
-    <button class="popup-directions-btn" onclick="openInMaps(${pin.lat}, ${pin.lng}, '${pin.name.replace(/'/g, "\\'")}')">🧭 Directions</button>
+    <button class="popup-directions-btn" onclick="openInMaps(${pin.lat}, ${pin.lng}, '${safeName.replace(/'/g, "\\'")}')">🧭 Directions</button>
   </div>`);
 
   marker.pinId = pin.id;
@@ -2179,7 +2188,7 @@ function initViewToggle() {
 }
 
 // Runner-facing amenity subset
-const RUNNER_AMENITIES = ['water', 'snacks', 'music', 'ice', 'porta-potty', 'medical'];
+const RUNNER_AMENITIES = ['water', 'snacks', 'music', 'ice', 'portapotty', 'medical'];
 
 // ── Block Parties ──
 const BLOCK_PARTY_CACHE_KEY = 'tb50k_block_parties';
@@ -2187,8 +2196,8 @@ const BLOCK_PARTY_CACHE_TTL = 60 * 60 * 1000; // 1 hour
 
 const AMENITY_EMOJI = {
   beer: '🍺', shots: '🥃', snacks: '🌮', water: '💧', music: '🎵',
-  chairs: '🪑', ice: '🧊', 'porta-potty': '🚽', tattoos: '🎨',
-  'dog-petting-zone': '🐶', medical: '🏥', 'family-zone': '👨‍👩‍👧',
+  chairs: '🪑', ice: '🧊', portapotty: '🚽', tattoos: '🎨',
+  dogs: '🐶', medical: '🏥', family: '👨‍👩‍👧',
 };
 
 function loadBlockParties() {
@@ -2461,10 +2470,11 @@ function makePinDraggable(marker, pin) {
 
     // Update popup content
     const emoji = PIN_ICONS[pin.iconType];
+    const safeName = escapeHtml(pin.name);
     marker.setPopupContent(`<div class="popup-content">
-      <h3>${emoji} ${pin.name}</h3>
+      <h3>${emoji} ${safeName}</h3>
       <p>${pin.lat.toFixed(5)}, ${pin.lng.toFixed(5)}</p>
-      <button class="popup-directions-btn" onclick="openInMaps(${pin.lat}, ${pin.lng}, '${pin.name.replace(/'/g, "\\'")}')">🧭 Directions</button>
+      <button class="popup-directions-btn" onclick="openInMaps(${pin.lat}, ${pin.lng}, '${safeName.replace(/'/g, "\\'")}')">🧭 Directions</button>
     </div>`);
   });
 }
@@ -2657,7 +2667,8 @@ function loadPinsFromURL() {
     const lat = parseFloat(parts[0]);
     const lng = parseFloat(parts[1]);
     const iconType = decodeURIComponent(parts[2]);
-    const name = decodeURIComponent(parts[3]);
+    // Rejoin remaining parts in case the name itself contained commas
+    const name = decodeURIComponent(parts.slice(3).join(','));
     if (isNaN(lat) || isNaN(lng)) return;
     // Check for duplicate
     if (customPins.some(p => Math.abs(p.lat - lat) < 0.0001 && Math.abs(p.lng - lng) < 0.0001)) return;

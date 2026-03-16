@@ -1,10 +1,10 @@
 // Service Worker for TB DC 50K — Offline caching
-const CACHE_NAME = 'tb50k-v2';
+const CACHE_NAME = 'tb50k-v3';
 const CORE_ASSETS = [
   '/',
   '/index.html',
-  '/style.css',
-  '/app.js',
+  '/style.css?v=8',
+  '/app.js?v=8',
   '/gpx_data.js',
   '/config.js',
   '/auth.js',
@@ -14,6 +14,7 @@ const CORE_ASSETS = [
   '/social-feed.js',
   '/party.js',
   '/betting.js',
+  '/block_parties.json',
   '/manifest.json',
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',

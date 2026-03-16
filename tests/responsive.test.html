@@ -359,6 +359,7 @@
       testSplitHistory();
       testAudioCheers();
       testFinisherWall();
+      testBugFixes();
     }
 
     // ── DOM Structure ──
@@ -1789,6 +1790,48 @@
       const content = document.getElementById('finisher-content');
       const rows = content ? content.querySelectorAll('.finisher-row') : [];
       assert(G, 'finisher rows rendered', rows.length > 0, `found ${rows.length}`);
+    }
+
+    // ── Bug Fix Regression Tests ──
+    function testBugFixes() {
+      const G = 'Bug Fixes';
+
+      // BUG-006: RUNNER_AMENITIES keys must match PARTY_AMENITIES ids + AMENITY_EMOJI keys
+      assert(G, 'RUNNER_AMENITIES defined', Array.isArray(RUNNER_AMENITIES));
+      const partyAmenityIds = typeof PARTY_AMENITIES !== 'undefined' ? PARTY_AMENITIES.map(a => a.id) : [];
+      RUNNER_AMENITIES.forEach(key => {
+        assert(G, `RUNNER_AMENITIES "${key}" exists in PARTY_AMENITIES`,
+          partyAmenityIds.includes(key), `"${key}" not found in PARTY_AMENITIES ids`);
+      });
+      // Also verify AMENITY_EMOJI keys match PARTY_AMENITIES
+      if (typeof AMENITY_EMOJI !== 'undefined' && partyAmenityIds.length > 0) {
+        partyAmenityIds.forEach(id => {
+          assert(G, `AMENITY_EMOJI has key "${id}"`, id in AMENITY_EMOJI, 'missing from AMENITY_EMOJI');
+        });
+      }
+
+      // BUG-008: escapeHtml function exists and works
+      assert(G, 'escapeHtml function exists', typeof escapeHtml === 'function');
+      if (typeof escapeHtml === 'function') {
+        const escaped = escapeHtml('<script>alert("xss")</script>');
+        assert(G, 'escapeHtml blocks script tags',
+          !escaped.includes('<script>'), `got: ${escaped}`);
+        assert(G, 'escapeHtml preserves safe text',
+          escapeHtml('Hello World') === 'Hello World');
+        assert(G, 'escapeHtml escapes ampersands',
+          escapeHtml('A & B') === 'A &amp; B');
+        assert(G, 'escapeHtml escapes angle brackets',
+          escapeHtml('<b>bold</b>').includes('&lt;'));
+      }
+
+      // BUG-009: TACO_BELL_STOPS count matches production (8 stops, indices 0-7)
+      assert(G, 'TACO_BELL_STOPS has exactly 8 entries',
+        TACO_BELL_STOPS.length === 8, `found ${TACO_BELL_STOPS.length}`);
+      assert(G, 'last stop is num 7',
+        TACO_BELL_STOPS[TACO_BELL_STOPS.length - 1].num === 7);
+
+      // BUG-007: loadPinsFromURL handles names with commas
+      assert(G, 'loadPinsFromURL is a function', typeof loadPinsFromURL === 'function');
     }
   </script>
 </body>

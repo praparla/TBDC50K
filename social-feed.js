@@ -116,9 +116,15 @@ const TB_SOCIAL_FEED = (function () {
     });
   }
 
+  function esc(str) {
+    const d = document.createElement('div');
+    d.appendChild(document.createTextNode(str));
+    return d.innerHTML;
+  }
+
   function renderEntry(entry) {
-    const displayName = entry.profiles ? entry.profiles.display_name : 'Anonymous';
-    const items = (entry.menu_items || []).map(m => m.item || m).join(', ');
+    const displayName = esc(entry.profiles ? entry.profiles.display_name : 'Anonymous');
+    const items = esc((entry.menu_items || []).map(m => m.item || m).join(', '));
     const time = new Date(entry.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const stopLabel = entry.stop_number === 0 ? 'Start/Finish' : 'Stop ' + entry.stop_number;
     const flags = flagCounts[entry.id] || 0;
@@ -142,7 +148,7 @@ const TB_SOCIAL_FEED = (function () {
       </div>`;
 
     if (entry.hot_take) {
-      html += `<div class="feed-entry-hottake">"${entry.hot_take}"</div>`;
+      html += `<div class="feed-entry-hottake">"${esc(entry.hot_take)}"</div>`;
     }
 
     if (!isOwnPost) {

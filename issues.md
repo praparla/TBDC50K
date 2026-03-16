@@ -18,6 +18,12 @@
 - **Mock _reset() wipes auth listeners:** When the mock Supabase `_reset()` clears `authListeners = []`, any `onAuthStateChange` callbacks registered by `TB_AUTH.init()` are lost. Subsequent `simulateSignIn()` calls fire `_setSession` but no listener updates `currentUser`. Fix: pass `keepAuthListeners = true` to `_reset()` when resetting between test groups that share an init'd auth module.
 - **Session user vs effective user in tests:** `simulateSignIn()` sets the mock session user ID, but `TB_AUTH.user.id` may differ due to async `ensureProfile()` propagation. DB functions use `TB_AUTH.user.id` (via `userId()`), so test assertions checking mock DB state must verify against the effective user ID, not the session user ID.
 
+- **AMENITY_EMOJI / RUNNER_AMENITIES key alignment:** When `app.js` defines dictionary keys for amenities, they must match the `id` values in `config.js PARTY_AMENITIES`. Hyphenated keys like `porta-potty` vs `portapotty` are easy to miss — always cross-reference the source of truth in `config.js`.
+- **URL-encoded data with commas:** When encoding structured data into URL fragments using commas as field delimiters, the last field (typically a name) should be parsed with `parts.slice(N).join(',')` to handle values that themselves contain commas.
+- **User-supplied text in innerHTML:** Any string from user input or external data (pin names, display names, hot takes, party names) must be escaped before inserting into `innerHTML`. Use a DOM-based `escapeHtml()` utility (create a text node, read back `.innerHTML`) rather than regex replacement.
+- **Service worker cache versioning:** When `index.html` loads assets with cache-bust query strings (`style.css?v=8`), the service worker's `CORE_ASSETS` list must use the same versioned paths. Mismatched paths cause the SW to cache a resource that the page never requests.
+- **Test stub alignment:** When production data arrays change length or shape, test stubs must be updated to match. Periodically audit test stubs against their production counterparts (e.g., `TACO_BELL_STOPS` count).
+
 ---
 
 ## Open Issues
@@ -27,6 +33,60 @@
 ---
 
 ## Closed Issues
+
+### [ISSUE-011] Missing block_parties.json causes 404 on every page load
+- **Status:** Fixed
+- **Severity:** Low
+- **Found:** 2026-03-16
+- **Fixed:** 2026-03-16
+- **Root Cause:** `loadBlockParties()` fetches `block_parties.json` but the file was never created in the repo, causing a 404 error + console warning on every page load.
+- **Fix:** Created an empty `block_parties.json` (`[]`) placeholder. Added the file to the SW `CORE_ASSETS` for offline caching.
+- **Lesson:** When code references a data file, always ship a placeholder even if real data comes later.
+
+### [ISSUE-010] Service worker caches un-versioned asset paths
+- **Status:** Fixed
+- **Severity:** Medium
+- **Found:** 2026-03-16
+- **Fixed:** 2026-03-16
+- **Root Cause:** `sw.js` listed `/style.css` and `/app.js` in `CORE_ASSETS`, but `index.html` loads `style.css?v=8` and `app.js?v=8`. The SW cached resources that the page never actually requested, so the cache was useless for offline and stale assets could be served.
+- **Fix:** Updated `CORE_ASSETS` paths to include the `?v=8` query strings matching `index.html`. Bumped cache version to `tb50k-v3`.
+- **Lesson:** SW CORE_ASSETS must exactly match the URLs in index.html, including cache-bust query strings.
+
+### [ISSUE-009] Backend test TACO_BELL_STOPS stub has 9 entries instead of 8
+- **Status:** Fixed
+- **Severity:** Low
+- **Found:** 2026-03-16
+- **Fixed:** 2026-03-16
+- **Root Cause:** The test stub in `backend.test.html` defined 9 stops (num 0-8) with a spurious `num: 8` entry. Production code only has 8 stops (num 0-7). This caused test isolation issues and could mask real bugs.
+- **Fix:** Removed the extra entry. Updated labels and mandatory fields to match production data shape.
+- **Lesson:** Test stubs must mirror production data structure. Added to Key Pointers.
+
+### [ISSUE-008] XSS vulnerability in popup/feed HTML rendering
+- **Status:** Fixed
+- **Severity:** High
+- **Found:** 2026-03-16
+- **Fixed:** 2026-03-16
+- **Root Cause:** User-supplied strings (custom pin names, display names, hot takes, party names/notes) were inserted directly into `innerHTML` without escaping. An attacker could inject `<img onerror=...>` or `<script>` tags.
+- **Fix:** Added `escapeHtml()` utility (DOM text node method) in `app.js`, exposed globally. Applied it in `addPinToMap`, `makePinDraggable`, `social-feed.js renderEntry`, `food-log.js renderLogEntries`, and `party.js renderPartyList/renderPartyMarkers`.
+- **Lesson:** Any user-sourced text inserted via innerHTML must be escaped. Added to Key Pointers.
+
+### [ISSUE-007] loadPinsFromURL drops pin names containing commas
+- **Status:** Fixed
+- **Severity:** Medium
+- **Found:** 2026-03-16
+- **Fixed:** 2026-03-16
+- **Root Cause:** `loadPinsFromURL` splits each pin entry on commas to extract `lat,lng,iconType,name`. But pin names can contain commas (e.g. "Jake's House, Basement"). `split(',')` + `parts[3]` would truncate the name.
+- **Fix:** Changed `parts[3]` to `parts.slice(3).join(',')` to rejoin all remaining parts as the name.
+- **Lesson:** When using delimiters in serialized data, the last field should consume all remaining parts.
+
+### [ISSUE-006] RUNNER_AMENITIES filter never matches portapotty
+- **Status:** Fixed
+- **Severity:** Medium
+- **Found:** 2026-03-16
+- **Fixed:** 2026-03-16
+- **Root Cause:** `RUNNER_AMENITIES` in `app.js` used `'porta-potty'` (hyphenated), but `PARTY_AMENITIES` in `config.js` uses `'portapotty'` (no hyphen). The filter `amenities.filter(a => RUNNER_AMENITIES.includes(a))` never matched, so runners never saw porta-potty amenities in block party popups. Same mismatch for `'dog-petting-zone'` vs `'dogs'` and `'family-zone'` vs `'family'` in `AMENITY_EMOJI`.
+- **Fix:** Aligned `RUNNER_AMENITIES` and `AMENITY_EMOJI` keys to match `PARTY_AMENITIES` ids: `portapotty`, `dogs`, `family`.
+- **Lesson:** Dictionary keys referencing another module's IDs must be cross-checked. Added to Key Pointers.
 
 ### [ISSUE-005] CSS rules not loading after style.css edits
 - **Status:** Fixed

@@ -238,6 +238,8 @@ const TB_PARTIES = (function () {
       return;
     }
 
+    const esc = typeof escapeHtml === 'function' ? escapeHtml : (s) => s;
+
     container.innerHTML = parties.map(party => {
       const amenityEmojis = (party.amenities || []).map(id => {
         const a = PARTY_AMENITIES.find(x => x.id === id);
@@ -246,7 +248,7 @@ const TB_PARTIES = (function () {
 
       const isHost = TB_AUTH.user && party.host_id === TB_AUTH.user.id;
       const isSubscribed = mySubscriptions.includes(party.id);
-      const hostName = party.profiles ? party.profiles.display_name : 'Unknown';
+      const hostName = esc(party.profiles ? party.profiles.display_name : 'Unknown');
       const liveClass = party.is_live ? 'party-live' : '';
 
       let actions = '';
@@ -263,14 +265,14 @@ const TB_PARTIES = (function () {
 
       return `<div class="party-item ${liveClass}" data-party-id="${party.id}">
         <div class="party-item-header">
-          <span class="party-item-name">${party.name}</span>
+          <span class="party-item-name">${esc(party.name)}</span>
           ${party.is_live ? '<span class="party-live-badge">LIVE</span>' : ''}
         </div>
         <div class="party-item-meta">
           <span>Host: ${hostName}</span>
           ${party.mile_marker ? `<span>Mile ${party.mile_marker}</span>` : ''}
         </div>
-        ${party.runner_note ? `<div class="party-item-note">${party.runner_note}</div>` : ''}
+        ${party.runner_note ? `<div class="party-item-note">${esc(party.runner_note)}</div>` : ''}
         <div class="party-item-amenities">${amenityEmojis}</div>
         <div class="party-item-actions">${actions}</div>
       </div>`;
@@ -338,12 +340,14 @@ const TB_PARTIES = (function () {
       }).join(' ');
 
       const marker = L.marker([party.lat, party.lng], { icon });
+      const safeName = escapeHtml(party.name);
+      const safeNote = party.runner_note ? escapeHtml(party.runner_note) : '';
       marker.bindPopup(`<div class="popup-content">
-        <h3>${party.is_live ? '🎉' : '🎈'} ${party.name}</h3>
-        ${party.runner_note ? `<p>${party.runner_note}</p>` : ''}
+        <h3>${party.is_live ? '🎉' : '🎈'} ${safeName}</h3>
+        ${safeNote ? `<p>${safeNote}</p>` : ''}
         ${party.mile_marker ? `<p>Mile ${party.mile_marker}</p>` : ''}
         <p>${amenityEmojis}</p>
-        <button class="popup-directions-btn" onclick="openInMaps(${party.lat}, ${party.lng}, '${party.name.replace(/'/g, "\\'")}')">🧭 Directions</button>
+        <button class="popup-directions-btn" onclick="openInMaps(${party.lat}, ${party.lng}, '${safeName.replace(/'/g, "\\'")}')">🧭 Directions</button>
       </div>`);
       partyLayer.addLayer(marker);
     });

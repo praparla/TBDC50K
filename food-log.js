@@ -192,15 +192,16 @@ const TB_FOOD_LOG = (function () {
       const stopLabel = parseInt(stopNum) === 0 ? 'Start/Finish' : 'Stop ' + stopNum;
       html += `<div class="food-log-stop-group">`;
       html += `<div class="food-log-stop-header">${stopLabel}</div>`;
+      const esc = typeof escapeHtml === 'function' ? escapeHtml : (s) => s;
       logs.forEach(log => {
-        const items = (log.menu_items || []).map(m => m.item || m).join(', ');
+        const items = esc((log.menu_items || []).map(m => m.item || m).join(', '));
         const time = new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         html += `<div class="food-log-entry">
           <span class="food-log-entry-items">${items}</span>
           <span class="food-log-entry-time">${time}</span>
         </div>`;
         if (log.hot_take) {
-          html += `<div class="food-log-entry-hottake">"${log.hot_take}"</div>`;
+          html += `<div class="food-log-entry-hottake">"${esc(log.hot_take)}"</div>`;
         }
       });
       html += `</div>`;

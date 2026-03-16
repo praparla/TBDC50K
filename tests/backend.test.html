@@ -128,20 +128,27 @@
     // TACO_BELL_STOPS stub (referenced by food-log.js)
     if (typeof TACO_BELL_STOPS === 'undefined') {
       window.TACO_BELL_STOPS = [
-        { num: 0, label: '0 - Start/Finish', mandatory: false },
-        { num: 1, label: '1 - Stop 1', mandatory: false },
-        { num: 2, label: '2 - Stop 2', mandatory: false },
-        { num: 3, label: '3 - Mandatory Stop', mandatory: true },
-        { num: 4, label: '4 - Stop 4', mandatory: false },
-        { num: 5, label: '5 - Stop 5', mandatory: false },
-        { num: 6, label: '6 - Stop 6', mandatory: false },
-        { num: 7, label: '7 - Mandatory Stop', mandatory: true },
-        { num: 8, label: '8 - Stop 8', mandatory: false },
+        { num: 0, label: 'Start/Finish - Taco Bell Cantina', mandatory: null },
+        { num: 1, label: 'Stop 1 - Alexandria', mandatory: null },
+        { num: 2, label: 'Stop 2 - Arlington', mandatory: null },
+        { num: 3, label: 'Stop 3 - Arlington', mandatory: 'Must eat Chalupa Supreme OR Crunchwrap by this stop' },
+        { num: 4, label: 'Stop 4 - Columbia Heights', mandatory: null },
+        { num: 5, label: 'Stop 5 - U Street', mandatory: null },
+        { num: 6, label: 'Stop 6 - Chinatown', mandatory: null },
+        { num: 7, label: 'Stop 7 - Union Station', mandatory: 'Must eat Burrito Supreme OR Nachos Bell Grande by this stop' },
       ];
     }
     // openInMaps stub (referenced by party.js popup)
     if (typeof openInMaps === 'undefined') {
       window.openInMaps = () => {};
+    }
+    // escapeHtml stub (referenced by party.js, food-log.js)
+    if (typeof escapeHtml === 'undefined') {
+      window.escapeHtml = function(str) {
+        const d = document.createElement('div');
+        d.appendChild(document.createTextNode(str));
+        return d.innerHTML;
+      };
     }
   </script>
 
