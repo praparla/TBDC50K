@@ -2255,3 +2255,374 @@ body {
     padding: 8px 14px;
   }
 }
+
+/* ── Course Section Rows ── */
+.course-section-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.course-section-row:hover {
+  background: var(--color-bg-secondary);
+}
+
+.section-color-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.section-row-name {
+  flex: 1;
+  font-size: 0.85rem;
+  color: var(--color-text);
+}
+
+/* ── Stop Detail Panel ── */
+.stop-detail-panel {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  max-height: 70vh;
+  background: var(--color-bg);
+  border-top: 2px solid var(--color-accent);
+  z-index: 1100;
+  overflow-y: auto;
+  padding: 16px 20px;
+  box-shadow: 0 -4px 20px var(--color-shadow);
+  transition: transform 0.3s ease;
+}
+
+.stop-detail-panel.hidden {
+  transform: translateY(100%);
+  pointer-events: none;
+}
+
+.stop-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  position: relative;
+}
+
+.stop-detail-close {
+  position: absolute;
+  top: -4px;
+  right: 0;
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.stop-detail-close:hover {
+  color: var(--color-text);
+}
+
+.stop-detail-num {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  color: var(--color-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.stop-detail-header h3 {
+  font-size: 1rem;
+  color: var(--color-text);
+  margin: 0;
+}
+
+.stop-detail-badge {
+  background: var(--color-warning);
+  color: #000;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.stop-detail-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.stop-detail-stats {
+  display: flex;
+  gap: 16px;
+}
+
+.stop-detail-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.stat-label {
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+}
+
+.stat-value {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-accent-secondary);
+}
+
+.stop-detail-ratings {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.rating-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rating-label {
+  width: 70px;
+  font-size: 0.78rem;
+  color: var(--color-text-secondary);
+}
+
+.rating-pips {
+  font-size: 0.9rem;
+}
+
+.rating-empty {
+  opacity: 0.2;
+}
+
+.stop-detail-vibe {
+  font-size: 0.82rem;
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+  margin: 0;
+  font-style: italic;
+}
+
+.stop-detail-crew {
+  border-top: 1px solid var(--color-border-subtle);
+  padding-top: 8px;
+}
+
+.stop-detail-crew h4 {
+  font-size: 0.8rem;
+  color: var(--color-text);
+  margin: 0 0 4px 0;
+}
+
+.stop-detail-crew p {
+  font-size: 0.78rem;
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.stop-detail-trivia {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+}
+
+.stop-detail-trivia summary {
+  cursor: pointer;
+  color: var(--color-accent-secondary);
+  font-weight: 600;
+}
+
+.stop-detail-trivia p {
+  margin: 4px 0 0 0;
+  line-height: 1.4;
+}
+
+/* ── Passport ── */
+.passport-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  gap: 8px;
+}
+
+.passport-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 6px;
+  border-radius: 8px;
+  border: 1px solid var(--color-border-subtle);
+  text-align: center;
+  transition: all 0.2s;
+}
+
+.passport-badge.unlocked {
+  border-color: var(--color-accent-secondary);
+  background: rgba(167, 139, 250, 0.1);
+}
+
+.passport-badge.locked {
+  opacity: 0.35;
+  filter: grayscale(0.8);
+}
+
+.passport-emoji {
+  font-size: 1.5rem;
+}
+
+.passport-name {
+  font-size: 0.65rem;
+  color: var(--color-text-secondary);
+  line-height: 1.2;
+}
+
+.passport-score {
+  text-align: center;
+  margin-top: 8px;
+  font-size: 0.8rem;
+  color: var(--color-accent-secondary);
+  font-weight: 600;
+}
+
+/* ── Pin Filters ── */
+.pin-filter-row {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.pin-filter-btn {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-bg-secondary);
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.pin-filter-btn.active {
+  border-color: var(--color-accent-secondary);
+  background: var(--color-accent);
+}
+
+.pin-filter-btn:not(.active) {
+  opacity: 0.4;
+}
+
+/* ── Spectator Markers ── */
+.spectator-marker {
+  font-size: 20px;
+  line-height: 24px;
+  text-align: center;
+}
+
+/* ── Desktop: Stop detail panel as side panel ── */
+@media (min-width: 769px) {
+  .stop-detail-panel {
+    left: auto;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    max-height: 100vh;
+    width: 360px;
+    border-top: none;
+    border-left: 2px solid var(--color-accent);
+    transform: translateX(100%);
+  }
+
+  .stop-detail-panel:not(.hidden) {
+    transform: translateX(0);
+  }
+}
+
+/* ── Mobile: Passport grid ── */
+@media (max-width: 768px) {
+  .passport-grid {
+    grid-template-columns: repeat(auto-fill, minmax(75px, 1fr));
+    gap: 6px;
+  }
+
+  .passport-badge {
+    padding: 8px 4px;
+  }
+
+  .passport-emoji {
+    font-size: 1.3rem;
+  }
+
+  .stop-detail-panel {
+    max-height: 60vh;
+    padding: 12px 16px;
+  }
+
+  .tools-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ── Block Party Items ── */
+.block-party-item {
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s;
+  margin-bottom: 4px;
+}
+
+.block-party-item:hover {
+  background: var(--color-bg-secondary);
+}
+
+.block-party-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.block-party-name {
+  font-size: 0.85rem;
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.block-party-host {
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+  margin-top: 2px;
+}
+
+.block-party-amenities {
+  font-size: 0.85rem;
+  margin-top: 4px;
+  letter-spacing: 2px;
+}
+
+.block-party-marker {
+  font-size: 22px;
+  line-height: 28px;
+  text-align: center;
+}

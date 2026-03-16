@@ -4,8 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Taco Bell DC 50K Route Planner</title>
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#682a8d" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="TB DC 50K" />
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌮</text></svg>" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link rel="stylesheet" href="style.css?v=4" />
+  <link rel="stylesheet" href="style.css?v=5" />
   <script>
     // Apply saved theme before render to prevent flash of default theme
     (function() {
@@ -129,6 +135,24 @@
       </div>
     </div>
 
+    <div class="section collapsed" id="section-block-parties">
+      <h2>Block Parties &#127881; <span class="section-toggle">&#9660;</span></h2>
+      <div class="section-body">
+        <p class="hint" data-sauce-id="block-party-hint" data-default-hint="Neighborhood parties along the route. Click to fly there.">Neighborhood parties along the route. Click to fly there.</p>
+        <button id="btn-block-parties" class="tool-btn" style="margin-bottom: 8px;" onclick="toggleBlockParties()">&#127881; Show on Map</button>
+        <div id="block-parties-list"></div>
+        <p class="hint" style="margin-top: 8px; font-size: 0.7rem;">Hosting a party? <a href="https://forms.gle/placeholder" target="_blank" style="color: var(--color-accent-secondary);">Submit here &rarr;</a></p>
+      </div>
+    </div>
+
+    <div class="section collapsed" id="section-course-sections">
+      <h2>Course Sections &#127504; <span class="section-toggle">&#9660;</span></h2>
+      <div class="section-body">
+        <p class="hint" data-sauce-id="sections-guide-hint" data-default-hint="Named sections of the 32.4-mile course. Click to fly to a section.">Named sections of the 32.4-mile course. Click to fly to a section.</p>
+        <div id="course-sections-list"></div>
+      </div>
+    </div>
+
     <div class="section collapsed" id="section-tools">
       <h2>Tools <span class="section-toggle">&#9660;</span></h2>
       <div class="section-body">
@@ -140,7 +164,19 @@
           <button id="btn-flythrough" class="tool-btn" onclick="startFlythrough()">&#127916; Preview Route</button>
           <button id="btn-race-mode" class="tool-btn" onclick="toggleRaceMode()">&#128205; Race Mode</button>
           <button class="tool-btn" onclick="printPaceCard()">&#128424; Print Pace Card</button>
+          <button id="btn-course-sections" class="tool-btn" onclick="toggleCourseSections()">&#128506; Course Sections</button>
+          <button id="btn-spectators" class="tool-btn" onclick="toggleSpectatorSpots()">&#128064; Spectator Spots</button>
+          <button class="tool-btn" onclick="exportGPX()">&#128229; Export GPX</button>
+          <button id="btn-share-pins" class="tool-btn" onclick="encodePinsToURL()">&#128279; Share Pins</button>
         </div>
+      </div>
+    </div>
+
+    <div class="section collapsed" id="section-passport">
+      <h2>TB Passport &#127942; <span class="section-toggle">&#9660;</span></h2>
+      <div class="section-body">
+        <p class="hint" data-sauce-id="passport-hint" data-default-hint="Earn badges by using features and completing challenges.">Earn badges by using features and completing challenges.</p>
+        <div id="passport-content"></div>
       </div>
     </div>
 
@@ -148,6 +184,7 @@
       <h2>Custom Pins <span class="section-toggle">&#9660;</span></h2>
       <div class="section-body">
         <p class="hint" data-sauce-id="pins-hint" data-default-hint="Tap the map to add a pin, or use the form below.">Tap the map to add a pin, or use the form below.</p>
+        <div id="pin-filters"></div>
         <div id="pin-form">
           <input type="text" id="pin-name" placeholder="Name (e.g. Jake's House)" />
           <select id="pin-icon">
@@ -181,6 +218,9 @@
       </div>
     </div>
   </div>
+
+  <!-- Stop Detail Panel -->
+  <div id="stop-detail-panel" class="stop-detail-panel hidden"></div>
 
   <div id="map"></div>
 
@@ -216,9 +256,17 @@
     </div>
   </div>
 
+  <script>
+    // Register service worker for PWA
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(function(err) {
+        console.warn('SW registration failed:', err);
+      });
+    }
+  </script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="gpx_data.js"></script>
-  <script src="app.js?v=4"></script>
+  <script src="app.js?v=5"></script>
 
   <!-- Supabase + Backend Features -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>

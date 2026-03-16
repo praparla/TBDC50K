@@ -111,6 +111,23 @@
       </div>
     </div>
 
+    <div class="section collapsed" id="section-block-parties">
+      <h2>Block Parties &#127881; <span class="section-toggle">&#9660;</span></h2>
+      <div class="section-body">
+        <p class="hint">Neighborhood parties along the route.</p>
+        <button id="btn-block-parties" class="tool-btn" onclick="toggleBlockParties()">&#127881; Show on Map</button>
+        <div id="block-parties-list"></div>
+      </div>
+    </div>
+
+    <div class="section collapsed" id="section-course-sections">
+      <h2>Course Sections &#127504; <span class="section-toggle">&#9660;</span></h2>
+      <div class="section-body">
+        <p class="hint">Named sections of the 32.4-mile course.</p>
+        <div id="course-sections-list"></div>
+      </div>
+    </div>
+
     <div class="section collapsed" id="section-tools">
       <h2>Tools <span class="section-toggle">&#9660;</span></h2>
       <div class="section-body">
@@ -122,7 +139,19 @@
           <button id="btn-flythrough" class="tool-btn" onclick="startFlythrough()">&#127916; Preview Route</button>
           <button id="btn-race-mode" class="tool-btn" onclick="toggleRaceMode()">&#128205; Race Mode</button>
           <button class="tool-btn" onclick="printPaceCard()">&#128424; Print Pace Card</button>
+          <button id="btn-course-sections" class="tool-btn" onclick="toggleCourseSections()">&#128506; Course Sections</button>
+          <button id="btn-spectators" class="tool-btn" onclick="toggleSpectatorSpots()">&#128064; Spectator Spots</button>
+          <button class="tool-btn" onclick="exportGPX()">&#128229; Export GPX</button>
+          <button id="btn-share-pins" class="tool-btn" onclick="encodePinsToURL()">&#128279; Share Pins</button>
         </div>
+      </div>
+    </div>
+
+    <div class="section collapsed" id="section-passport">
+      <h2>TB Passport &#127942; <span class="section-toggle">&#9660;</span></h2>
+      <div class="section-body">
+        <p class="hint">Earn badges by using features and completing challenges.</p>
+        <div id="passport-content"></div>
       </div>
     </div>
 
@@ -130,6 +159,7 @@
       <h2>Custom Pins <span class="section-toggle">&#9660;</span></h2>
       <div class="section-body">
         <p class="hint">Tap the map to add a pin, or use the form below.</p>
+        <div id="pin-filters"></div>
         <div id="pin-form">
           <input type="text" id="pin-name" placeholder="Name (e.g. Jake's House)" />
           <select id="pin-icon">
@@ -164,6 +194,8 @@
     </div>
   </div>
 
+  <div id="stop-detail-panel" class="stop-detail-panel hidden"></div>
+
   <div id="map"></div>
 
   <div id="context-menu" class="context-menu hidden">
@@ -179,7 +211,7 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="../gpx_data.js"></script>
-  <script src="../app.js?v=4"></script>
+  <script src="../app.js?v=5"></script>
   <script>
     // ── Test Runner ──
     const _tests = [];
@@ -247,6 +279,13 @@
       testSaucePacketCopy();
       testTimeOfDayEstimator();
       testLayerControl();
+      testCourseSections();
+      testStopDetailPanel();
+      testPassport();
+      testPinFilters();
+      testSpectatorSpots();
+      testGPXExport();
+      testBlockParties();
     }
 
     // ── DOM Structure ──
@@ -269,10 +308,18 @@
       assert(G, 'section-weather exists', document.getElementById('section-weather'));
       assert(G, 'section-segments exists', document.getElementById('section-segments'));
 
+      // New sections from Session #3
+      assert(G, 'section-course-sections exists', document.getElementById('section-course-sections'));
+      assert(G, 'section-block-parties exists', document.getElementById('section-block-parties'));
+      assert(G, 'section-passport exists', document.getElementById('section-passport'));
+      assert(G, 'stop-detail-panel exists', document.getElementById('stop-detail-panel'));
+      assert(G, 'pin-filters exists', document.getElementById('pin-filters'));
+
       // Each section has section-body and section-toggle
       const sectionIds = ['section-stops', 'section-pace', 'section-food',
                           'section-countdown', 'section-weather',
-                          'section-tools', 'section-pins', 'section-segments', 'section-route'];
+                          'section-course-sections', 'section-block-parties',
+                          'section-tools', 'section-passport', 'section-pins', 'section-segments', 'section-route'];
       sectionIds.forEach(id => {
         const sec = document.getElementById(id);
         assert(G, `${id} has .section-body`, sec && sec.querySelector('.section-body'));
@@ -716,12 +763,15 @@
       const grid = document.querySelector('.tools-grid');
       assert(G, 'tools-grid exists', !!grid);
       const buttons = grid ? grid.querySelectorAll('.tool-btn') : [];
-      assert(G, '6 tool buttons', buttons.length === 6, `found ${buttons.length}`);
+      assert(G, '10 tool buttons', buttons.length === 10, `found ${buttons.length}`);
 
       // Specific buttons
       assert(G, 'bathrooms button exists', !!document.getElementById('btn-bathrooms'));
       assert(G, 'flythrough button exists', !!document.getElementById('btn-flythrough'));
       assert(G, 'race-mode button exists', !!document.getElementById('btn-race-mode'));
+      assert(G, 'course-sections button exists', !!document.getElementById('btn-course-sections'));
+      assert(G, 'spectators button exists', !!document.getElementById('btn-spectators'));
+      assert(G, 'share-pins button exists', !!document.getElementById('btn-share-pins'));
 
       // Functions exist
       assert(G, 'toggleBathrooms is a function', typeof toggleBathrooms === 'function');
@@ -730,6 +780,10 @@
       assert(G, 'startFlythrough is a function', typeof startFlythrough === 'function');
       assert(G, 'toggleRaceMode is a function', typeof toggleRaceMode === 'function');
       assert(G, 'printPaceCard is a function', typeof printPaceCard === 'function');
+      assert(G, 'toggleCourseSections is a function', typeof toggleCourseSections === 'function');
+      assert(G, 'toggleSpectatorSpots is a function', typeof toggleSpectatorSpots === 'function');
+      assert(G, 'exportGPX is a function', typeof exportGPX === 'function');
+      assert(G, 'encodePinsToURL is a function', typeof encodePinsToURL === 'function');
 
       // Bathroom state starts off
       assert(G, 'bathroomToggleOn starts false', bathroomToggleOn === false);
@@ -1095,6 +1149,180 @@
       // Leaflet layer control is on the map
       const controlEl = document.querySelector('.leaflet-control-layers');
       assert(G, 'Leaflet layer control is in DOM', !!controlEl);
+    }
+
+    // ── Course Sections ──
+    function testCourseSections() {
+      const G = 'Course Sections';
+
+      assert(G, 'COURSE_SECTIONS array exists', Array.isArray(COURSE_SECTIONS));
+      assert(G, '7 course sections defined', COURSE_SECTIONS.length === 7, `found ${COURSE_SECTIONS.length}`);
+
+      // Each section has required properties
+      COURSE_SECTIONS.forEach((s, i) => {
+        assert(G, `section ${i}: has name`, typeof s.name === 'string' && s.name.length > 0);
+        assert(G, `section ${i}: has miStart`, typeof s.miStart === 'number');
+        assert(G, `section ${i}: has miEnd`, typeof s.miEnd === 'number');
+        assert(G, `section ${i}: has color`, typeof s.color === 'string' && s.color.startsWith('#'));
+        assert(G, `section ${i}: has note`, typeof s.note === 'string');
+      });
+
+      // Sections are contiguous
+      for (let i = 1; i < COURSE_SECTIONS.length; i++) {
+        assert(G, `section ${i} starts where ${i-1} ends`,
+          COURSE_SECTIONS[i].miStart === COURSE_SECTIONS[i-1].miEnd);
+      }
+
+      // Functions exist
+      assert(G, 'toggleCourseSections is a function', typeof toggleCourseSections === 'function');
+      assert(G, 'buildCourseSectionsList is a function', typeof buildCourseSectionsList === 'function');
+
+      // Course sections list is rendered
+      const list = document.getElementById('course-sections-list');
+      assert(G, 'course-sections-list exists', !!list);
+      const rows = list ? list.querySelectorAll('.course-section-row') : [];
+      assert(G, '7 section rows rendered', rows.length === 7, `found ${rows.length}`);
+
+      // Toggle on/off
+      assert(G, 'courseSectionsVisible starts false', courseSectionsVisible === false);
+      toggleCourseSections();
+      assert(G, 'toggle on sets courseSectionsVisible true', courseSectionsVisible === true);
+      assert(G, 'toggle on adds polylines', courseSectionLayers.length === 7);
+      toggleCourseSections();
+      assert(G, 'toggle off sets courseSectionsVisible false', courseSectionsVisible === false);
+      assert(G, 'toggle off clears layers', courseSectionLayers.length === 0);
+    }
+
+    // ── Stop Detail Panel ──
+    function testStopDetailPanel() {
+      const G = 'Stop Detail Panel';
+
+      assert(G, 'STOP_META array exists', Array.isArray(STOP_META));
+      assert(G, '8 stop metas defined', STOP_META.length === 8, `found ${STOP_META.length}`);
+
+      // Each meta has required properties
+      STOP_META.forEach((m, i) => {
+        assert(G, `meta ${i}: has burritoRating`, typeof m.burritoRating === 'number' && m.burritoRating >= 1 && m.burritoRating <= 5);
+        assert(G, `meta ${i}: has tacoRating`, typeof m.tacoRating === 'number');
+        assert(G, `meta ${i}: has vomitRisk`, typeof m.vomitRisk === 'number');
+        assert(G, `meta ${i}: has vibeNote`, typeof m.vibeNote === 'string');
+        assert(G, `meta ${i}: has crewAccess`, typeof m.crewAccess === 'string');
+        assert(G, `meta ${i}: has trivia`, typeof m.trivia === 'string');
+      });
+
+      // Functions
+      assert(G, 'openStopDetail is a function', typeof openStopDetail === 'function');
+      assert(G, 'closeStopDetail is a function', typeof closeStopDetail === 'function');
+
+      // Panel element
+      const panel = document.getElementById('stop-detail-panel');
+      assert(G, 'panel element exists', !!panel);
+      assert(G, 'panel starts hidden', panel && panel.classList.contains('hidden'));
+
+      // Open panel
+      openStopDetail(3);
+      assert(G, 'panel opens (hidden removed)', !panel.classList.contains('hidden'));
+      assert(G, 'panel has content after open', panel.innerHTML.length > 0);
+      assert(G, 'panel shows mandatory badge for stop 3',
+        panel.innerHTML.includes('Mandatory Food Stop'));
+
+      // Close panel
+      closeStopDetail();
+      assert(G, 'panel closes (hidden added)', panel.classList.contains('hidden'));
+    }
+
+    // ── Passport ──
+    function testPassport() {
+      const G = 'TB Passport';
+
+      assert(G, 'ACHIEVEMENTS array exists', Array.isArray(ACHIEVEMENTS));
+      assert(G, '10 achievements defined', ACHIEVEMENTS.length === 10, `found ${ACHIEVEMENTS.length}`);
+
+      ACHIEVEMENTS.forEach((a, i) => {
+        assert(G, `achievement ${i}: has id`, typeof a.id === 'string');
+        assert(G, `achievement ${i}: has name`, typeof a.name === 'string');
+        assert(G, `achievement ${i}: has emoji`, typeof a.emoji === 'string');
+        assert(G, `achievement ${i}: has check function`, typeof a.check === 'function');
+      });
+
+      // Passport content rendered
+      const content = document.getElementById('passport-content');
+      assert(G, 'passport-content exists', !!content);
+      const badges = content ? content.querySelectorAll('.passport-badge') : [];
+      assert(G, '10 badge elements rendered', badges.length === 10, `found ${badges.length}`);
+
+      // Score displayed
+      const score = content ? content.querySelector('.passport-score') : null;
+      assert(G, 'passport score displayed', !!score);
+
+      // buildPassport function
+      assert(G, 'buildPassport is a function', typeof buildPassport === 'function');
+      assert(G, 'trackAchievement is a function', typeof trackAchievement === 'function');
+    }
+
+    // ── Pin Filters ──
+    function testPinFilters() {
+      const G = 'Pin Filters';
+
+      const container = document.getElementById('pin-filters');
+      assert(G, 'pin-filters container exists', !!container);
+
+      const filterBtns = container ? container.querySelectorAll('.pin-filter-btn') : [];
+      assert(G, '7 filter buttons (one per category)', filterBtns.length === 7, `found ${filterBtns.length}`);
+
+      // All start active
+      const activeCount = container ? container.querySelectorAll('.pin-filter-btn.active').length : 0;
+      assert(G, 'all filters start active', activeCount === 7, `found ${activeCount}`);
+
+      // Functions
+      assert(G, 'togglePinCategory is a function', typeof togglePinCategory === 'function');
+      assert(G, 'buildPinFilters is a function', typeof buildPinFilters === 'function');
+      assert(G, 'hiddenPinCategories is a Set', hiddenPinCategories instanceof Set);
+    }
+
+    // ── Spectator Spots ──
+    function testSpectatorSpots() {
+      const G = 'Spectator Spots';
+
+      assert(G, 'SPECTATOR_SPOTS array exists', Array.isArray(SPECTATOR_SPOTS));
+      assert(G, '6 spectator spots', SPECTATOR_SPOTS.length === 6, `found ${SPECTATOR_SPOTS.length}`);
+
+      SPECTATOR_SPOTS.forEach((s, i) => {
+        assert(G, `spot ${i}: has name`, typeof s.name === 'string');
+        assert(G, `spot ${i}: has lat/lng`, typeof s.lat === 'number' && typeof s.lng === 'number');
+        assert(G, `spot ${i}: has mile`, typeof s.mile === 'number');
+        assert(G, `spot ${i}: has note`, typeof s.note === 'string');
+        assert(G, `spot ${i}: has parking`, typeof s.parking === 'string');
+      });
+
+      assert(G, 'toggleSpectatorSpots is a function', typeof toggleSpectatorSpots === 'function');
+      assert(G, 'spectatorToggleOn starts false', spectatorToggleOn === false);
+    }
+
+    // ── GPX Export ──
+    function testGPXExport() {
+      const G = 'GPX Export';
+
+      assert(G, 'exportGPX is a function', typeof exportGPX === 'function');
+    }
+
+    // ── Block Parties ──
+    function testBlockParties() {
+      const G = 'Block Parties';
+
+      assert(G, 'AMENITY_EMOJI object exists', typeof AMENITY_EMOJI === 'object');
+      assert(G, 'has beer emoji', AMENITY_EMOJI.beer === '🍺');
+      assert(G, 'has water emoji', AMENITY_EMOJI.water === '💧');
+
+      assert(G, 'toggleBlockParties is a function', typeof toggleBlockParties === 'function');
+      assert(G, 'loadBlockParties is a function', typeof loadBlockParties === 'function');
+      assert(G, 'blockPartyToggleOn starts false', blockPartyToggleOn === false);
+
+      const list = document.getElementById('block-parties-list');
+      assert(G, 'block-parties-list exists', !!list);
+
+      const btn = document.getElementById('btn-block-parties');
+      assert(G, 'block-parties toggle button exists', !!btn);
     }
   </script>
 </body>

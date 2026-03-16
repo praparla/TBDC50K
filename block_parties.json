@@ -1,0 +1,62 @@
+[
+  {
+    "id": "bp-001",
+    "name": "Jake's Corner Party",
+    "lat": 38.8090,
+    "lng": -77.0595,
+    "mile_marker": 2.5,
+    "host": "Jake M.",
+    "runner_note": "Cold towels, beer, and a cowbell. Find us on the corner.",
+    "crew_note": "Parking on S. Pitt St. Ring doorbell for access.",
+    "amenities": ["beer", "water", "music", "snacks"],
+    "confirmed": true
+  },
+  {
+    "id": "bp-002",
+    "name": "The Taco Temple",
+    "lat": 38.8350,
+    "lng": -77.1050,
+    "mile_marker": 7.5,
+    "host": "Sarah K.",
+    "runner_note": "We have a taco-themed photo booth and shots of hot sauce. Yes, literal hot sauce shots.",
+    "crew_note": "Free parking in driveway + street. Family friendly.",
+    "amenities": ["shots", "snacks", "water", "music", "chairs"],
+    "confirmed": true
+  },
+  {
+    "id": "bp-003",
+    "name": "Mile 14 Margaritas",
+    "lat": 38.8930,
+    "lng": -77.0700,
+    "mile_marker": 14.0,
+    "host": "Dave & Lisa",
+    "runner_note": "Frozen margaritas, Baja Blast flavor available. You've earned this.",
+    "crew_note": "Parking garage on N. Nash St. 3 blocks from party.",
+    "amenities": ["beer", "shots", "snacks", "water", "music", "ice", "chairs"],
+    "confirmed": true
+  },
+  {
+    "id": "bp-004",
+    "name": "The Dog Petting Zone",
+    "lat": 38.9200,
+    "lng": -77.0340,
+    "mile_marker": 18.5,
+    "host": "Columbia Heights Runners Club",
+    "runner_note": "6 very good dogs who want to support your dreams. Also gummy bears.",
+    "crew_note": "Columbia Heights Metro. No parking — take the train.",
+    "amenities": ["dog-petting-zone", "snacks", "water", "chairs"],
+    "confirmed": true
+  },
+  {
+    "id": "bp-005",
+    "name": "Union Station Rally",
+    "lat": 38.8980,
+    "lng": -77.0070,
+    "mile_marker": 23.5,
+    "host": "TB50K Volunteer Crew",
+    "runner_note": "Last party before the Final Push. Medical available. You can do this.",
+    "crew_note": "Union Station parking. Full medical kit on site.",
+    "amenities": ["water", "snacks", "medical", "ice", "chairs", "music"],
+    "confirmed": true
+  }
+]

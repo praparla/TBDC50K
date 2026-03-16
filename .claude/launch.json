@@ -3,8 +3,8 @@
   "configurations": [
     {
       "name": "dev",
-      "runtimeExecutable": "/tmp/tb50k_serve.sh",
-      "runtimeArgs": [],
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-c", "cd /tmp/tb50k_serve && python3 -m http.server 8050"],
       "port": 8050
     }
   ]

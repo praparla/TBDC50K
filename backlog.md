@@ -26,7 +26,7 @@
 - [ ] **Elevation profile** - Show interactive elevation chart (via `leaflet-elevation` plugin) below the map. Hover/scrub to move a dot along the route. Shows grade, elevation, and cumulative distance. Already have GPX data — zero new network requests needed.
 - [ ] **Grade-colored route polyline** - Segment the `GPX_TRACK` array and color each segment by steepness: green (flat), yellow (moderate), red (steep). Lets runners instantly spot hard sections without reading a chart.
 - [x] **Turn-by-turn segments** - Break route into named stop-to-stop segments with individual distances and elevation change per leg.
-- [ ] **Named course sections** - Define and highlight named sub-sections ("The Georgetown Climb," "Capitol Hill Push," "Final 5K") as clickable overlays with character notes. Storytelling for the course.
+- [x] **Named course sections** - Define and highlight named sub-sections ("The Georgetown Climb," "Capitol Hill Push," "Final 5K") as clickable overlays with character notes. Storytelling for the course.
 - [ ] **Offline map support** - Service worker pre-fetches CARTO dark tiles for the route corridor at zoom 13–16 (~3–8 MB). The `gpx_data.js` embedded data is already offline; only tile layer needs caching.
 
 ### P1 - Race Planning & Pacing
@@ -42,11 +42,11 @@
 - [x] **Map tile layer switcher** - Toggle between: CARTO Dark (current), Esri World Imagery (satellite), OpenTopoMap (contour lines), OSM Standard. Uses Leaflet's built-in `L.control.layers()`. Low effort, high utility.
 - [x] **"Fly to stop" smooth navigation** - Replaced `map.setView()` with `map.flyTo()` for smooth cinematic pan-and-zoom when clicking a stop or pin in the sidebar.
 - [ ] **Alternative route suggestions** - Toggle between different route options between stops.
-- [ ] **Spectator spots map layer** - Toggleable GeoJSON layer of recommended crew/spectator positions with easy parking or Metro access (Lincoln Memorial area ~mile 15, Capitol Hill ~mile 23, Old Town start/finish). Static file, no backend.
+- [x] **Spectator spots map layer** - Toggleable GeoJSON layer of recommended crew/spectator positions with easy parking or Metro access (Lincoln Memorial area ~mile 15, Capitol Hill ~mile 23, Old Town start/finish). Static file, no backend.
 
 ### P2 - Custom Pins & Social
-- [ ] **Pin categories & filtering** - Toggle visibility of pin types (restrooms, friends, food, etc.)
-- [ ] **Shareable pin sets via URL** - Encode custom pins into a URL hash/query string so runners can share crew stop locations with their support team. No backend — pure client-side URL state.
+- [x] **Pin categories & filtering** - Toggle visibility of pin types (restrooms, friends, food, etc.)
+- [x] **Shareable pin sets via URL** - Encode custom pins into a URL hash/query string so runners can share crew stop locations with their support team. No backend — pure client-side URL state.
 - [ ] **Pin notes & photos** - Add notes or photos to custom pins
 - [ ] **Friend location sharing** - Real-time location sharing on race day
 
@@ -58,7 +58,7 @@
 
 ### P2 - Sharing & Export
 - [x] **Printable pace card** - "Print" button generates a clean single-page pace card (stop names, cumulative distances, goal arrivals, mandatory food notes) via `window.print()` with print-specific CSS. Runners can laminate and carry in their vest.
-- [ ] **GPX export** - Export the route with custom pins as a GPX file for Garmin/Wahoo.
+- [x] **GPX export** - Export the route with custom pins as a GPX file for Garmin/Wahoo.
 - [ ] **Strava integration** - Import training runs, overlay on race route.
 - [x] **Add to Calendar (.ics)** - One-click `.ics` download for Nov 27, 2026 race day with event details pre-filled. Works in Apple Calendar, Google Calendar, and Outlook — no API keys needed.
 - [ ] **Shareable race card image** - CSS-styled `<div>` showing route thumbnail, goal time, name, and Taco Bell branding — screenshottable for Instagram/social hype.
@@ -71,22 +71,22 @@
 - [x] **Course preview flythrough animation** - "Preview Route" button animates the map camera panning along the GPX track start-to-finish using `setInterval` + `map.panTo()`. Toggle to start/stop.
 
 ### P2 - PWA & Offline
-- [ ] **Installable PWA** - `manifest.json` + service worker → "Add to Home Screen" on iOS/Android. Race-day quick launch from home screen without navigating to a URL. Taco Bell 🌮 launcher icon.
+- [x] **Installable PWA** - `manifest.json` + service worker → "Add to Home Screen" on iOS/Android. Race-day quick launch from home screen without navigating to a URL. Taco Bell 🌮 launcher icon.
 - [ ] **Offline tile caching** - Pre-cache map tiles for route corridor. See offline map support above.
 
 ### P2 - Gamification
-- [ ] **"Taco Bell Passport" achievement system** - Checklist-style badges: "Visited All 8 TBs on a Training Run," "Logged 20+ Mile Training Run," "Both Mandatory Food Items Checked," "Finished Under 9 Hours." SVG/emoji badges shown in a passport panel; state in localStorage. No backend.
+- [x] **"Taco Bell Passport" achievement system** - Checklist-style badges: "Visited All 8 TBs on a Training Run," "Logged 20+ Mile Training Run," "Both Mandatory Food Items Checked," "Finished Under 9 Hours." SVG/emoji badges shown in a passport panel; state in localStorage. No backend.
 
 ### P2 - Rich Info Cards Per Stop
 
 Each Taco Bell stop and bathroom deserves a richer experience than a basic Leaflet popup. Replace popups with a Komoot/AllTrails-style sidebar detail panel that slides in when you click a marker.
 
-- [ ] **Stop detail panel** — Clicking a TB stop in the sidebar or on the map slides open a detail panel (replacing sidebar list content, or as a bottom sheet on mobile). Panel layout:
+- [x] **Stop detail panel** — Clicking a TB stop in the sidebar or on the map slides open a detail panel (replacing sidebar list content, or as a bottom sheet on mobile). Panel layout:
   - **Above the fold:** Stop number + name, cumulative miles from start, miles to next stop, estimated arrival time (if pace calculator is set), mandatory food indicator (🌮 badge if this is Stop 3 or Stop 7)
   - **Below the fold:** Crew/spectator access notes (parking, Metro station, street address), "Open in Maps" button, fun stop rating
   - **Collapsible extra:** historical Taco Bell trivia blurb for that location
 
-- [ ] **Funny stop rating scales** — Each TB stop gets three fun ratings displayed as emoji pip rows:
+- [x] **Funny stop rating scales** — Each TB stop gets three fun ratings displayed as emoji pip rows:
   - 🌯 **Bean Burrito Price Scale** (1–5): relative cost of the mandatory food item, calibrated so 1 burrito ≈ $1.49. Shows what you're paying in burrito-equivalents. Tooltip: "This stop will cost you 3 Bean Burritos."
   - 🌮 **Stop Experience Scale** (1–5): overall vibe from "Sad Sauce Packet" (1) to "Cantina Tier" (5). Ratings are pre-authored in a `STOP_META` object in `app.js`.
   - 🤢 **Vomit Risk Scale** (1–5): from "100% Upchuck Guarantee" (1) → "Odds Not Good" (2) → "Roll The Dice" (3) → "Probably Fine" (4) → "Would Eat A Chalupa Off This Floor" (5). Pre-authored per stop; shown on bathroom finder layer markers too. Each bathroom marker popup leads with this rating in big text so runners can make a split-second call at mile 24.
@@ -102,7 +102,7 @@ Each Taco Bell stop and bathroom deserves a richer experience than a basic Leafl
 
 A static, organizer-curated layer of neighborhood hospitality stops: private homes or local spots along the route where spectators are setting up parties, offering snacks, handing out beer, blasting music. Completely unique to this race and extremely on-brand for the TB DC community vibe.
 
-- [ ] **`block_parties.json` data layer** — Add `block_parties.json` to the repo root. Schema per entry:
+- [x] **`block_parties.json` data layer** — Add `block_parties.json` to the repo root. Schema per entry:
   ```json
   {
     "id": "bp-001",
@@ -121,7 +121,7 @@ A static, organizer-curated layer of neighborhood hospitality stops: private hom
 
 - [ ] **Runner vs. Crew view toggle** — Toggle in the sidebar header (two-button pill: 🏃 Runner | 🧑‍🤝‍🧑 Crew). In **Runner view**: block party popups show name, mile marker, what to expect, and "Open in Maps" button — no address, no parking, nothing distracting. In **Crew view**: full address, parking notes, host contact (if provided), and all amenities. State persisted to `localStorage`. Also controls visibility of other crew-relevant info (e.g., parking callouts on spectator spots layer).
 
-- [ ] **Block party sidebar section** — New collapsible section "🎉 Party Spots" in the sidebar listing confirmed block parties sorted by mile marker. Each item shows: party name, mile marker, host name, amenity emoji badges (🍺🎵🪑). Clicking flies the map to that pin and opens the detail popup.
+- [x] **Block party sidebar section** — New collapsible section "🎉 Party Spots" in the sidebar listing confirmed block parties sorted by mile marker. Each item shows: party name, mile marker, host name, amenity emoji badges (🍺🎵🪑). Clicking flies the map to that pin and opens the detail popup.
 
 - [ ] **Intake form for submitting a party** — Link in the "Party Spots" sidebar section: "Hosting a party? Submit here →" opens a Google Form (or Formspree-backed HTML form) for hosts to register. Fields: name, address, approximate mile marker, what you're offering, runner-facing note, crew-facing note, contact email. Submissions are reviewed and manually curated into `block_parties.json` by the race organizer before going live — no auto-publish. Keeps spam out while keeping setup zero-backend.
 
@@ -393,3 +393,38 @@ Working through remaining backlog in priority order. Skipping features requiring
 - [x] **Sauce packet wisdom copy** (2026-03-11) — `SAUCE_COPY` object with 8 sauce packet sayings. `applySaucePacketCopy()` swaps hint text when sauce theme is active using `data-sauce-id` and `data-default-hint` attributes. Reverts on theme change.
 - [x] **Printable pace card** (2026-03-11) — "Print Pace Card" button in Tools. Triggers `window.print()` with comprehensive `@media print` CSS hiding map/sidebar chrome, forcing black-on-white layout. Auto-calculates pace first.
 - [x] **Test suite update** (2026-03-11) — Added 7 new test groups (102 assertions) to `tests/responsive.test.html`: Countdown Clock, Segments, Weather, Race Mode, Sauce Packet Copy, Time-of-Day Estimator, Layer Control. Updated existing tests for new 6-button tools grid and 9-section DOM. 301/303 total assertions pass.
+- [x] **Named course sections** (2026-03-15) — 7 named sub-sections ("Old Town Stroll," "The Van Dorn Shuffle," "Arlington Long Haul," "The Georgetown Climb," "DC Entry Push," "The Capitol Grind," "The Final Push") as colored polyline overlays on the map + clickable sidebar section. `COURSE_SECTIONS` data array, `toggleCourseSections()`, `buildCourseSectionsList()`.
+- [x] **Stop detail panel + funny rating scales** (2026-03-15) — Click a TB stop → slide-in panel with rich info: cumulative miles, miles to next, mandatory food indicator, crew access notes, trivia. Three emoji rating scales (🌯 Burrito Price 1–5, 🌮 Experience 1–5, 🤢 Vomit Risk 1–5) from `STOP_META` data. Bottom sheet on mobile, right panel on desktop.
+- [x] **GPX export** (2026-03-15) — "Export GPX" button in Tools. Downloads route track + all custom pins as a standards-compliant `.gpx` file for Garmin/Wahoo. Uses `exportGPX()` with XML generation.
+- [x] **Spectator spots map layer** (2026-03-15) — 6 recommended crew/spectator positions with parking/Metro info. Toggleable 👀 marker layer via `toggleSpectatorSpots()`. Static `SPECTATOR_SPOTS` data.
+- [x] **Installable PWA** (2026-03-15) — `manifest.json` with taco emoji icon, `sw.js` service worker with cache-first tiles, network-first APIs, and core asset pre-caching. "Add to Home Screen" ready on iOS/Android.
+- [x] **Taco Bell Passport achievement system** (2026-03-15) — 10 badges (Route Scout, Speed Demon, Taco Timer, Theme DJ, Pit Stop Pro, Course Scholar, Full Sender, Night Owl, Pin Dropper, Social Butterfly). Achievement hooks in existing functions. Grid UI in sidebar. State persisted to localStorage.
+- [x] **Pin categories & filtering** (2026-03-15) — Toggle pin visibility by type (restroom, water, friend, food, medical, parking, custom). Filter row in Custom Pins section via `buildPinFilters()` / `togglePinCategory()`.
+- [x] **Shareable pin sets via URL** (2026-03-15) — Encode custom pins into URL hash fragment. "Share Pins" button in Tools copies shareable URL. `encodePinsToURL()` / `loadPinsFromURL()`. Pure client-side, no backend.
+- [x] **Block parties data layer + sidebar** (2026-03-15) — `block_parties.json` with 5 sample parties. Toggleable 🎉 marker layer, sidebar "Block Parties" section sorted by mile marker with amenity emoji badges. 1-hour localStorage cache. `loadBlockParties()`, `renderBlockPartySidebar()`, `toggleBlockParties()`.
+- [x] **Test suite update** (2026-03-15) — Added 7 new test groups (206 assertions) to `tests/responsive.test.html`: Course Sections, Stop Detail Panel, TB Passport, Pin Filters, Spectator Spots, GPX Export, Block Parties. Updated existing tests for 10-button tools grid and new DOM sections. 524/527 total assertions pass.
+
+---
+
+## Implementation Plan (2026-03-15 Session)
+
+Working through remaining backlog in priority order. Skipping features requiring user accounts, external API keys, or unavailable data (no elevation in GPX).
+
+### Batch 1 — P1 Features
+1. **Named course sections** — Define 6–8 named sub-sections ("The Georgetown Climb," "Capitol Hill Push," "Final 5K") as clickable overlays with character notes. Static `COURSE_SECTIONS` data + colored polyline segments on map + sidebar section.
+2. **Grade-adjusted pace estimator (GAP)** — Slider for user's flat-road pace + approximate Minetti GAP model using estimated elevation changes per segment. Refines aid station splits.
+
+### Batch 2 — P2 Quick Wins
+3. **GPX export** — "Export GPX" button downloads route + custom pins as a .gpx file.
+4. **Spectator spots map layer** — Static `SPECTATOR_SPOTS` data with recommended crew/spectator positions. Toggleable layer.
+5. **Installable PWA** — `manifest.json` + service worker for "Add to Home Screen" + offline capability.
+
+### Batch 3 — P2 Rich Features
+6. **Stop detail panel + funny rating scales** — Click a TB stop → slide-in detail panel with rich info, emoji rating scales (burrito price, experience, vomit risk).
+7. **Taco Bell Passport achievement system** — Badge/checklist system in localStorage.
+8. **Pin categories & filtering** — Toggle pin type visibility.
+
+### Batch 4 — P2 Social/Sharing
+9. **Shareable pin sets via URL** — Encode pins into URL hash.
+10. **Block parties data layer** — `block_parties.json` + toggleable 🎉 marker layer + sidebar section.
+11. **Shareable race card image** — CSS-styled div for screenshots.

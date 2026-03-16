@@ -80,6 +80,53 @@ const PIN_ICONS = {
 const STOP_DISTANCES = [0, 5.1, 12.7, 15.5, 19.0, 20.0, 22.0, 23.5, 32.4];
 // Index 0 = Start, 1–7 = Stops 1–7, 8 = Finish (same location as Start)
 
+// ── Named Course Sections ──
+const COURSE_SECTIONS = [
+  { name: 'Old Town Stroll', miStart: 0, miEnd: 3.0, color: '#34d399', note: 'Flat, scenic streets of Old Town Alexandria. Ease into it — the cobblestones are charming now, less so at mile 30.' },
+  { name: 'The Van Dorn Shuffle', miStart: 3.0, miEnd: 5.1, color: '#60a5fa', note: 'Out to the first Taco Bell on Van Dorn St. Suburban stretch. Save energy — you\'ll need it.' },
+  { name: 'Arlington Long Haul', miStart: 5.1, miEnd: 12.7, color: '#fbbf24', note: 'The big one. 7.6 miles through Arlington to Stop 2. Longest leg of the race. Trail sections and bike paths.' },
+  { name: 'The Georgetown Climb', miStart: 12.7, miEnd: 15.5, color: '#f87171', note: 'Rolling hills through Arlington to Stop 3. Mandatory food checkpoint — eat your Chalupa or Crunchwrap.' },
+  { name: 'DC Entry Push', miStart: 15.5, miEnd: 20.0, color: '#c084fc', note: 'Cross into DC proper. Columbia Heights to U Street. Urban buzz, good crowd energy. Miles 15–20.' },
+  { name: 'The Capitol Grind', miStart: 20.0, miEnd: 23.5, color: '#fb923c', note: 'Chinatown through to Union Station. Stop 7 mandatory food. The wall hits here for most runners.' },
+  { name: 'The Final Push', miStart: 23.5, miEnd: 32.4, color: '#ef4444', note: '8.9 miles back to Old Town. Longest leg, highest fatigue. Dig deep. The finish line chalupa awaits.' },
+];
+
+// ── Stop Detail Metadata ──
+const STOP_META = [
+  { stopIndex: 0, burritoRating: 3, tacoRating: 5, vomitRisk: 5, vibeNote: 'The Cantina flagship. Alcohol available. DJ on race day. You\'ll end here — make it count.', crewAccess: 'King St Metro, street parking on King St. Crew-friendly sidewalks.', trivia: 'This is a Taco Bell Cantina — one of TB\'s upscale locations with booze, open kitchen, and no drive-through.' },
+  { stopIndex: 1, burritoRating: 2, tacoRating: 3, vomitRisk: 4, vibeNote: 'Suburban classic. Drive-through vibes. Get in, fuel up, get out.', crewAccess: 'Large parking lot. Easy crew access. Van Dorn St has wide shoulders.', trivia: 'A standard Taco Bell with the original 90s interior — purple booths and all.' },
+  { stopIndex: 2, burritoRating: 3, tacoRating: 3, vomitRisk: 3, vibeNote: 'Lee Highway location. You\'ve earned this one after 12.7 miles.', crewAccess: 'Parking lot access from Lee Hwy. Bus stops nearby.', trivia: 'The Lee Highway corridor was once the main route from DC to the Shenandoah Valley.' },
+  { stopIndex: 3, burritoRating: 4, tacoRating: 4, vomitRisk: 3, vibeNote: 'MANDATORY FOOD STOP. Chalupa Supreme or Crunchwrap required. Choose wisely.', crewAccess: 'Wilson Blvd, Courthouse Metro nearby. Metered street parking.', trivia: 'The Crunchwrap Supreme was invented in 2005 and immediately became TB\'s #1 seller.' },
+  { stopIndex: 4, burritoRating: 3, tacoRating: 4, vomitRisk: 2, vibeNote: 'Columbia Heights — the energy shift. DC proper. You might see protesters or a parade.', crewAccess: 'Columbia Heights Metro. Paid garage parking on 14th St.', trivia: 'The 14th St corridor has more Taco Bells per mile than any other street in DC.' },
+  { stopIndex: 5, burritoRating: 2, tacoRating: 3, vomitRisk: 2, vibeNote: 'U Street. Jazz history meets fast food destiny. Only 1 mile from the last stop.', crewAccess: 'U St Metro. Street parking limited — crew should use Metro.', trivia: 'U Street was known as "Black Broadway" in the early 1900s. Now it\'s known for its TB.' },
+  { stopIndex: 6, burritoRating: 3, tacoRating: 3, vomitRisk: 2, vibeNote: 'Chinatown. The Verizon Center looms. You\'re in the home stretch... kind of.', crewAccess: 'Gallery Place Metro. Multiple parking garages within 2 blocks.', trivia: 'The Chinatown TB is one of the few fast food locations required to display its name in Chinese characters.' },
+  { stopIndex: 7, burritoRating: 5, tacoRating: 4, vomitRisk: 1, vibeNote: 'MANDATORY FOOD STOP #2. Union Station. Burrito Supreme or Nachos Bell Grande. Then 8.9 miles home.', crewAccess: 'Union Station Metro + Amtrak. Massive parking garage. Best crew access on the course.', trivia: 'Union Station serves 40 million visitors per year. Most of them wish there was a Taco Bell inside.' },
+];
+
+// ── Spectator Spots ──
+const SPECTATOR_SPOTS = [
+  { name: 'Old Town Start/Finish', lat: 38.8047, lng: -77.0442, mile: 0, note: 'Best spot to see runners off and welcome them home. King St has plenty of cafes for waiting.', parking: 'King St Metro, street parking, nearby garages.' },
+  { name: 'Shirlington Village', lat: 38.8425, lng: -77.0870, mile: 8.5, note: 'Midway through the Arlington Long Haul. Restaurants and shops to kill time.', parking: 'Free parking in Shirlington garage.' },
+  { name: 'Rosslyn Overlook', lat: 38.8967, lng: -77.0719, mile: 13.5, note: 'Great views of Georgetown and the Potomac. Catch runners on the Georgetown Climb.', parking: 'Rosslyn Metro. Paid garages.' },
+  { name: 'Lincoln Memorial Area', lat: 38.8893, lng: -77.0502, mile: 15.0, note: 'Iconic backdrop. Runners pass through around mile 15. Great photo op.', parking: 'Foggy Bottom Metro. Limited street parking.' },
+  { name: 'U Street Corridor', lat: 38.9169, lng: -77.0325, mile: 20.0, note: 'High-energy neighborhood. Bars and restaurants everywhere. Cheer from a patio.', parking: 'U St Metro. Street parking available.' },
+  { name: 'Capitol Hill / Union Station', lat: 38.8982, lng: -77.0062, mile: 23.5, note: 'Last TB stop before the Final Push. Runners need encouragement here.', parking: 'Union Station garage. Multiple Metro lines.' },
+];
+
+// ── Taco Bell Passport Achievements ──
+const ACHIEVEMENTS = [
+  { id: 'visit_all_8', name: 'Grand Slam', emoji: '🏆', desc: 'Visited all 8 Taco Bell stops', check: () => { const pins = JSON.parse(localStorage.getItem('tb50k_pins') || '[]'); return pins.length >= 8; } },
+  { id: 'mandatory_food', name: 'Rule Follower', emoji: '✅', desc: 'Completed both mandatory food items', check: () => localStorage.getItem('tb50k_food_rule_1') === 'true' && localStorage.getItem('tb50k_food_rule_2') === 'true' },
+  { id: 'pace_set', name: 'Time Keeper', emoji: '⏱', desc: 'Set a goal finish time', check: () => !!(localStorage.getItem('tb50k_pace_hours') || localStorage.getItem('tb50k_pace_minutes')) },
+  { id: 'race_mode', name: 'Gone Live', emoji: '📡', desc: 'Activated Race Mode', check: () => localStorage.getItem('tb50k_race_mode_used') === 'true' },
+  { id: 'calendar_added', name: 'Committed', emoji: '📅', desc: 'Added race to calendar', check: () => localStorage.getItem('tb50k_calendar_added') === 'true' },
+  { id: 'theme_explorer', name: 'Fashionista', emoji: '🎨', desc: 'Tried 3+ themes', check: () => { try { return (JSON.parse(localStorage.getItem('tb50k_themes_tried') || '[]')).length >= 3; } catch(e) { return false; } } },
+  { id: 'pin_master', name: 'Pin Master', emoji: '📌', desc: 'Placed 5+ custom pins', check: () => (JSON.parse(localStorage.getItem('tb50k_pins') || '[]')).length >= 5 },
+  { id: 'sub_9', name: 'Speed Demon', emoji: '🔥', desc: 'Set a goal time under 9 hours', check: () => { const h = parseInt(localStorage.getItem('tb50k_pace_hours') || '0'); const m = parseInt(localStorage.getItem('tb50k_pace_minutes') || '0'); return (h * 60 + m) > 0 && (h * 60 + m) < 540; } },
+  { id: 'bathrooms_found', name: 'Bathroom Scout', emoji: '🚽', desc: 'Used the bathroom finder', check: () => localStorage.getItem('tb50k_bathrooms_used') === 'true' },
+  { id: 'flythrough_watched', name: 'Film Buff', emoji: '🎬', desc: 'Watched the route flythrough', check: () => localStorage.getItem('tb50k_flythrough_used') === 'true' },
+];
+
 let map;
 let tileLayer;
 let routeLayer;
@@ -91,6 +138,14 @@ let currentThemeId = DEFAULT_THEME;
 let bathroomLayer = null;
 let bathroomToggleOn = false;
 let layerControl = null;
+let courseSectionLayers = [];
+let courseSectionsVisible = false;
+let spectatorLayer = null;
+let spectatorToggleOn = false;
+let detailPanelOpen = false;
+let blockPartyLayer = null;
+let blockPartyToggleOn = false;
+let blockParties = [];
 
 // ── Map Tile Options (for layer switcher) ──
 const MAP_TILES = {
@@ -168,6 +223,12 @@ function applyTheme(themeId) {
   // Persist
   localStorage.setItem(THEME_STORAGE_KEY, theme.id);
 
+  // Track for achievement
+  try {
+    const tried = JSON.parse(localStorage.getItem('tb50k_themes_tried') || '[]');
+    if (!tried.includes(theme.id)) { tried.push(theme.id); localStorage.setItem('tb50k_themes_tried', JSON.stringify(tried)); }
+  } catch(e) { /* ignore */ }
+
   // Swap tile layer
   if (tileLayer) {
     map.removeLayer(tileLayer);
@@ -230,6 +291,11 @@ document.addEventListener('DOMContentLoaded', () => {
   restoreCountdownInputs();
   loadWeather();
   applySaucePacketCopy();
+  buildCourseSectionsList();
+  buildPassport();
+  buildPinFilters();
+  loadPinsFromURL();
+  loadBlockParties();
 
   // Initialize backend features (graceful degradation — works without these scripts)
   if (typeof TB_AUTH !== 'undefined') TB_AUTH.init();
@@ -350,6 +416,7 @@ function addStopMarkers(wptCoords) {
     item.addEventListener('click', () => {
       map.flyTo([wpt.lat, wpt.lon], 15, { duration: 1.2 });
       marker.openPopup();
+      openStopDetail(i);
     });
     stopsList.appendChild(item);
   });
@@ -545,6 +612,7 @@ function toggleBathrooms() {
   bathroomToggleOn = true;
   btn.classList.add('active');
   btn.textContent = '🚽 Restrooms On';
+  trackAchievement('tb50k_bathrooms_used');
 
   // Check cache
   try {
@@ -631,6 +699,7 @@ window.exportToGoogleMaps = exportToGoogleMaps;
 
 // ── Add to Calendar (.ics) ──
 function downloadICS() {
+  trackAchievement('tb50k_calendar_added');
   const ics = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
@@ -676,6 +745,7 @@ function startFlythrough() {
   }
 
   flythroughActive = true;
+  trackAchievement('tb50k_flythrough_used');
   const track = GPX_TRACK;
   const totalPoints = track.length;
   const step = Math.max(1, Math.floor(totalPoints / 200)); // ~200 frames
@@ -1033,6 +1103,7 @@ function startRaceMode() {
   }
 
   raceModeActive = true;
+  trackAchievement('tb50k_race_mode_used');
 
   // Create pulsing marker
   const pulseIcon = L.divIcon({
@@ -1220,3 +1291,460 @@ function printPaceCard() {
 }
 
 window.printPaceCard = printPaceCard;
+
+// ── Named Course Sections ──
+function toggleCourseSections() {
+  const btn = document.getElementById('btn-course-sections');
+  if (!btn) return;
+
+  if (courseSectionsVisible) {
+    courseSectionLayers.forEach(l => map.removeLayer(l));
+    courseSectionLayers = [];
+    courseSectionsVisible = false;
+    btn.classList.remove('active');
+    btn.textContent = '🗺 Course Sections';
+    return;
+  }
+
+  courseSectionsVisible = true;
+  btn.classList.add('active');
+  btn.textContent = '🗺 Sections On';
+
+  // Map mile markers to approximate track indices
+  const totalDist = STOP_DISTANCES[STOP_DISTANCES.length - 1];
+  const totalPoints = GPX_TRACK.length;
+
+  COURSE_SECTIONS.forEach(section => {
+    const startIdx = Math.round((section.miStart / totalDist) * totalPoints);
+    const endIdx = Math.min(Math.round((section.miEnd / totalDist) * totalPoints), totalPoints - 1);
+    const segCoords = GPX_TRACK.slice(startIdx, endIdx + 1);
+
+    if (segCoords.length < 2) return;
+
+    const polyline = L.polyline(segCoords, {
+      color: section.color,
+      weight: 7,
+      opacity: 0.8,
+    }).addTo(map);
+
+    polyline.bindPopup(`<div class="popup-content">
+      <h3>${section.name}</h3>
+      <p><strong>Miles ${section.miStart}–${section.miEnd}</strong> (${(section.miEnd - section.miStart).toFixed(1)} mi)</p>
+      <p>${section.note}</p>
+    </div>`);
+
+    courseSectionLayers.push(polyline);
+  });
+}
+
+window.toggleCourseSections = toggleCourseSections;
+
+function buildCourseSectionsList() {
+  const container = document.getElementById('course-sections-list');
+  if (!container) return;
+
+  let html = '';
+  COURSE_SECTIONS.forEach(section => {
+    html += `<div class="section-row course-section-row" data-mi-start="${section.miStart}" data-mi-end="${section.miEnd}">
+      <span class="section-color-dot" style="background: ${section.color}"></span>
+      <span class="section-row-name">${section.name}</span>
+      <span class="segment-dist">${section.miStart}–${section.miEnd} mi</span>
+    </div>`;
+  });
+  container.innerHTML = html;
+
+  // Click to fly to section midpoint
+  container.querySelectorAll('.course-section-row').forEach(row => {
+    row.addEventListener('click', () => {
+      const miStart = parseFloat(row.dataset.miStart);
+      const miEnd = parseFloat(row.dataset.miEnd);
+      const midMile = (miStart + miEnd) / 2;
+      const totalDist = STOP_DISTANCES[STOP_DISTANCES.length - 1];
+      const midIdx = Math.round((midMile / totalDist) * GPX_TRACK.length);
+      const pt = GPX_TRACK[Math.min(midIdx, GPX_TRACK.length - 1)];
+      map.flyTo(pt, 14, { duration: 1.2 });
+    });
+  });
+}
+
+// ── GPX Export ──
+function exportGPX() {
+  let gpx = `<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="TacoBellDC50K-RoutePlanner" xmlns="http://www.topografix.com/GPX/1/1">
+  <metadata>
+    <name>Taco Bell DC 50K Route</name>
+    <desc>32.4-mile ultramarathon through 8 Taco Bell locations in DC/Arlington/Alexandria</desc>
+  </metadata>
+`;
+
+  // Waypoints (TB stops)
+  GPX_WAYPOINTS.forEach((wpt, i) => {
+    const stop = TACO_BELL_STOPS[i];
+    gpx += `  <wpt lat="${wpt.lat}" lon="${wpt.lon}">
+    <name>${stop ? stop.label : wpt.name}</name>
+  </wpt>\n`;
+  });
+
+  // Custom pins as waypoints
+  customPins.forEach(pin => {
+    gpx += `  <wpt lat="${pin.lat}" lon="${pin.lng}">
+    <name>${pin.name}</name>
+    <sym>${pin.iconType}</sym>
+  </wpt>\n`;
+  });
+
+  // Track
+  gpx += '  <trk>\n    <name>TB DC 50K Route</name>\n    <trkseg>\n';
+  GPX_TRACK.forEach(pt => {
+    gpx += `      <trkpt lat="${pt[0]}" lon="${pt[1]}"></trkpt>\n`;
+  });
+  gpx += '    </trkseg>\n  </trk>\n</gpx>';
+
+  const blob = new Blob([gpx], { type: 'application/gpx+xml' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'taco-bell-dc-50k.gpx';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+window.exportGPX = exportGPX;
+
+// ── Spectator Spots Layer ──
+function toggleSpectatorSpots() {
+  const btn = document.getElementById('btn-spectators');
+  if (!btn) return;
+
+  if (spectatorToggleOn) {
+    if (spectatorLayer) map.removeLayer(spectatorLayer);
+    spectatorToggleOn = false;
+    btn.classList.remove('active');
+    btn.textContent = '👀 Spectator Spots';
+    return;
+  }
+
+  spectatorToggleOn = true;
+  btn.classList.add('active');
+  btn.textContent = '👀 Spots On';
+
+  spectatorLayer = L.layerGroup();
+  SPECTATOR_SPOTS.forEach(spot => {
+    const icon = L.divIcon({
+      className: 'spectator-marker',
+      html: '👀',
+      iconSize: [24, 24],
+      iconAnchor: [12, 12],
+    });
+
+    const marker = L.marker([spot.lat, spot.lng], { icon });
+    marker.bindPopup(`<div class="popup-content">
+      <h3>👀 ${spot.name}</h3>
+      <p><strong>Mile ${spot.mile}</strong></p>
+      <p>${spot.note}</p>
+      <p><em>🅿️ ${spot.parking}</em></p>
+      <button class="popup-directions-btn" onclick="openInMaps(${spot.lat}, ${spot.lng}, '${spot.name.replace(/'/g, "\\'")}')">🧭 Directions</button>
+    </div>`);
+    spectatorLayer.addLayer(marker);
+  });
+
+  spectatorLayer.addTo(map);
+}
+
+window.toggleSpectatorSpots = toggleSpectatorSpots;
+
+// ── Stop Detail Panel ──
+function openStopDetail(stopIndex) {
+  const stop = TACO_BELL_STOPS[stopIndex];
+  const meta = STOP_META[stopIndex];
+  const wpt = GPX_WAYPOINTS[stopIndex];
+  if (!stop || !meta) return;
+
+  const panel = document.getElementById('stop-detail-panel');
+  if (!panel) return;
+
+  const dist = STOP_DISTANCES[stopIndex];
+  const nextDist = stopIndex < STOP_DISTANCES.length - 2 ? (STOP_DISTANCES[stopIndex + 1] - dist).toFixed(1) : 'N/A';
+  const isMandatory = stopIndex === 3 || stopIndex === 7;
+
+  // Build rating pips
+  function ratingPips(emoji, count) {
+    return emoji.repeat(count) + '<span class="rating-empty">' + emoji.repeat(5 - count) + '</span>';
+  }
+
+  panel.innerHTML = `
+    <div class="stop-detail-header">
+      <button class="stop-detail-close" onclick="closeStopDetail()">&times;</button>
+      <div class="stop-detail-num ${stopIndex === 0 ? 'start-finish' : ''}">${stopIndex === 0 ? 'S' : stop.num}</div>
+      <h3>${stop.label}</h3>
+      ${isMandatory ? '<span class="stop-detail-badge">🌮 Mandatory Food Stop</span>' : ''}
+    </div>
+    <div class="stop-detail-body">
+      <div class="stop-detail-stats">
+        <div class="stop-detail-stat"><span class="stat-label">Distance</span><span class="stat-value">${dist} mi</span></div>
+        <div class="stop-detail-stat"><span class="stat-label">To Next Stop</span><span class="stat-value">${nextDist} mi</span></div>
+      </div>
+      <div class="stop-detail-ratings">
+        <div class="rating-row" title="Relative cost in Bean Burrito equivalents"><span class="rating-label">🌯 Price</span><span class="rating-pips">${ratingPips('🌯', meta.burritoRating)}</span></div>
+        <div class="rating-row" title="Overall stop experience"><span class="rating-label">🌮 Vibe</span><span class="rating-pips">${ratingPips('🌮', meta.tacoRating)}</span></div>
+        <div class="rating-row" title="Odds of keeping food down"><span class="rating-label">🤢 Risk</span><span class="rating-pips">${ratingPips('🤢', 6 - meta.vomitRisk)}</span></div>
+      </div>
+      <p class="stop-detail-vibe">${meta.vibeNote}</p>
+      <div class="stop-detail-crew">
+        <h4>🅿️ Crew & Spectator Access</h4>
+        <p>${meta.crewAccess}</p>
+      </div>
+      <details class="stop-detail-trivia">
+        <summary>📖 Taco Bell Trivia</summary>
+        <p>${meta.trivia}</p>
+      </details>
+      <button class="popup-directions-btn" onclick="openInMaps(${wpt.lat}, ${wpt.lon}, '${stop.label.replace(/'/g, "\\'")}')">🧭 Directions</button>
+    </div>
+  `;
+
+  panel.classList.remove('hidden');
+  detailPanelOpen = true;
+}
+
+window.openStopDetail = openStopDetail;
+
+function closeStopDetail() {
+  const panel = document.getElementById('stop-detail-panel');
+  if (panel) panel.classList.add('hidden');
+  detailPanelOpen = false;
+}
+
+window.closeStopDetail = closeStopDetail;
+
+// ── Taco Bell Passport ──
+function buildPassport() {
+  const container = document.getElementById('passport-content');
+  if (!container) return;
+
+  let earned = 0;
+  let html = '<div class="passport-grid">';
+  ACHIEVEMENTS.forEach(a => {
+    const unlocked = a.check();
+    if (unlocked) earned++;
+    html += `<div class="passport-badge ${unlocked ? 'unlocked' : 'locked'}" title="${a.desc}">
+      <span class="passport-emoji">${a.emoji}</span>
+      <span class="passport-name">${a.name}</span>
+    </div>`;
+  });
+  html += '</div>';
+  html += `<p class="passport-score">${earned}/${ACHIEVEMENTS.length} badges earned</p>`;
+  container.innerHTML = html;
+}
+
+// Track achievement triggers
+function trackAchievement(key) {
+  localStorage.setItem(key, 'true');
+}
+
+// ── Pin Category Filtering ──
+function buildPinFilters() {
+  const container = document.getElementById('pin-filters');
+  if (!container) return;
+
+  const categories = Object.entries(PIN_ICONS);
+  let html = '<div class="pin-filter-row">';
+  categories.forEach(([key, emoji]) => {
+    html += `<button class="pin-filter-btn active" data-category="${key}" title="Toggle ${key} pins" onclick="togglePinCategory('${key}', this)">${emoji}</button>`;
+  });
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+const hiddenPinCategories = new Set();
+
+function togglePinCategory(category, btn) {
+  if (hiddenPinCategories.has(category)) {
+    hiddenPinCategories.delete(category);
+    btn.classList.add('active');
+  } else {
+    hiddenPinCategories.add(category);
+    btn.classList.remove('active');
+  }
+  // Show/hide matching markers
+  pinMarkers.forEach(m => {
+    const pin = customPins.find(p => p.id === m.pinId);
+    if (!pin) return;
+    if (hiddenPinCategories.has(pin.iconType)) {
+      map.removeLayer(m);
+    } else {
+      m.addTo(map);
+    }
+  });
+}
+
+window.togglePinCategory = togglePinCategory;
+
+// ── Shareable Pin Sets via URL ──
+function encodePinsToURL() {
+  if (customPins.length === 0) {
+    alert('No pins to share. Place some pins first!');
+    return;
+  }
+  const data = customPins.map(p => `${p.lat.toFixed(5)},${p.lng.toFixed(5)},${encodeURIComponent(p.iconType)},${encodeURIComponent(p.name)}`).join(';');
+  const url = `${window.location.origin}${window.location.pathname}#pins=${data}`;
+  navigator.clipboard.writeText(url).then(() => {
+    const btn = document.getElementById('btn-share-pins');
+    if (btn) {
+      const orig = btn.textContent;
+      btn.textContent = '✅ Copied!';
+      setTimeout(() => { btn.textContent = orig; }, 2000);
+    }
+  }).catch(() => {
+    prompt('Copy this URL to share your pins:', url);
+  });
+}
+
+window.encodePinsToURL = encodePinsToURL;
+
+// ── Block Parties ──
+const BLOCK_PARTY_CACHE_KEY = 'tb50k_block_parties';
+const BLOCK_PARTY_CACHE_TTL = 60 * 60 * 1000; // 1 hour
+
+const AMENITY_EMOJI = {
+  beer: '🍺', shots: '🥃', snacks: '🌮', water: '💧', music: '🎵',
+  chairs: '🪑', ice: '🧊', 'porta-potty': '🚽', tattoos: '🎨',
+  'dog-petting-zone': '🐶', medical: '🏥', 'family-zone': '👨‍👩‍👧',
+};
+
+function loadBlockParties() {
+  // Check cache
+  try {
+    const cached = JSON.parse(localStorage.getItem(BLOCK_PARTY_CACHE_KEY));
+    if (cached && Date.now() - cached.ts < BLOCK_PARTY_CACHE_TTL) {
+      blockParties = cached.data;
+      renderBlockPartySidebar();
+      return;
+    }
+  } catch (e) { /* cache miss */ }
+
+  fetch('block_parties.json')
+    .then(r => r.json())
+    .then(data => {
+      blockParties = data.filter(p => p.confirmed);
+      localStorage.setItem(BLOCK_PARTY_CACHE_KEY, JSON.stringify({ ts: Date.now(), data: blockParties }));
+      renderBlockPartySidebar();
+    })
+    .catch(err => {
+      console.warn('Block parties fetch failed:', err);
+      const container = document.getElementById('block-parties-list');
+      if (container) container.innerHTML = '<p class="hint">No party data available.</p>';
+    });
+}
+
+function renderBlockPartySidebar() {
+  const container = document.getElementById('block-parties-list');
+  if (!container) return;
+
+  if (blockParties.length === 0) {
+    container.innerHTML = '<p class="hint">No confirmed parties yet.</p>';
+    return;
+  }
+
+  let html = '';
+  blockParties.sort((a, b) => a.mile_marker - b.mile_marker).forEach(party => {
+    const amenityBadges = (party.amenities || []).map(a => AMENITY_EMOJI[a] || '').join(' ');
+    html += `<div class="block-party-item" data-id="${party.id}" data-lat="${party.lat}" data-lng="${party.lng}">
+      <div class="block-party-header">
+        <span class="block-party-name">🎉 ${party.name}</span>
+        <span class="segment-dist">mi ${party.mile_marker}</span>
+      </div>
+      <div class="block-party-host">Hosted by ${party.host}</div>
+      <div class="block-party-amenities">${amenityBadges}</div>
+    </div>`;
+  });
+  container.innerHTML = html;
+
+  container.querySelectorAll('.block-party-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const lat = parseFloat(item.dataset.lat);
+      const lng = parseFloat(item.dataset.lng);
+      map.flyTo([lat, lng], 16, { duration: 1.2 });
+      // Open popup if party layer is on
+      if (blockPartyLayer) {
+        blockPartyLayer.eachLayer(l => {
+          if (l.getLatLng && Math.abs(l.getLatLng().lat - lat) < 0.001) {
+            l.openPopup();
+          }
+        });
+      }
+    });
+  });
+}
+
+function toggleBlockParties() {
+  const btn = document.getElementById('btn-block-parties');
+  if (!btn) return;
+
+  if (blockPartyToggleOn) {
+    if (blockPartyLayer) map.removeLayer(blockPartyLayer);
+    blockPartyToggleOn = false;
+    btn.classList.remove('active');
+    btn.textContent = '🎉 Show on Map';
+    return;
+  }
+
+  blockPartyToggleOn = true;
+  btn.classList.add('active');
+  btn.textContent = '🎉 Parties On';
+
+  blockPartyLayer = L.layerGroup();
+  blockParties.forEach(party => {
+    const icon = L.divIcon({
+      className: 'block-party-marker',
+      html: '🎉',
+      iconSize: [28, 28],
+      iconAnchor: [14, 14],
+    });
+
+    const amenityBadges = (party.amenities || []).map(a => AMENITY_EMOJI[a] || '').join(' ');
+    const marker = L.marker([party.lat, party.lng], { icon });
+    marker.bindPopup(`<div class="popup-content">
+      <h3>🎉 ${party.name}</h3>
+      <p><strong>Mile ${party.mile_marker}</strong> — Hosted by ${party.host}</p>
+      <p>${party.runner_note}</p>
+      <p>${amenityBadges}</p>
+      <button class="popup-directions-btn" onclick="openInMaps(${party.lat}, ${party.lng}, '${party.name.replace(/'/g, "\\'")}')">🧭 Directions</button>
+    </div>`);
+    blockPartyLayer.addLayer(marker);
+  });
+
+  blockPartyLayer.addTo(map);
+}
+
+window.toggleBlockParties = toggleBlockParties;
+
+function loadPinsFromURL() {
+  const hash = window.location.hash;
+  if (!hash.startsWith('#pins=')) return;
+  const data = hash.substring(6);
+  const entries = data.split(';');
+  let imported = 0;
+  entries.forEach(entry => {
+    const parts = entry.split(',');
+    if (parts.length < 4) return;
+    const lat = parseFloat(parts[0]);
+    const lng = parseFloat(parts[1]);
+    const iconType = decodeURIComponent(parts[2]);
+    const name = decodeURIComponent(parts[3]);
+    if (isNaN(lat) || isNaN(lng)) return;
+    // Check for duplicate
+    if (customPins.some(p => Math.abs(p.lat - lat) < 0.0001 && Math.abs(p.lng - lng) < 0.0001)) return;
+    const pin = { id: Date.now() + imported, name, iconType, lat, lng };
+    customPins.push(pin);
+    addPinToMap(pin);
+    addPinToSidebar(pin);
+    imported++;
+  });
+  if (imported > 0) {
+    saveCustomPins();
+    // Clear hash after import
+    history.replaceState(null, '', window.location.pathname + window.location.search);
+  }
+}
