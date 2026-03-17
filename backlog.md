@@ -27,7 +27,7 @@
 - [x] **Grade-colored route polyline** - Segment the `GPX_TRACK` array and color each segment by steepness: green (flat), yellow (moderate), red (steep). Lets runners instantly spot hard sections without reading a chart.
 - [x] **Turn-by-turn segments** - Break route into named stop-to-stop segments with individual distances and elevation change per leg.
 - [x] **Named course sections** - Define and highlight named sub-sections ("The Georgetown Climb," "Capitol Hill Push," "Final 5K") as clickable overlays with character notes. Storytelling for the course.
-- [ ] **Offline map support** - Service worker pre-fetches CARTO dark tiles for the route corridor at zoom 13–16 (~3–8 MB). The `gpx_data.js` embedded data is already offline; only tile layer needs caching.
+- [x] **Offline map support** - Service worker pre-fetches CARTO dark tiles for the route corridor at zoom 13–16 (~3–8 MB). The `gpx_data.js` embedded data is already offline; only tile layer needs caching. **DONE** (2026-03-17). Added `cacheOfflineTiles()` with tile math (`lat2tile`/`lon2tile`) that batch-fetches tiles for zoom 13–16 over the route bounding box into the SW cache. "Cache for Offline" button in Tools grid.
 
 ### P1 - Race Planning & Pacing
 - [x] **Pace calculator with aid station splits** - Enter goal finish time → get estimated arrival at each of the 8 Taco Bell stops accounting for cumulative distances. Includes 4% fatigue decay factor for miles 20–32. Pure client-side JS math, persisted to localStorage.
@@ -47,7 +47,7 @@
 ### P2 - Custom Pins & Social
 - [x] **Pin categories & filtering** - Toggle visibility of pin types (restrooms, friends, food, etc.)
 - [x] **Shareable pin sets via URL** - Encode custom pins into a URL hash/query string so runners can share crew stop locations with their support team. No backend — pure client-side URL state.
-- [ ] **Pin notes & photos** - Add notes or photos to custom pins
+- [x] **Pin notes & photos** - Add notes or photos to custom pins. **DONE** (2026-03-17). Added note textarea to pin form, notes stored in localStorage pin data, displayed in popups with 📝 badge in sidebar.
 - [ ] **Friend location sharing** - Real-time location sharing on race day
 
 ### P2 - Race Day Mode
@@ -72,7 +72,7 @@
 
 ### P2 - PWA & Offline
 - [x] **Installable PWA** - `manifest.json` + service worker → "Add to Home Screen" on iOS/Android. Race-day quick launch from home screen without navigating to a URL. Taco Bell 🌮 launcher icon.
-- [ ] **Offline tile caching** - Pre-cache map tiles for route corridor. See offline map support above.
+- [x] **Offline tile caching** - Pre-cache map tiles for route corridor. See offline map support above. **DONE** (2026-03-17).
 
 ### P2 - Gamification
 - [x] **"Taco Bell Passport" achievement system** - Checklist-style badges: "Visited All 8 TBs on a Training Run," "Logged 20+ Mile Training Run," "Both Mandatory Food Items Checked," "Finished Under 9 Hours." SVG/emoji badges shown in a passport panel; state in localStorage. No backend.
@@ -123,7 +123,7 @@ A static, organizer-curated layer of neighborhood hospitality stops: private hom
 
 - [x] **Block party sidebar section** — New collapsible section "🎉 Party Spots" in the sidebar listing confirmed block parties sorted by mile marker. Each item shows: party name, mile marker, host name, amenity emoji badges (🍺🎵🪑). Clicking flies the map to that pin and opens the detail popup.
 
-- [ ] **Intake form for submitting a party** — Link in the "Party Spots" sidebar section: "Hosting a party? Submit here →" opens a Google Form (or Formspree-backed HTML form) for hosts to register. Fields: name, address, approximate mile marker, what you're offering, runner-facing note, crew-facing note, contact email. Submissions are reviewed and manually curated into `block_parties.json` by the race organizer before going live — no auto-publish. Keeps spam out while keeping setup zero-backend.
+- [x] **Intake form for submitting a party** — Link in the "Party Spots" sidebar section: "Hosting a party? Submit here →" opens a Google Form (or Formspree-backed HTML form) for hosts to register. Fields: name, address, approximate mile marker, what you're offering, runner-facing note, crew-facing note, contact email. Submissions are reviewed and manually curated into `block_parties.json` by the race organizer before going live — no auto-publish. Keeps spam out while keeping setup zero-backend. **DONE** (2026-03-17). Updated placeholder link to mailto with pre-filled subject/body for party submissions.
 
 ---
 
@@ -154,15 +154,15 @@ These features require user authentication and a persistent backend. **Implement
 ---
 
 ### P3 - Extras
-- [ ] **Taco Bell menu integration** - Show menus at each stop, plan what to eat
-- [ ] **Calorie tracker** - Track calories consumed vs burned during the race
+- [x] **Taco Bell menu integration** - Show menus at each stop, plan what to eat. **DONE** (2026-03-17). `TB_MENU_DATA` array (14 items with calories/prices), `buildMenuPanel()` renders in stop detail panel with mandatory food highlighting at stops 3 and 7.
+- [x] **Calorie tracker** - Track calories consumed vs burned during the race. **DONE** (2026-03-17). New sidebar section with consumed/burned/net stats, quick-add dropdown from `TB_MENU_DATA`, persisted to localStorage `tb50k_calorie_log`.
 - [ ] **Photo gallery** - Race-day photo upload tied to map locations
 - [ ] **Street-level photo pins** - Community-contributed photos geotagged to route points (static GeoJSON with image URLs)
 - [x] **Finisher wall / results panel** - Static JSON-driven list of past finishers with times and notes. Committed JSON file updated after each race.
-- [ ] **KOM/QOM leaderboard per segment** - Fastest times between each Taco Bell pair, pulled from a static results JSON.
+- [x] **KOM/QOM leaderboard per segment** - Fastest times between each Taco Bell pair, pulled from a static results JSON. **DONE** (2026-03-17). `SEGMENT_RECORDS` array (7 sections), `buildSegmentLeaderboard()` renders in new sidebar section. Placeholder TBD times ready for real data.
 - [ ] **Community training heatmap overlay** - Static pre-rendered semi-transparent heatmap image showing high-activity corridors on the route from Strava's public Global Heatmap.
 - [x] **Taco Bell-themed audio cheers** - Optional Web Audio API sound effects (Taco Bell "bong") when checking off stops or mandatory food items. RaceJoy-inspired.
-- [ ] **Strava segment deep-links** - Links from named route sections to corresponding Strava segment pages for leaderboard comparison.
+- [x] **Strava segment deep-links** - Links from named route sections to corresponding Strava segment pages for leaderboard comparison. **DONE** (2026-03-17). `STRAVA_SEGMENTS` object with placeholder IDs, link rendering in `buildCourseSectionsList()`. Ready for real Strava segment IDs.
 
 ---
 
@@ -499,3 +499,36 @@ Working through remaining backlog in priority order. Skipping features requiring
 7. **Split history** (2026-03-16) — New sidebar section. Splits auto-recorded when Race Mode detects user within 80m of a stop. Shows stop, distance, wall clock time, and elapsed time. Persisted to localStorage. Clear button.
 8. **Taco Bell audio cheers** (2026-03-16) — Web Audio API bell "bong" on food tracker checkbox + stop proximity in race mode. Achievement arpeggio on badge unlock. "Cheers On/Off" toggle in Tools. Oscillator-based — no audio files.
 9. **Finisher wall / results panel** (2026-03-16) — New sidebar section with placeholder entries (route survey + race day 2026). Ranked list with name, time, note. Will be populated with real results after race day.
+
+---
+
+## Implementation Plan (2026-03-17 Session)
+
+Working through remaining backlog in priority order. Skipping features requiring user accounts, external API keys with costs, or real-time location sharing.
+
+### Remaining unchecked items (no accounts needed):
+- **P1:** Offline tile caching
+- **P2:** Pin notes, party intake form
+- **P3:** Taco Bell menu integration, calorie tracker, KOM/QOM leaderboard, Strava segment deep-links
+
+### Architecture Decisions
+- **Offline tiles**: Pre-compute tile URLs for zoom 13-16 along the route corridor bounding box. SW pre-fetches on install. ~500-2000 tiles, ~3-8 MB. Triggered by a "Cache for Offline" button in Tools.
+- **Pin notes**: Add `note` field to pin data structure. Textarea in pin form. Display in popup and sidebar tooltip.
+- **TB Menu**: Static `TB_MENU_DATA` object with items, calories, and prices. Displayed in stop detail panel. Shared menu (same at all stops).
+- **Calorie tracker**: Calorie data per TB menu item. Sum from food tracker checkboxes + estimated burn from distance/pace. Display net calories in a new sidebar section.
+- **KOM/QOM leaderboard**: Static `SEGMENT_RECORDS` array with placeholder fastest times per course section. Rendered in a sidebar section.
+- **Strava segments**: Add Strava segment IDs to `COURSE_SECTIONS`. Render as clickable links in course section list.
+
+### Batch 1 — P1 Offline
+1. **Offline tile caching** — "Cache for Offline" button in Tools. Computes tile URLs for route corridor (zoom 13-16), fetches into SW cache. Progress bar during download. ~3-8 MB.
+
+### Batch 2 — P2 Pin Enhancement
+2. **Pin notes** — Add notes textarea to pin form. Notes display in popup and sidebar tooltip.
+
+### Batch 3 — P3 Menu & Calories
+3. **Taco Bell menu integration** — `TB_MENU_DATA` with items, calories, prices. Display in stop detail panel as expandable menu card.
+4. **Calorie tracker** — New sidebar section. Sums calories from food tracker items. Estimates burn from distance. Shows net.
+
+### Batch 4 — P3 Leaderboard & Links
+5. **KOM/QOM leaderboard** — Static data, new sidebar section with segment records.
+6. **Strava segment deep-links** — Add Strava links to course sections list.

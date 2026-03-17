@@ -307,6 +307,9 @@ document.addEventListener('DOMContentLoaded', () => {
   fetchElevation();
   loadSplitHistory();
   buildFinisherWall();
+  buildCalorieTracker();
+  buildCalorieLogForm();
+  buildSegmentLeaderboard();
 
   // Initialize view toggle
   initViewToggle();
@@ -511,9 +514,11 @@ function onMapClick(e) {
 function placePin(latlng) {
   const nameInput = document.getElementById('pin-name');
   const iconSelect = document.getElementById('pin-icon');
+  const noteInput = document.getElementById('pin-note');
 
   const name = nameInput.value.trim() || 'Unnamed Pin';
   const iconType = iconSelect.value;
+  const note = noteInput ? noteInput.value.trim() : '';
 
   const pin = {
     id: Date.now(),
@@ -521,6 +526,7 @@ function placePin(latlng) {
     iconType,
     lat: latlng.lat,
     lng: latlng.lng,
+    note,
   };
 
   customPins.push(pin);
@@ -530,6 +536,7 @@ function placePin(latlng) {
 
   // Reset form
   nameInput.value = '';
+  if (noteInput) noteInput.value = '';
   pendingPinLatLng = null;
   resetAddButton();
 }
@@ -546,8 +553,10 @@ function addPinToMap(pin) {
 
   const marker = L.marker([pin.lat, pin.lng], { icon, draggable: true }).addTo(map);
   const safeName = escapeHtml(pin.name);
+  const safeNote = pin.note ? escapeHtml(pin.note) : '';
   marker.bindPopup(`<div class="popup-content">
     <h3>${emoji} ${safeName}</h3>
+    ${safeNote ? `<p class="pin-note-text">${safeNote}</p>` : ''}
     <p>${pin.lat.toFixed(5)}, ${pin.lng.toFixed(5)}</p>
     <button class="popup-directions-btn" onclick="openInMaps(${pin.lat}, ${pin.lng}, '${safeName.replace(/'/g, "\\'")}')">🧭 Directions</button>
   </div>`);
@@ -566,9 +575,11 @@ function addPinToSidebar(pin) {
   const item = document.createElement('div');
   item.className = 'pin-item';
   item.dataset.pinId = pin.id;
+  if (pin.note) item.title = pin.note;
   item.innerHTML = `
     <span class="pin-icon-label">${emoji}</span>
     <span class="pin-name">${pin.name}</span>
+    ${pin.note ? '<span class="pin-note-badge" title="Has note">📝</span>' : ''}
     <button class="pin-delete" title="Remove pin">&times;</button>
   `;
 
@@ -1793,6 +1804,10 @@ const SAUCE_COPY = {
   'elevation-hint': "What goes up must come down. Except your heart rate.",
   'splits-hint': "I knew you'd come back for me.",
   'finisher-hint': "Nice to finally meet you.",
+  'calorie-hint': "You can't outrun a bad diet. But you can out-taco it.",
+  'leaderboard-hint': "I've been waiting for someone like you.",
+  'block-party-hint': "Let's just enjoy this moment together.",
+  'sections-guide-hint': "You had me at 'mile one.'",
 };
 
 function applySaucePacketCopy() {
@@ -1868,10 +1883,14 @@ function buildCourseSectionsList() {
 
   let html = '';
   COURSE_SECTIONS.forEach(section => {
-    html += `<div class="section-row course-section-row" data-mi-start="${section.miStart}" data-mi-end="${section.miEnd}">
-      <span class="section-color-dot" style="background: ${section.color}"></span>
-      <span class="section-row-name">${section.name}</span>
-      <span class="segment-dist">${section.miStart}–${section.miEnd} mi</span>
+    const segId = STRAVA_SEGMENTS[section.name];
+    const stravaLink = segId ? ` <a href="https://www.strava.com/segments/${segId}" target="_blank" rel="noopener" class="strava-link" title="View on Strava" onclick="event.stopPropagation()">🏃‍♂️</a>` : '';
+    html += `<div class="course-section-item section-row course-section-row" data-section-name="${section.name}" data-mi-start="${section.miStart}" data-mi-end="${section.miEnd}">
+      <div class="course-section-header">
+        <span class="section-color-dot" style="background: ${section.color}"></span>
+        <span class="section-row-name">${section.name}</span>
+        <span class="segment-dist">${section.miStart}–${section.miEnd} mi</span>${stravaLink}
+      </div>
     </div>`;
   });
   container.innerHTML = html;
@@ -2028,6 +2047,10 @@ function openStopDetail(stopIndex) {
       <details class="stop-detail-trivia">
         <summary>📖 Taco Bell Trivia</summary>
         <p>${meta.trivia}</p>
+      </details>
+      <details class="stop-detail-menu">
+        <summary>🌮 Menu & Calories</summary>
+        ${buildMenuPanel(stopIndex)}
       </details>
       <button class="popup-directions-btn" onclick="openInMaps(${wpt.lat}, ${wpt.lon}, '${stop.label.replace(/'/g, "\\'")}')">🧭 Directions</button>
     </div>
@@ -2683,4 +2706,323 @@ function loadPinsFromURL() {
     // Clear hash after import
     history.replaceState(null, '', window.location.pathname + window.location.search);
   }
+}
+
+// ── Offline Tile Caching ──
+function lat2tile(lat, zoom) { return Math.floor((1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, zoom)); }
+function lon2tile(lon, zoom) { return Math.floor((lon + 180) / 360 * Math.pow(2, zoom)); }
+
+function cacheOfflineTiles() {
+  const btn = document.getElementById('btn-offline-tiles');
+  if (!btn) return;
+
+  // Route bounding box with padding
+  const bounds = routeLayer.getBounds().pad(0.1);
+  const minLat = bounds.getSouth();
+  const maxLat = bounds.getNorth();
+  const minLng = bounds.getWest();
+  const maxLng = bounds.getEast();
+
+  // Collect tile URLs for zoom 13-16 on CARTO Dark (default theme tiles)
+  const tileUrl = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+  const subdomains = ['a', 'b', 'c', 'd'];
+  const urls = [];
+
+  for (let z = 13; z <= 16; z++) {
+    const xMin = lon2tile(minLng, z);
+    const xMax = lon2tile(maxLng, z);
+    const yMin = lat2tile(maxLat, z); // note: y is inverted
+    const yMax = lat2tile(minLat, z);
+
+    for (let x = xMin; x <= xMax; x++) {
+      for (let y = yMin; y <= yMax; y++) {
+        const s = subdomains[(x + y) % subdomains.length];
+        urls.push(tileUrl.replace('{s}', s).replace('{z}', z).replace('{x}', x).replace('{y}', y).replace('{r}', ''));
+      }
+    }
+  }
+
+  const total = urls.length;
+  btn.textContent = `Caching 0/${total}...`;
+  btn.disabled = true;
+
+  let done = 0;
+  let errors = 0;
+
+  // Batch fetch to avoid overwhelming the browser
+  const batchSize = 10;
+  let idx = 0;
+
+  function fetchBatch() {
+    if (idx >= urls.length) {
+      btn.textContent = `✅ Cached ${done} tiles`;
+      btn.disabled = false;
+      setTimeout(() => { btn.textContent = '📥 Cache for Offline'; }, 3000);
+      localStorage.setItem('tb50k_tiles_cached', 'true');
+      return;
+    }
+
+    const batch = urls.slice(idx, idx + batchSize);
+    idx += batchSize;
+
+    Promise.allSettled(batch.map(url => {
+      return caches.open('tb50k-v4').then(cache => {
+        return cache.match(url).then(existing => {
+          if (existing) { done++; return; } // already cached
+          return fetch(url).then(resp => {
+            if (resp.ok) { cache.put(url, resp); }
+            done++;
+          });
+        });
+      }).catch(() => { errors++; done++; });
+    })).then(() => {
+      btn.textContent = `Caching ${done}/${total}...`;
+      // Use requestAnimationFrame to avoid blocking UI
+      requestAnimationFrame(fetchBatch);
+    });
+  }
+
+  fetchBatch();
+}
+
+window.cacheOfflineTiles = cacheOfflineTiles;
+
+// ── Taco Bell Menu Data (calories + prices for calorie tracker) ──
+const TB_MENU_DATA = [
+  { name: 'Chalupa Supreme', cal: 350, price: 4.19, category: 'entree' },
+  { name: 'Crunchwrap Supreme', cal: 530, price: 5.49, category: 'entree' },
+  { name: 'Burrito Supreme', cal: 390, price: 4.49, category: 'entree' },
+  { name: 'Nachos Bell Grande', cal: 740, price: 5.49, category: 'entree' },
+  { name: 'Cheesy Gordita Crunch', cal: 500, price: 4.99, category: 'entree' },
+  { name: 'Mexican Pizza', cal: 540, price: 5.49, category: 'entree' },
+  { name: 'Crunchy Taco', cal: 170, price: 1.79, category: 'taco' },
+  { name: 'Soft Taco', cal: 180, price: 1.79, category: 'taco' },
+  { name: 'Bean Burrito', cal: 380, price: 1.49, category: 'value' },
+  { name: 'Quesadilla', cal: 470, price: 4.49, category: 'entree' },
+  { name: 'Cinnamon Twists', cal: 170, price: 1.49, category: 'side' },
+  { name: 'Baja Blast', cal: 220, price: 2.29, category: 'drink' },
+  { name: 'Mountain Dew', cal: 220, price: 2.29, category: 'drink' },
+  { name: 'Water', cal: 0, price: 0, category: 'drink' },
+];
+
+function buildMenuPanel(stopIndex) {
+  const isMandatory3 = stopIndex === 3;
+  const isMandatory7 = stopIndex === 7;
+  let html = '<div class="menu-panel"><h4>🌮 Menu</h4>';
+
+  if (isMandatory3) {
+    html += '<p class="menu-mandatory">⚠️ Must order: Chalupa Supreme or Crunchwrap</p>';
+  } else if (isMandatory7) {
+    html += '<p class="menu-mandatory">⚠️ Must order: Burrito Supreme or Nachos Bell Grande</p>';
+  }
+
+  html += '<div class="menu-items">';
+  TB_MENU_DATA.forEach(item => {
+    const highlight = (isMandatory3 && (item.name === 'Chalupa Supreme' || item.name === 'Crunchwrap Supreme')) ||
+                      (isMandatory7 && (item.name === 'Burrito Supreme' || item.name === 'Nachos Bell Grande'));
+    html += `<div class="menu-item ${highlight ? 'mandatory-highlight' : ''}">
+      <span class="menu-item-name">${item.name}</span>
+      <span class="menu-item-cal">${item.cal} cal</span>
+      <span class="menu-item-price">${item.price > 0 ? '$' + item.price.toFixed(2) : 'Free'}</span>
+    </div>`;
+  });
+  html += '</div></div>';
+  return html;
+}
+
+// ── Calorie Tracker ──
+// Estimated calories burned per mile for an average runner (varies by weight/pace)
+const CALORIES_PER_MILE = 100; // ~100 cal/mile for 150lb runner
+
+function buildCalorieTracker() {
+  const container = document.getElementById('calorie-tracker-content');
+  if (!container) return;
+
+  // Consumed: sum up calories from checked food tracker items
+  const consumed = getConsumedCalories();
+
+  // Burned: from pace calculator distance (or total race distance)
+  const burned = getBurnedCalories();
+
+  const net = consumed - burned;
+
+  let html = '<div class="calorie-summary">';
+  html += `<div class="calorie-stat"><span class="calorie-label">🍔 Consumed</span><span class="calorie-value">${consumed} cal</span></div>`;
+  html += `<div class="calorie-stat"><span class="calorie-label">🔥 Burned (est.)</span><span class="calorie-value">${burned} cal</span></div>`;
+  html += `<div class="calorie-stat net ${net >= 0 ? 'positive' : 'negative'}"><span class="calorie-label">📊 Net</span><span class="calorie-value">${net >= 0 ? '+' : ''}${net} cal</span></div>`;
+  html += '</div>';
+
+  // Food item breakdown
+  const checkedItems = getCheckedFoodItems();
+  if (checkedItems.length > 0) {
+    html += '<div class="calorie-breakdown"><h4>Food Log</h4>';
+    checkedItems.forEach(item => {
+      html += `<div class="calorie-item"><span>${item.name}</span><span>${item.cal} cal</span></div>`;
+    });
+    html += '</div>';
+  } else {
+    html += '<p class="hint">Check off food items in the Mandatory Food section or use the Food Log to track calories.</p>';
+  }
+
+  // Burn estimate note
+  html += `<p class="hint" style="margin-top:8px;font-size:0.65rem;">Burn estimate: ~${CALORIES_PER_MILE} cal/mile for 150lb runner at moderate pace. Distance: ${getEstimatedDistance().toFixed(1)} mi.</p>`;
+
+  container.innerHTML = html;
+}
+
+function getConsumedCalories() {
+  let total = 0;
+  // Check mandatory food tracker
+  const rule1 = localStorage.getItem('tb50k_food_rule_1') === 'true';
+  const rule2 = localStorage.getItem('tb50k_food_rule_2') === 'true';
+  if (rule1) {
+    // Assume average of Chalupa Supreme (350) and Crunchwrap (530) = 440
+    total += 440;
+  }
+  if (rule2) {
+    // Assume average of Burrito Supreme (390) and Nachos BG (740) = 565
+    total += 565;
+  }
+
+  // Check calorie log items stored in localStorage
+  try {
+    const logged = JSON.parse(localStorage.getItem('tb50k_calorie_log') || '[]');
+    logged.forEach(item => {
+      const menuItem = TB_MENU_DATA.find(m => m.name === item);
+      if (menuItem) total += menuItem.cal;
+    });
+  } catch (e) { /* ignore */ }
+
+  return total;
+}
+
+function getCheckedFoodItems() {
+  const items = [];
+  const rule1 = localStorage.getItem('tb50k_food_rule_1') === 'true';
+  const rule2 = localStorage.getItem('tb50k_food_rule_2') === 'true';
+  if (rule1) items.push({ name: 'Mandatory Stop 3 (avg)', cal: 440 });
+  if (rule2) items.push({ name: 'Mandatory Stop 7 (avg)', cal: 565 });
+
+  try {
+    const logged = JSON.parse(localStorage.getItem('tb50k_calorie_log') || '[]');
+    logged.forEach(name => {
+      const menuItem = TB_MENU_DATA.find(m => m.name === name);
+      if (menuItem) items.push({ name: menuItem.name, cal: menuItem.cal });
+    });
+  } catch (e) { /* ignore */ }
+
+  return items;
+}
+
+function getBurnedCalories() {
+  return Math.round(getEstimatedDistance() * CALORIES_PER_MILE);
+}
+
+function getEstimatedDistance() {
+  // If race mode has recorded splits, use the last split distance
+  try {
+    const splits = JSON.parse(localStorage.getItem('tb50k_splits') || '[]');
+    if (splits.length > 0) {
+      const lastSplit = splits[splits.length - 1];
+      if (lastSplit.distance) return parseFloat(lastSplit.distance);
+    }
+  } catch (e) { /* ignore */ }
+
+  // Default to total race distance
+  return STOP_DISTANCES[STOP_DISTANCES.length - 1];
+}
+
+function addCalorieLogItem(itemName) {
+  try {
+    const logged = JSON.parse(localStorage.getItem('tb50k_calorie_log') || '[]');
+    logged.push(itemName);
+    localStorage.setItem('tb50k_calorie_log', JSON.stringify(logged));
+    buildCalorieTracker();
+  } catch (e) { /* ignore */ }
+}
+
+function clearCalorieLog() {
+  localStorage.removeItem('tb50k_calorie_log');
+  buildCalorieTracker();
+}
+
+window.addCalorieLogItem = addCalorieLogItem;
+window.clearCalorieLog = clearCalorieLog;
+
+// ── Calorie Log Quick-Add UI ──
+function buildCalorieLogForm() {
+  const container = document.getElementById('calorie-log-form');
+  if (!container) return;
+
+  let html = '<select id="calorie-item-select">';
+  TB_MENU_DATA.forEach(item => {
+    html += `<option value="${item.name}">${item.name} (${item.cal} cal)</option>`;
+  });
+  html += '</select>';
+  html += '<button class="tool-btn" onclick="addCalorieLogItem(document.getElementById(\'calorie-item-select\').value)">+ Add</button>';
+  html += ' <button class="tool-btn" onclick="clearCalorieLog()">Clear</button>';
+
+  container.innerHTML = html;
+}
+
+// ── KOM/QOM Segment Records ──
+const SEGMENT_RECORDS = [
+  { section: 'Old Town Stroll', distance: 3.0, kom: { name: 'TBD', time: '--:--' }, qom: { name: 'TBD', time: '--:--' } },
+  { section: 'The Van Dorn Shuffle', distance: 2.1, kom: { name: 'TBD', time: '--:--' }, qom: { name: 'TBD', time: '--:--' } },
+  { section: 'Arlington Long Haul', distance: 7.6, kom: { name: 'TBD', time: '--:--' }, qom: { name: 'TBD', time: '--:--' } },
+  { section: 'The Georgetown Climb', distance: 2.8, kom: { name: 'TBD', time: '--:--' }, qom: { name: 'TBD', time: '--:--' } },
+  { section: 'DC Entry Push', distance: 4.5, kom: { name: 'TBD', time: '--:--' }, qom: { name: 'TBD', time: '--:--' } },
+  { section: 'The Capitol Grind', distance: 3.5, kom: { name: 'TBD', time: '--:--' }, qom: { name: 'TBD', time: '--:--' } },
+  { section: 'The Final Push', distance: 8.9, kom: { name: 'TBD', time: '--:--' }, qom: { name: 'TBD', time: '--:--' } },
+];
+
+function buildSegmentLeaderboard() {
+  const container = document.getElementById('leaderboard-content');
+  if (!container) return;
+
+  let html = '<div class="leaderboard-list">';
+  SEGMENT_RECORDS.forEach(rec => {
+    html += `<div class="leaderboard-row">
+      <div class="leaderboard-section">${rec.section} <span class="segment-dist">${rec.distance} mi</span></div>
+      <div class="leaderboard-records">
+        <span class="leaderboard-record" title="King of the Mountain">👑 KOM: ${rec.kom.name} ${rec.kom.time}</span>
+        <span class="leaderboard-record" title="Queen of the Mountain">👸 QOM: ${rec.qom.name} ${rec.qom.time}</span>
+      </div>
+    </div>`;
+  });
+  html += '</div>';
+  html += '<p class="hint" style="margin-top:8px;">Records will be populated after the Nov 27, 2026 race.</p>';
+
+  container.innerHTML = html;
+}
+
+// ── Strava Segment Deep-Links ──
+// Strava segment IDs for each course section (approximate Strava segments along the route)
+const STRAVA_SEGMENTS = {
+  'Old Town Stroll': null,
+  'The Van Dorn Shuffle': null,
+  'Arlington Long Haul': null,
+  'The Georgetown Climb': null,
+  'DC Entry Push': null,
+  'The Capitol Grind': null,
+  'The Final Push': null,
+};
+
+// Enhance course section list items with Strava links when segment IDs are available
+function addStravaLinks() {
+  const items = document.querySelectorAll('.course-section-item');
+  items.forEach(item => {
+    const name = item.dataset.sectionName;
+    const segmentId = STRAVA_SEGMENTS[name];
+    if (segmentId) {
+      const link = document.createElement('a');
+      link.href = `https://www.strava.com/segments/${segmentId}`;
+      link.target = '_blank';
+      link.rel = 'noopener';
+      link.className = 'strava-link';
+      link.textContent = '🏃 Strava';
+      link.title = 'View on Strava';
+      item.querySelector('.course-section-header')?.appendChild(link);
+    }
+  });
 }

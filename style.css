@@ -3283,3 +3283,210 @@ body {
   grid-column: 1 / -1;
   font-style: italic;
 }
+
+/* ── Pin Notes ── */
+#pin-note {
+  background: var(--color-bg-card, rgba(255,255,255,0.05));
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  color: var(--color-text);
+  padding: 6px 8px;
+  font-size: 0.78rem;
+  font-family: inherit;
+}
+
+.pin-note-text {
+  font-size: 0.78rem;
+  font-style: italic;
+  color: var(--color-text-muted);
+  margin: 4px 0;
+}
+
+.pin-note-badge {
+  font-size: 0.65rem;
+  margin-left: 4px;
+}
+
+/* ── Menu Panel (in stop detail) ── */
+.stop-detail-menu {
+  margin-top: 10px;
+  border-top: 1px solid var(--color-border);
+  padding-top: 8px;
+}
+
+.stop-detail-menu summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--color-text);
+}
+
+.menu-panel h4 {
+  margin: 0 0 6px;
+  font-size: 0.82rem;
+}
+
+.menu-mandatory {
+  color: var(--color-accent-secondary, #ef1897);
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin: 4px 0 8px;
+}
+
+.menu-items {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.menu-item {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 8px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 0.75rem;
+}
+
+.menu-item:last-child { border-bottom: none; }
+
+.menu-item-name { font-weight: 500; }
+.menu-item-cal { color: var(--color-text-muted); text-align: right; }
+.menu-item-price { color: var(--color-accent); text-align: right; font-weight: 600; }
+
+.menu-item.mandatory-highlight {
+  background: rgba(239, 24, 151, 0.1);
+  border-radius: 4px;
+  padding: 4px 6px;
+}
+
+/* ── Calorie Tracker ── */
+#calorie-log-form {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+#calorie-item-select {
+  flex: 1;
+  min-width: 140px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-card, rgba(255,255,255,0.05));
+  color: var(--color-text);
+  font-size: 0.75rem;
+}
+
+#calorie-log-form .tool-btn {
+  padding: 6px 10px;
+  font-size: 0.72rem;
+}
+
+.calorie-summary {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.calorie-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px;
+  border-radius: 8px;
+  background: var(--color-bg-card, rgba(255,255,255,0.05));
+  border: 1px solid var(--color-border);
+}
+
+.calorie-stat.net {
+  grid-column: 1 / -1;
+}
+
+.calorie-stat.positive .calorie-value { color: #ef4444; }
+.calorie-stat.negative .calorie-value { color: #34d399; }
+
+.calorie-label {
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+  margin-bottom: 2px;
+}
+
+.calorie-value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.calorie-breakdown {
+  margin-top: 8px;
+}
+
+.calorie-breakdown h4 {
+  font-size: 0.78rem;
+  margin: 0 0 6px;
+  color: var(--color-text);
+}
+
+.calorie-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 3px 0;
+  font-size: 0.73rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.calorie-item:last-child { border-bottom: none; }
+
+/* ── KOM/QOM Leaderboard ── */
+.leaderboard-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.leaderboard-row {
+  padding: 8px;
+  border-radius: 8px;
+  background: var(--color-bg-card, rgba(255,255,255,0.05));
+  border: 1px solid var(--color-border);
+}
+
+.leaderboard-section {
+  font-weight: 600;
+  font-size: 0.8rem;
+  margin-bottom: 4px;
+}
+
+.leaderboard-records {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.leaderboard-record {
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+}
+
+/* ── Strava Links ── */
+.strava-link {
+  font-size: 0.7rem;
+  margin-left: 6px;
+  text-decoration: none;
+  opacity: 0.7;
+}
+
+.strava-link:hover {
+  opacity: 1;
+}
+
+.course-section-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}

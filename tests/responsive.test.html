@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Responsive Layout Tests — TB DC 50K</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link rel="stylesheet" href="../style.css?v=8" />
+  <link rel="stylesheet" href="../style.css?v=9" />
   <style>
     /* Test overlay */
     #test-overlay {
@@ -159,6 +159,7 @@
           <button id="btn-grade-color" class="tool-btn" onclick="toggleGradeColor()">&#127752; Color by Grade</button>
           <button class="tool-btn" onclick="showRaceCard()">&#128247; Race Card</button>
           <button id="btn-audio-toggle" class="tool-btn active" onclick="toggleAudio()">&#128276; Cheers On</button>
+          <button id="btn-offline-tiles" class="tool-btn" onclick="cacheOfflineTiles()">&#128229; Cache for Offline</button>
         </div>
       </div>
     </div>
@@ -182,6 +183,7 @@
         <div id="pin-filters"></div>
         <div id="pin-form">
           <input type="text" id="pin-name" placeholder="Name (e.g. Jake's House)" />
+          <textarea id="pin-note" placeholder="Add a note (optional)" rows="2" style="width:100%;resize:vertical;margin-bottom:6px;"></textarea>
           <select id="pin-icon">
             <option value="restroom">&#128701; Restroom</option>
             <option value="water">&#128167; Water</option>
@@ -202,6 +204,23 @@
       <div class="section-body">
         <p class="hint" data-sauce-id="splits-hint" data-default-hint="Splits are auto-recorded when Race Mode detects you near a stop.">Splits are auto-recorded when Race Mode detects you near a stop.</p>
         <div id="split-history-content"><p class="hint">No splits recorded yet. Start Race Mode and approach a stop.</p></div>
+      </div>
+    </div>
+
+    <div class="section collapsed" id="section-calories">
+      <h2>Calorie Tracker &#128293; <span class="section-toggle">&#9660;</span></h2>
+      <div class="section-body">
+        <p class="hint" data-sauce-id="calorie-hint" data-default-hint="Track calories consumed vs burned on the course.">Track calories consumed vs burned on the course.</p>
+        <div id="calorie-log-form"></div>
+        <div id="calorie-tracker-content"><p class="hint">Loading...</p></div>
+      </div>
+    </div>
+
+    <div class="section collapsed" id="section-leaderboard">
+      <h2>Segment Records &#128081; <span class="section-toggle">&#9660;</span></h2>
+      <div class="section-body">
+        <p class="hint" data-sauce-id="leaderboard-hint" data-default-hint="Fastest times per course section. KOM/QOM records.">Fastest times per course section. KOM/QOM records.</p>
+        <div id="leaderboard-content"><p class="hint">Loading...</p></div>
       </div>
     </div>
 
@@ -274,7 +293,7 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="../gpx_data.js"></script>
   <script src="../config.js"></script>
-  <script src="../app.js?v=8"></script>
+  <script src="../app.js?v=9"></script>
   <script>
     // ── Test Runner ──
     const _tests = [];
@@ -312,13 +331,10 @@
     function cs(el) { return getComputedStyle(el); }
 
     // Wait for app to initialize then run tests
-    // Use rAF inside setTimeout to ensure loadGPX's rAF has completed
     setTimeout(() => {
-      requestAnimationFrame(() => {
-        runAllTests();
-        renderTests();
-      });
-    }, 800);
+      runAllTests();
+      renderTests();
+    }, 2000);
 
     function runAllTests() {
       testDOMStructure();
@@ -360,6 +376,11 @@
       testSplitHistory();
       testAudioCheers();
       testFinisherWall();
+      testCalorieTracker();
+      testSegmentLeaderboard();
+      testPinNotes();
+      testMenuPanel();
+      testOfflineTiles();
       testBugFixes();
     }
 
@@ -397,12 +418,22 @@
       assert(G, 'search-input exists', document.getElementById('search-input'));
       assert(G, 'gap-toggle exists', document.getElementById('gap-toggle'));
 
+      // New sections from Session #5
+      assert(G, 'section-calories exists', document.getElementById('section-calories'));
+      assert(G, 'section-leaderboard exists', document.getElementById('section-leaderboard'));
+      assert(G, 'pin-note textarea exists', document.getElementById('pin-note'));
+      assert(G, 'calorie-tracker-content exists', document.getElementById('calorie-tracker-content'));
+      assert(G, 'leaderboard-content exists', document.getElementById('leaderboard-content'));
+      assert(G, 'calorie-log-form exists', document.getElementById('calorie-log-form'));
+      assert(G, 'offline-tiles button exists', document.getElementById('btn-offline-tiles'));
+
       // Each section has section-body and section-toggle
       const sectionIds = ['section-stops', 'section-pace', 'section-food',
                           'section-countdown', 'section-weather',
                           'section-course-sections', 'section-block-parties',
                           'section-tools', 'section-passport', 'section-pins',
-                          'section-splits', 'section-finishers',
+                          'section-splits', 'section-calories', 'section-leaderboard',
+                          'section-finishers',
                           'section-segments', 'section-elevation', 'section-route'];
       sectionIds.forEach(id => {
         const sec = document.getElementById(id);
@@ -536,6 +567,7 @@
       const sectionIds = ['section-stops', 'section-pace', 'section-food',
                           'section-countdown', 'section-weather',
                           'section-tools', 'section-pins', 'section-splits',
+                          'section-calories', 'section-leaderboard',
                           'section-finishers', 'section-segments', 'section-elevation', 'section-route'];
       sectionIds.forEach(id => {
         assert(G, `${id} starts collapsed`,
@@ -848,7 +880,7 @@
       const grid = document.querySelector('.tools-grid');
       assert(G, 'tools-grid exists', !!grid);
       const buttons = grid ? grid.querySelectorAll('.tool-btn') : [];
-      assert(G, '13 tool buttons', buttons.length === 13, `found ${buttons.length}`);
+      assert(G, '14 tool buttons', buttons.length === 14, `found ${buttons.length}`);
 
       // Specific buttons
       assert(G, 'bathrooms button exists', !!document.getElementById('btn-bathrooms'));
@@ -1791,6 +1823,133 @@
       const content = document.getElementById('finisher-content');
       const rows = content ? content.querySelectorAll('.finisher-row') : [];
       assert(G, 'finisher rows rendered', rows.length > 0, `found ${rows.length}`);
+    }
+
+    // ── Calorie Tracker ──
+    function testCalorieTracker() {
+      const G = 'Calorie Tracker';
+
+      // DOM
+      assert(G, 'section-calories exists', !!document.getElementById('section-calories'));
+      assert(G, 'calorie-tracker-content exists', !!document.getElementById('calorie-tracker-content'));
+      assert(G, 'calorie-log-form exists', !!document.getElementById('calorie-log-form'));
+
+      // Functions
+      assert(G, 'buildCalorieTracker is a function', typeof buildCalorieTracker === 'function');
+      assert(G, 'buildCalorieLogForm is a function', typeof buildCalorieLogForm === 'function');
+      assert(G, 'addCalorieLogItem is a function', typeof addCalorieLogItem === 'function');
+      assert(G, 'clearCalorieLog is a function', typeof clearCalorieLog === 'function');
+      assert(G, 'getConsumedCalories is a function', typeof getConsumedCalories === 'function');
+      assert(G, 'getBurnedCalories is a function', typeof getBurnedCalories === 'function');
+
+      // Data
+      assert(G, 'TB_MENU_DATA array exists', Array.isArray(TB_MENU_DATA));
+      assert(G, 'TB_MENU_DATA has 14 items', TB_MENU_DATA.length === 14, `found ${TB_MENU_DATA.length}`);
+      TB_MENU_DATA.forEach(item => {
+        assert(G, `menu item "${item.name}" has cal`, typeof item.cal === 'number');
+        assert(G, `menu item "${item.name}" has price`, typeof item.price === 'number');
+      });
+
+      // CALORIES_PER_MILE constant
+      assert(G, 'CALORIES_PER_MILE constant exists', typeof CALORIES_PER_MILE === 'number');
+      assert(G, 'CALORIES_PER_MILE is 100', CALORIES_PER_MILE === 100);
+
+      // Content rendered
+      const content = document.getElementById('calorie-tracker-content');
+      assert(G, 'calorie summary rendered', content && content.querySelector('.calorie-summary'));
+
+      // Select dropdown rendered
+      const select = document.getElementById('calorie-item-select');
+      assert(G, 'calorie item select rendered', !!select);
+      if (select) {
+        assert(G, 'select has 14 options', select.options.length === 14, `found ${select.options.length}`);
+      }
+    }
+
+    // ── Segment Leaderboard ──
+    function testSegmentLeaderboard() {
+      const G = 'Segment Leaderboard';
+
+      // DOM
+      assert(G, 'section-leaderboard exists', !!document.getElementById('section-leaderboard'));
+      assert(G, 'leaderboard-content exists', !!document.getElementById('leaderboard-content'));
+
+      // Functions
+      assert(G, 'buildSegmentLeaderboard is a function', typeof buildSegmentLeaderboard === 'function');
+
+      // Data
+      assert(G, 'SEGMENT_RECORDS array exists', Array.isArray(SEGMENT_RECORDS));
+      assert(G, 'SEGMENT_RECORDS has 7 entries', SEGMENT_RECORDS.length === 7, `found ${SEGMENT_RECORDS.length}`);
+      SEGMENT_RECORDS.forEach(rec => {
+        assert(G, `record "${rec.section}" has distance`, typeof rec.distance === 'number');
+        assert(G, `record "${rec.section}" has kom`, typeof rec.kom === 'object');
+        assert(G, `record "${rec.section}" has qom`, typeof rec.qom === 'object');
+      });
+
+      // Content rendered
+      const content = document.getElementById('leaderboard-content');
+      const rows = content ? content.querySelectorAll('.leaderboard-row') : [];
+      assert(G, '7 leaderboard rows rendered', rows.length === 7, `found ${rows.length}`);
+    }
+
+    // ── Pin Notes ──
+    function testPinNotes() {
+      const G = 'Pin Notes';
+
+      // DOM
+      assert(G, 'pin-note textarea exists', !!document.getElementById('pin-note'));
+      const noteField = document.getElementById('pin-note');
+      if (noteField) {
+        assert(G, 'pin-note is a textarea', noteField.tagName === 'TEXTAREA');
+        assert(G, 'pin-note has placeholder', noteField.placeholder.includes('note'));
+      }
+    }
+
+    // ── Menu Panel ──
+    function testMenuPanel() {
+      const G = 'Menu Panel';
+
+      // Function
+      assert(G, 'buildMenuPanel is a function', typeof buildMenuPanel === 'function');
+
+      // Test non-mandatory stop
+      const html0 = buildMenuPanel(0);
+      assert(G, 'menu panel returns HTML', html0.includes('menu-panel'));
+      assert(G, 'menu panel has items', html0.includes('Chalupa Supreme'));
+      assert(G, 'menu panel has calories', html0.includes('350 cal'));
+      assert(G, 'menu panel has prices', html0.includes('$4.19'));
+
+      // Test mandatory stop 3
+      const html3 = buildMenuPanel(3);
+      assert(G, 'stop 3 has mandatory warning', html3.includes('Must order'));
+      assert(G, 'stop 3 highlights Chalupa', html3.includes('mandatory-highlight'));
+
+      // Test mandatory stop 7
+      const html7 = buildMenuPanel(7);
+      assert(G, 'stop 7 has mandatory warning', html7.includes('Must order'));
+    }
+
+    // ── Offline Tile Caching ──
+    function testOfflineTiles() {
+      const G = 'Offline Tiles';
+
+      // Function
+      assert(G, 'cacheOfflineTiles is a function', typeof cacheOfflineTiles === 'function');
+
+      // Helper functions
+      assert(G, 'lat2tile is a function', typeof lat2tile === 'function');
+      assert(G, 'lon2tile is a function', typeof lon2tile === 'function');
+
+      // Button
+      assert(G, 'offline-tiles button exists', !!document.getElementById('btn-offline-tiles'));
+
+      // Tile math verification
+      const tileX = lon2tile(-77.0, 13);
+      const tileY = lat2tile(38.9, 13);
+      assert(G, 'lon2tile returns integer', Number.isInteger(tileX));
+      assert(G, 'lat2tile returns integer', Number.isInteger(tileY));
+      assert(G, 'tile X in reasonable range', tileX > 0 && tileX < 10000);
+      assert(G, 'tile Y in reasonable range', tileY > 0 && tileY < 10000);
     }
 
     // ── Bug Fix Regression Tests ──

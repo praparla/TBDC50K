@@ -11,7 +11,7 @@
   <meta name="apple-mobile-web-app-title" content="TB DC 50K" />
   <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌮</text></svg>" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link rel="stylesheet" href="style.css?v=8" />
+  <link rel="stylesheet" href="style.css?v=9" />
   <script>
     // Apply saved theme before render to prevent flash of default theme
     (function() {
@@ -151,7 +151,7 @@
         <p class="hint" data-sauce-id="block-party-hint" data-default-hint="Neighborhood parties along the route. Click to fly there.">Neighborhood parties along the route. Click to fly there.</p>
         <button id="btn-block-parties" class="tool-btn" style="margin-bottom: 8px;" onclick="toggleBlockParties()">&#127881; Show on Map</button>
         <div id="block-parties-list"></div>
-        <p class="hint" style="margin-top: 8px; font-size: 0.7rem;">Hosting a party? <a href="https://forms.gle/placeholder" target="_blank" style="color: var(--color-accent-secondary);">Submit here &rarr;</a></p>
+        <p class="hint" style="margin-top: 8px; font-size: 0.7rem;">Hosting a party along the route? <a href="mailto:tacobelldc50k@gmail.com?subject=Block%20Party%20Submission&body=Party%20Name%3A%0AAddress%3A%0AApproximate%20Mile%20Marker%3A%0AWhat%20You're%20Offering%3A%0ARunner%20Note%3A%0AContact%20Email%3A" style="color: var(--color-accent-secondary);">Submit your party &rarr;</a></p>
       </div>
     </div>
 
@@ -181,6 +181,7 @@
           <button id="btn-grade-color" class="tool-btn" onclick="toggleGradeColor()">&#127752; Color by Grade</button>
           <button class="tool-btn" onclick="showRaceCard()">&#128247; Race Card</button>
           <button id="btn-audio-toggle" class="tool-btn active" onclick="toggleAudio()">&#128276; Cheers On</button>
+          <button id="btn-offline-tiles" class="tool-btn" onclick="cacheOfflineTiles()">&#128229; Cache for Offline</button>
         </div>
       </div>
     </div>
@@ -204,6 +205,7 @@
         <div id="pin-filters"></div>
         <div id="pin-form">
           <input type="text" id="pin-name" placeholder="Name (e.g. Jake's House)" />
+          <textarea id="pin-note" placeholder="Add a note (optional)" rows="2" style="width:100%;resize:vertical;margin-bottom:6px;"></textarea>
           <select id="pin-icon">
             <option value="restroom">&#128701; Restroom</option>
             <option value="water">&#128167; Water</option>
@@ -224,6 +226,23 @@
       <div class="section-body">
         <p class="hint" data-sauce-id="splits-hint" data-default-hint="Splits are auto-recorded when Race Mode detects you near a stop.">Splits are auto-recorded when Race Mode detects you near a stop.</p>
         <div id="split-history-content"><p class="hint">No splits recorded yet. Start Race Mode and approach a stop.</p></div>
+      </div>
+    </div>
+
+    <div class="section collapsed" id="section-calories">
+      <h2>Calorie Tracker &#128293; <span class="section-toggle">&#9660;</span></h2>
+      <div class="section-body">
+        <p class="hint" data-sauce-id="calorie-hint" data-default-hint="Track calories consumed vs burned on the course.">Track calories consumed vs burned on the course.</p>
+        <div id="calorie-log-form"></div>
+        <div id="calorie-tracker-content"><p class="hint">Loading...</p></div>
+      </div>
+    </div>
+
+    <div class="section collapsed" id="section-leaderboard">
+      <h2>Segment Records &#128081; <span class="section-toggle">&#9660;</span></h2>
+      <div class="section-body">
+        <p class="hint" data-sauce-id="leaderboard-hint" data-default-hint="Fastest times per course section. KOM/QOM records.">Fastest times per course section. KOM/QOM records.</p>
+        <div id="leaderboard-content"><p class="hint">Loading...</p></div>
       </div>
     </div>
 
@@ -312,7 +331,7 @@
   </script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="gpx_data.js"></script>
-  <script src="app.js?v=8"></script>
+  <script src="app.js?v=9"></script>
 
   <!-- Supabase + Backend Features -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
