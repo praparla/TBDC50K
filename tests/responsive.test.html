@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Responsive Layout Tests — TB DC 50K</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link rel="stylesheet" href="../style.css?v=9" />
+  <link rel="stylesheet" href="../style.css?v=10" />
   <style>
     /* Test overlay */
     #test-overlay {
@@ -160,6 +160,8 @@
           <button class="tool-btn" onclick="showRaceCard()">&#128247; Race Card</button>
           <button id="btn-audio-toggle" class="tool-btn active" onclick="toggleAudio()">&#128276; Cheers On</button>
           <button id="btn-offline-tiles" class="tool-btn" onclick="cacheOfflineTiles()">&#128229; Cache for Offline</button>
+          <button id="btn-alt-routes" class="tool-btn" onclick="toggleAltRoutes()">&#128256; Alt Routes</button>
+          <button id="btn-heatmap" class="tool-btn" onclick="toggleHeatmap()">&#128293; Training Heatmap</button>
         </div>
       </div>
     </div>
@@ -196,6 +198,14 @@
           <button id="btn-add-pin" disabled>Click Map to Place Pin</button>
         </div>
         <div id="pins-list"></div>
+      </div>
+    </div>
+
+    <div class="section collapsed" id="section-alt-routes">
+      <h2>Alt Routes &#128256; <span class="section-toggle">&#9660;</span></h2>
+      <div class="section-body">
+        <p class="hint" data-sauce-id="alt-routes-hint" data-default-hint="Alternative route options between stops. Toggle from Tools to see on map.">Alternative route options between stops. Toggle from Tools to see on map.</p>
+        <div id="alt-routes-list"><p class="hint">Toggle alt routes to see options.</p></div>
       </div>
     </div>
 
@@ -382,6 +392,8 @@
       testMenuPanel();
       testOfflineTiles();
       testBugFixes();
+      testAltRoutes();
+      testTrainingHeatmap();
     }
 
     // ── DOM Structure ──
@@ -426,14 +438,17 @@
       assert(G, 'leaderboard-content exists', document.getElementById('leaderboard-content'));
       assert(G, 'calorie-log-form exists', document.getElementById('calorie-log-form'));
       assert(G, 'offline-tiles button exists', document.getElementById('btn-offline-tiles'));
+      assert(G, 'section-alt-routes exists', document.getElementById('section-alt-routes'));
+      assert(G, 'alt-routes button exists', document.getElementById('btn-alt-routes'));
+      assert(G, 'heatmap button exists', document.getElementById('btn-heatmap'));
 
       // Each section has section-body and section-toggle
       const sectionIds = ['section-stops', 'section-pace', 'section-food',
                           'section-countdown', 'section-weather',
                           'section-course-sections', 'section-block-parties',
                           'section-tools', 'section-passport', 'section-pins',
-                          'section-splits', 'section-calories', 'section-leaderboard',
-                          'section-finishers',
+                          'section-alt-routes', 'section-splits', 'section-calories',
+                          'section-leaderboard', 'section-finishers',
                           'section-segments', 'section-elevation', 'section-route'];
       sectionIds.forEach(id => {
         const sec = document.getElementById(id);
@@ -566,8 +581,8 @@
       // All start collapsed (class is in HTML)
       const sectionIds = ['section-stops', 'section-pace', 'section-food',
                           'section-countdown', 'section-weather',
-                          'section-tools', 'section-pins', 'section-splits',
-                          'section-calories', 'section-leaderboard',
+                          'section-tools', 'section-pins', 'section-alt-routes',
+                          'section-splits', 'section-calories', 'section-leaderboard',
                           'section-finishers', 'section-segments', 'section-elevation', 'section-route'];
       sectionIds.forEach(id => {
         assert(G, `${id} starts collapsed`,
@@ -880,7 +895,7 @@
       const grid = document.querySelector('.tools-grid');
       assert(G, 'tools-grid exists', !!grid);
       const buttons = grid ? grid.querySelectorAll('.tool-btn') : [];
-      assert(G, '14 tool buttons', buttons.length === 14, `found ${buttons.length}`);
+      assert(G, '16 tool buttons', buttons.length === 16, `found ${buttons.length}`);
 
       // Specific buttons
       assert(G, 'bathrooms button exists', !!document.getElementById('btn-bathrooms'));
@@ -1993,6 +2008,71 @@
 
       // BUG-007: loadPinsFromURL handles names with commas
       assert(G, 'loadPinsFromURL is a function', typeof loadPinsFromURL === 'function');
+    }
+
+    // ── Alternative Routes ──
+    function testAltRoutes() {
+      const G = 'Alt Routes';
+
+      // DOM
+      assert(G, 'section-alt-routes exists', !!document.getElementById('section-alt-routes'));
+      assert(G, 'alt-routes-list exists', !!document.getElementById('alt-routes-list'));
+
+      // Data
+      assert(G, 'ALT_ROUTES array exists', Array.isArray(ALT_ROUTES));
+      assert(G, 'ALT_ROUTES has 3 entries', ALT_ROUTES.length === 3, `found ${ALT_ROUTES.length}`);
+
+      ALT_ROUTES.forEach(alt => {
+        assert(G, `alt "${alt.name}" has id`, typeof alt.id === 'string');
+        assert(G, `alt "${alt.name}" has coords`, Array.isArray(alt.coords) && alt.coords.length >= 2);
+        assert(G, `alt "${alt.name}" has distanceMi`, typeof alt.distanceMi === 'number');
+        assert(G, `alt "${alt.name}" has mainDistanceMi`, typeof alt.mainDistanceMi === 'number');
+        assert(G, `alt "${alt.name}" has color`, typeof alt.color === 'string');
+        assert(G, `alt "${alt.name}" has description`, typeof alt.description === 'string');
+      });
+
+      // Functions
+      assert(G, 'toggleAltRoutes is a function', typeof toggleAltRoutes === 'function');
+      assert(G, 'renderAltRoutesSidebar is a function', typeof renderAltRoutesSidebar === 'function');
+
+      // State
+      assert(G, 'altRoutesVisible starts false', altRoutesVisible === false);
+      assert(G, 'altRouteLayers starts empty', Array.isArray(altRouteLayers) && altRouteLayers.length === 0);
+
+      // Button
+      const btn = document.getElementById('btn-alt-routes');
+      assert(G, 'alt-routes button exists', !!btn);
+      assert(G, 'button text contains Alt', btn && btn.textContent.includes('Alt'));
+
+      // CSS: alt-route-item style exists
+      let hasAltCSS = false;
+      try {
+        for (const sheet of document.styleSheets) {
+          try {
+            for (const rule of sheet.cssRules) {
+              if (rule.selectorText && rule.selectorText.includes('.alt-route-item')) hasAltCSS = true;
+            }
+          } catch (e) { /* cross-origin */ }
+        }
+      } catch (e) {}
+      assert(G, 'alt route CSS exists', hasAltCSS);
+    }
+
+    // ── Training Heatmap ──
+    function testTrainingHeatmap() {
+      const G = 'Training Heatmap';
+
+      // Functions
+      assert(G, 'toggleHeatmap is a function', typeof toggleHeatmap === 'function');
+
+      // State
+      assert(G, 'heatmapVisible starts false', heatmapVisible === false);
+      assert(G, 'heatmapLayer starts null', heatmapLayer === null);
+
+      // Button
+      const btn = document.getElementById('btn-heatmap');
+      assert(G, 'heatmap button exists', !!btn);
+      assert(G, 'button text contains Heatmap', btn && btn.textContent.includes('Heatmap'));
     }
   </script>
 </body>

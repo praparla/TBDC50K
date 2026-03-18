@@ -1,10 +1,10 @@
 // Service Worker for TB DC 50K — Offline caching
-const CACHE_NAME = 'tb50k-v4';
+const CACHE_NAME = 'tb50k-v5';
 const CORE_ASSETS = [
   '/',
   '/index.html',
-  '/style.css?v=9',
-  '/app.js?v=9',
+  '/style.css?v=10',
+  '/app.js?v=10',
   '/gpx_data.js',
   '/config.js',
   '/auth.js',

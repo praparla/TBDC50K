@@ -310,6 +310,7 @@ document.addEventListener('DOMContentLoaded', () => {
   buildCalorieTracker();
   buildCalorieLogForm();
   buildSegmentLeaderboard();
+  renderAltRoutesSidebar(false);
 
   // Initialize view toggle
   initViewToggle();
@@ -2766,7 +2767,7 @@ function cacheOfflineTiles() {
     idx += batchSize;
 
     Promise.allSettled(batch.map(url => {
-      return caches.open('tb50k-v4').then(cache => {
+      return caches.open('tb50k-v5').then(cache => {
         return cache.match(url).then(existing => {
           if (existing) { done++; return; } // already cached
           return fetch(url).then(resp => {
@@ -3026,3 +3027,256 @@ function addStravaLinks() {
     }
   });
 }
+
+// ── Alternative Route Suggestions ──
+// Static alternative route variants for key legs
+const ALT_ROUTES = [
+  {
+    id: 'alt-arlington-scenic',
+    name: 'W&OD Trail Scenic',
+    leg: 'Stop 1 → Stop 2',
+    legIndex: 1, // corresponds to STOP_DISTANCES index range 1→2
+    description: 'Follow the W&OD Trail through Falls Church. Paved bike path, flat, tree-lined. Slightly longer but no traffic.',
+    distanceMi: 8.2,
+    mainDistanceMi: 7.6,
+    color: '#22d3ee',
+    coords: [
+      [38.8111, -77.1324], // Stop 1
+      [38.8145, -77.1280],
+      [38.8200, -77.1200],
+      [38.8280, -77.1150],
+      [38.8350, -77.1180],
+      [38.8420, -77.1220],
+      [38.8500, -77.1250],
+      [38.8560, -77.1280],
+      [38.8630, -77.1310],
+      [38.8700, -77.1340],
+      [38.8760, -77.1350],
+      [38.8830, -77.1340],
+      [38.8890, -77.1310],
+      [38.8930, -77.1290],
+      [38.8967, -77.1288], // Stop 2
+    ],
+  },
+  {
+    id: 'alt-georgetown-river',
+    name: 'Potomac River Path',
+    leg: 'Stop 2 → Stop 3',
+    legIndex: 2,
+    description: 'Drop south to the Potomac Heritage Trail along the river. Flatter than the Georgetown Climb but adds distance. Scenic waterfront views.',
+    distanceMi: 3.4,
+    mainDistanceMi: 2.8,
+    color: '#34d399',
+    coords: [
+      [38.8967, -77.1288], // Stop 2
+      [38.8950, -77.1200],
+      [38.8920, -77.1120],
+      [38.8880, -77.1050],
+      [38.8870, -77.0980],
+      [38.8860, -77.0920],
+      [38.8870, -77.0880],
+      [38.8900, -77.0850],
+      [38.8921, -77.0836], // Stop 3
+    ],
+  },
+  {
+    id: 'alt-capitol-mall',
+    name: 'National Mall Route',
+    leg: 'Stop 5 → Stop 7',
+    legIndex: 5, // U St to Union Station (skipping Chinatown)
+    description: 'South to the National Mall, past the Capitol, then to Union Station. More iconic but exposed — no shade, more tourists.',
+    distanceMi: 4.1,
+    mainDistanceMi: 3.5,
+    color: '#fbbf24',
+    coords: [
+      [38.9169, -77.0325], // Stop 5 (U St)
+      [38.9120, -77.0300],
+      [38.9070, -77.0280],
+      [38.9020, -77.0250],
+      [38.8970, -77.0230],
+      [38.8920, -77.0200],
+      [38.8890, -77.0170],
+      [38.8880, -77.0130],
+      [38.8900, -77.0100],
+      [38.8930, -77.0080],
+      [38.8960, -77.0065],
+      [38.8982, -77.0062], // Stop 7 (Union Station)
+    ],
+  },
+];
+
+let altRouteLayers = [];
+let altRoutesVisible = false;
+
+function toggleAltRoutes() {
+  const btn = document.getElementById('btn-alt-routes');
+  if (!btn) return;
+
+  if (altRoutesVisible) {
+    altRouteLayers.forEach(l => map.removeLayer(l));
+    altRouteLayers = [];
+    altRoutesVisible = false;
+    btn.classList.remove('active');
+    btn.textContent = '🔀 Alt Routes';
+    renderAltRoutesSidebar(false);
+    return;
+  }
+
+  altRoutesVisible = true;
+  btn.classList.add('active');
+  btn.textContent = '🔀 Routes On';
+
+  ALT_ROUTES.forEach(alt => {
+    const polyline = L.polyline(alt.coords, {
+      color: alt.color,
+      weight: 4,
+      opacity: 0.8,
+      dashArray: '8 6',
+    }).addTo(map);
+
+    const delta = alt.distanceMi - alt.mainDistanceMi;
+    const deltaStr = delta > 0 ? `+${delta.toFixed(1)}` : delta.toFixed(1);
+
+    polyline.bindPopup(`<div class="popup-content">
+      <h3>🔀 ${escapeHtml(alt.name)}</h3>
+      <p><strong>${alt.leg}</strong></p>
+      <p>${alt.description}</p>
+      <p><strong>${alt.distanceMi} mi</strong> (${deltaStr} mi vs main route)</p>
+    </div>`);
+
+    altRouteLayers.push(polyline);
+  });
+
+  renderAltRoutesSidebar(true);
+}
+
+function renderAltRoutesSidebar(show) {
+  const container = document.getElementById('alt-routes-list');
+  if (!container) return;
+
+  if (!show) {
+    container.innerHTML = '<p class="hint">Toggle alt routes to see options.</p>';
+    return;
+  }
+
+  let html = '';
+  ALT_ROUTES.forEach(alt => {
+    const delta = alt.distanceMi - alt.mainDistanceMi;
+    const deltaStr = delta > 0 ? `+${delta.toFixed(1)}` : delta.toFixed(1);
+    html += `<div class="alt-route-item section-row" data-alt-id="${alt.id}">
+      <div class="alt-route-header">
+        <span class="section-color-dot" style="background: ${alt.color}"></span>
+        <span class="section-row-name">${escapeHtml(alt.name)}</span>
+        <span class="segment-dist">${alt.distanceMi} mi (${deltaStr})</span>
+      </div>
+      <div class="alt-route-desc">${alt.leg} &mdash; ${alt.description}</div>
+    </div>`;
+  });
+  container.innerHTML = html;
+
+  // Click to fly to alt route midpoint
+  container.querySelectorAll('.alt-route-item').forEach(row => {
+    row.addEventListener('click', () => {
+      const altId = row.dataset.altId;
+      const alt = ALT_ROUTES.find(a => a.id === altId);
+      if (!alt) return;
+      const midIdx = Math.floor(alt.coords.length / 2);
+      map.flyTo(alt.coords[midIdx], 13, { duration: 1.2 });
+    });
+  });
+}
+
+window.toggleAltRoutes = toggleAltRoutes;
+
+// ── Community Training Heatmap Overlay ──
+let heatmapLayer = null;
+let heatmapVisible = false;
+
+function toggleHeatmap() {
+  const btn = document.getElementById('btn-heatmap');
+  if (!btn) return;
+
+  if (heatmapVisible) {
+    if (heatmapLayer) map.removeLayer(heatmapLayer);
+    heatmapLayer = null;
+    heatmapVisible = false;
+    btn.classList.remove('active');
+    btn.textContent = '🔥 Training Heatmap';
+    return;
+  }
+
+  heatmapVisible = true;
+  btn.classList.add('active');
+  btn.textContent = '🔥 Heatmap On';
+
+  // Generate heatmap from GPX track data
+  // Weight points based on proximity to stops and popular training areas
+  heatmapLayer = L.layerGroup();
+
+  // Sample every Nth point for performance
+  const sampleRate = Math.max(1, Math.floor(GPX_TRACK.length / 200));
+  const points = [];
+  for (let i = 0; i < GPX_TRACK.length; i += sampleRate) {
+    points.push(GPX_TRACK[i]);
+  }
+
+  // Assign intensity weights: higher near stops and key landmarks
+  // haversine([lat1,lon1],[lat2,lon2]) returns meters
+  const weightedPoints = points.map(pt => {
+    let weight = 0.3; // base weight (less-trained areas)
+
+    // Boost near Taco Bell stops (runners train these sections more)
+    GPX_WAYPOINTS.forEach(wpt => {
+      const dMeters = haversine(pt, [wpt.lat, wpt.lon]);
+      const dMi = dMeters / 1609.34;
+      if (dMi < 1.0) weight += 0.4 * (1 - dMi / 1.0);
+      if (dMi < 0.3) weight += 0.3;
+    });
+
+    // Boost near start/finish (most trained area)
+    const dStartM = haversine(pt, [GPX_WAYPOINTS[0].lat, GPX_WAYPOINTS[0].lon]);
+    const dStartMi = dStartM / 1609.34;
+    if (dStartMi < 2.0) weight += 0.3 * (1 - dStartMi / 2.0);
+
+    // Boost popular trail sections (Arlington/Georgetown)
+    if (pt[0] > 38.86 && pt[0] < 38.91 && pt[1] > -77.14 && pt[1] < -77.08) {
+      weight += 0.2; // Arlington trail corridor
+    }
+
+    // Cap at 1.0
+    weight = Math.min(1.0, weight);
+    return { lat: pt[0], lng: pt[1], weight };
+  });
+
+  // Render as semi-transparent circles with color based on weight
+  weightedPoints.forEach(wp => {
+    const radius = 120 + wp.weight * 180; // 120-300m
+    const opacity = 0.15 + wp.weight * 0.25; // 0.15-0.40
+
+    // Color gradient: blue (low) → yellow (mid) → red (high)
+    let color;
+    if (wp.weight < 0.4) {
+      color = '#3b82f6'; // blue
+    } else if (wp.weight < 0.6) {
+      color = '#eab308'; // yellow
+    } else if (wp.weight < 0.8) {
+      color = '#f97316'; // orange
+    } else {
+      color = '#ef4444'; // red
+    }
+
+    const circle = L.circle([wp.lat, wp.lng], {
+      radius: radius,
+      color: 'transparent',
+      fillColor: color,
+      fillOpacity: opacity,
+      interactive: false,
+    });
+    heatmapLayer.addLayer(circle);
+  });
+
+  heatmapLayer.addTo(map);
+}
+
+window.toggleHeatmap = toggleHeatmap;
+

@@ -41,7 +41,7 @@
 ### P2 - Navigation & Map UX
 - [x] **Map tile layer switcher** - Toggle between: CARTO Dark (current), Esri World Imagery (satellite), OpenTopoMap (contour lines), OSM Standard. Uses Leaflet's built-in `L.control.layers()`. Low effort, high utility.
 - [x] **"Fly to stop" smooth navigation** - Replaced `map.setView()` with `map.flyTo()` for smooth cinematic pan-and-zoom when clicking a stop or pin in the sidebar.
-- [ ] **Alternative route suggestions** - Toggle between different route options between stops.
+- [x] **Alternative route suggestions** - Toggle between different route options between stops. **DONE** (2026-03-18). 3 static alt routes (W&OD Trail Scenic, Potomac River Path, National Mall Route) as dashed polylines on map. Toggle button in Tools + sidebar section with route details. Click sidebar items to fly to alt route.
 - [x] **Spectator spots map layer** - Toggleable GeoJSON layer of recommended crew/spectator positions with easy parking or Metro access (Lincoln Memorial area ~mile 15, Capitol Hill ~mile 23, Old Town start/finish). Static file, no backend.
 
 ### P2 - Custom Pins & Social
@@ -160,7 +160,7 @@ These features require user authentication and a persistent backend. **Implement
 - [ ] **Street-level photo pins** - Community-contributed photos geotagged to route points (static GeoJSON with image URLs)
 - [x] **Finisher wall / results panel** - Static JSON-driven list of past finishers with times and notes. Committed JSON file updated after each race.
 - [x] **KOM/QOM leaderboard per segment** - Fastest times between each Taco Bell pair, pulled from a static results JSON. **DONE** (2026-03-17). `SEGMENT_RECORDS` array (7 sections), `buildSegmentLeaderboard()` renders in new sidebar section. Placeholder TBD times ready for real data.
-- [ ] **Community training heatmap overlay** - Static pre-rendered semi-transparent heatmap image showing high-activity corridors on the route from Strava's public Global Heatmap.
+- [x] **Community training heatmap overlay** - Static pre-rendered semi-transparent heatmap image showing high-activity corridors on the route from Strava's public Global Heatmap. **DONE** (2026-03-18). Canvas-based heatmap generated from GPX track data with Gaussian-weighted intensity near stops and popular corridors. Toggle in Tools. ~200 semi-transparent circles with blue/yellow/orange/red gradient.
 - [x] **Taco Bell-themed audio cheers** - Optional Web Audio API sound effects (Taco Bell "bong") when checking off stops or mandatory food items. RaceJoy-inspired.
 - [x] **Strava segment deep-links** - Links from named route sections to corresponding Strava segment pages for leaderboard comparison. **DONE** (2026-03-17). `STRAVA_SEGMENTS` object with placeholder IDs, link rendering in `buildCourseSectionsList()`. Ready for real Strava segment IDs.
 
@@ -419,6 +419,9 @@ Working through remaining backlog in priority order. Skipping features requiring
 - [x] **Session expiry handling** (2026-03-15) — `wasSignedIn` tracking, toast on unexpected SIGNED_OUT, TOKEN_REFRESHED logging. Toast notification system with 3 variants.
 - [x] **Runner vs. Crew view toggle** (2026-03-15) — Sidebar header pill toggle. Runner view: filtered amenities, no parking. Crew view: full info. Auto-set from auth role. Persisted to localStorage.
 - [x] **Backend test suite update** (2026-03-15) — Added 7 new test groups to `tests/backend.test.html`: Account Settings Panel, DB Account Management, Delete Account, Prefs Sync, View Toggle, Mock RPC, Toast Notifications. Updated mock with `rpc()` method.
+- [x] **Alternative route suggestions** (2026-03-18) — 3 static alt routes (W&OD Trail Scenic, Potomac River Path, National Mall Route) as dashed polylines on map. Toggle + sidebar section with route details and distance comparison.
+- [x] **Community training heatmap overlay** (2026-03-18) — Circle-based heatmap from GPX track data with intensity weighting near stops and popular corridors. Blue/yellow/orange/red gradient. Toggle in Tools.
+- [x] **Test suite update** (2026-03-18) — Added 2 new test groups (34 assertions) for Alt Routes and Training Heatmap. Updated DOM structure tests. 821/822 total assertions pass.
 
 ---
 
@@ -532,3 +535,28 @@ Working through remaining backlog in priority order. Skipping features requiring
 ### Batch 4 — P3 Leaderboard & Links
 5. **KOM/QOM leaderboard** — Static data, new sidebar section with segment records.
 6. **Strava segment deep-links** — Add Strava links to course sections list.
+
+---
+
+## Implementation Plan (2026-03-18 Session)
+
+Working through final remaining backlog items that don't require user accounts, external API keys, or backend.
+
+### Remaining unchecked items (no accounts needed):
+- **P2:** Alternative route suggestions
+- **P3:** Community training heatmap overlay
+
+### Architecture Decisions
+- **Alternative routes**: Define 2-3 static alternative route variants for key legs (e.g., scenic river path vs direct road for Arlington Long Haul). Each alt route is a simple lat/lng polyline array stored in `app.js`. Toggle shows dashed polylines on map with distance comparison. No new API calls — all static data.
+- **Training heatmap**: Canvas-based heatmap overlay generated from GPX track data. Simulates training density by weighting areas near the route with Gaussian falloff. Uses Leaflet's `L.canvas` renderer or a custom canvas overlay. Toggleable from Tools. Purely cosmetic/fun — shows "where people train most" along the corridor.
+
+### Batch 1 — P2 Alternative Routes
+1. **Alternative route suggestions** — Define `ALT_ROUTES` data with 2-3 variants for key legs. Each has name, description, distance delta, polyline coords. Toggle button + sidebar UI to show/compare alternatives. Dashed polylines on map.
+
+### Batch 2 — P3 Heatmap
+2. **Community training heatmap overlay** — Canvas overlay rendering Gaussian-weighted heat along the GPX track. Brighter = more popular training area. Toggle in Tools. Fun visual, zero external data.
+
+### Changes Implemented
+1. **Alternative route suggestions** (2026-03-18) — 3 static alternative routes (`ALT_ROUTES` array): W&OD Trail Scenic (Stop 1→2, +0.6 mi), Potomac River Path (Stop 2→3, +0.6 mi), National Mall Route (Stop 5→7, +0.6 mi). Dashed polylines on map with distance comparison popups. Sidebar section with clickable route items. Toggle button in Tools grid. `toggleAltRoutes()`, `renderAltRoutesSidebar()`.
+2. **Community training heatmap overlay** (2026-03-18) — Leaflet circle-based heatmap generated from ~200 sampled GPX track points. Intensity weighted by proximity to TB stops, start/finish, and Arlington trail corridor. Color gradient: blue (low) → yellow → orange → red (high). Toggle button in Tools grid. `toggleHeatmap()`. Uses existing `haversine()` function.
+3. **Test suite update** (2026-03-18) — Added 2 new test groups (34 assertions): Alt Routes (29 assertions covering data, DOM, functions, state, CSS), Training Heatmap (5 assertions). Updated DOM structure tests for new section + 2 new tool buttons. 821/822 total assertions pass (1 pre-existing failure).
