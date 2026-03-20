@@ -2008,6 +2008,18 @@
 
       // BUG-007: loadPinsFromURL handles names with commas
       assert(G, 'loadPinsFromURL is a function', typeof loadPinsFromURL === 'function');
+
+      // BUG-012: Route Info distance must match canonical STOP_DISTANCES value
+      const routeInfoEl = document.getElementById('route-info');
+      if (routeInfoEl && typeof updateRouteInfo === 'function') {
+        // Invoke updateRouteInfo with some dummy coords to populate
+        updateRouteInfo([[38.8, -77.0], [38.81, -77.01], [38.82, -77.02]]);
+        const routeText = routeInfoEl.textContent;
+        const canonicalDist = STOP_DISTANCES[STOP_DISTANCES.length - 1];
+        assert(G, `Route Info shows canonical distance (${canonicalDist} mi)`,
+          routeText.includes(canonicalDist + ' miles'),
+          'got: ' + routeText.match(/Route Distance:.*miles/)?.[0]);
+      }
     }
 
     // ── Alternative Routes ──

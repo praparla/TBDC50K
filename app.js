@@ -443,14 +443,11 @@ function addStopMarkers(wptCoords) {
 
 // ── Route Info ──
 function updateRouteInfo(coords) {
-  let totalDist = 0;
-  for (let i = 1; i < coords.length; i++) {
-    totalDist += haversine(coords[i - 1], coords[i]);
-  }
+  const routeMiles = STOP_DISTANCES[STOP_DISTANCES.length - 1]; // canonical distance
 
   const info = document.getElementById('route-info');
   info.innerHTML = `
-    <strong>Route Distance:</strong> ${(totalDist / 1609.34).toFixed(1)} miles<br>
+    <strong>Route Distance:</strong> ${routeMiles} miles<br>
     <strong>Track Points:</strong> ${coords.length}<br>
     <strong>Stops:</strong> 8 Taco Bells + Start/Finish<br>
     <strong>Time Limit:</strong> 11 hours<br>

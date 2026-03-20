@@ -34,6 +34,15 @@
 
 ## Closed Issues
 
+### [ISSUE-012] Route Info section shows incorrect distance (32.8 mi vs 32.4 mi)
+- **Status:** Fixed
+- **Severity:** Medium
+- **Found:** 2026-03-20
+- **Fixed:** 2026-03-20
+- **Root Cause:** `updateRouteInfo()` in `app.js` computed route distance by summing haversine distances between all GPX track points (`totalDist / 1609.34`), yielding 32.8 miles. Every other part of the app uses the canonical 32.4 mi from `STOP_DISTANCES[8]`. The haversine sum was inflated by GPS track point jitter.
+- **Fix:** Changed `updateRouteInfo()` to use `STOP_DISTANCES[STOP_DISTANCES.length - 1]` (32.4) instead of computing from track points. Bumped cache-bust versions (`app.js?v=11`, SW `tb50k-v6`).
+- **Lesson:** Use canonical/curated distances as the single source of truth rather than computing from raw GPS data, which accumulates jitter.
+
 ### [ISSUE-011] Missing block_parties.json causes 404 on every page load
 - **Status:** Fixed
 - **Severity:** Low
