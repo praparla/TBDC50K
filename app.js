@@ -1126,8 +1126,9 @@ function buildSegments() {
     const legDist = (STOP_DISTANCES[i + 1] - STOP_DISTANCES[i]).toFixed(1);
     const fromLabel = i === 0 ? 'Start' : `Stop ${i}`;
     const toLabel = i + 1 === STOP_DISTANCES.length - 1 ? 'Finish' : `Stop ${i + 1}`;
-    const toStop = TACO_BELL_STOPS[Math.min(i + 1, TACO_BELL_STOPS.length - 1)];
-    const areaName = toStop ? toStop.label.split(' - ')[1] || '' : '';
+    const isLastLeg = i + 1 === STOP_DISTANCES.length - 1;
+    const toStop = isLastLeg ? TACO_BELL_STOPS[0] : TACO_BELL_STOPS[i + 1];
+    const areaName = isLastLeg ? 'Alexandria' : (toStop ? toStop.label.split(' - ')[1] || '' : '');
 
     html += `<div class="segment-row">
       <span class="segment-label">${fromLabel} → ${toLabel}</span>

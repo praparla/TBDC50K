@@ -1074,6 +1074,22 @@
         const hasArea = rows[0].querySelector('.segment-area');
         assert(G, 'segment rows have area names', !!hasArea);
       }
+
+      // Regression: ISSUE-013 — last segment neighborhood must be Alexandria, not Union Station
+      if (rows.length >= 8) {
+        const lastArea = rows[7].querySelector('.segment-area');
+        assert(G, 'last segment area is Alexandria (not Union Station)',
+          lastArea && lastArea.textContent.trim() === 'Alexandria',
+          `got "${lastArea ? lastArea.textContent.trim() : 'null'}"`);
+      }
+
+      // First segment neighborhood should be Alexandria (Stop 1)
+      if (rows.length >= 1) {
+        const firstArea = rows[0].querySelector('.segment-area');
+        assert(G, 'first segment area is Alexandria',
+          firstArea && firstArea.textContent.trim() === 'Alexandria',
+          `got "${firstArea ? firstArea.textContent.trim() : 'null'}"`);
+      }
     }
 
     // ── Weather Section ──

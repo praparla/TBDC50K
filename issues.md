@@ -28,11 +28,25 @@
 
 ## Open Issues
 
-(none)
+### [ISSUE-014] Theme swatch buttons are 22×22px — below 44×44px minimum touch target
+- **Status:** Open
+- **Severity:** Low
+- **Found:** 2026-03-22
+- **Root Cause:** `.theme-swatch` CSS sets `width` and `height` to 22px. WCAG 2.5.8 and Apple HIG recommend minimum 44×44px touch targets for interactive elements, especially on mobile.
+- **Fix:** _(pending)_
 
 ---
 
 ## Closed Issues
+
+### [ISSUE-013] Leg-by-Leg "Stop 7 → Finish" shows wrong neighborhood ("Union Station" instead of "Alexandria")
+- **Status:** Fixed
+- **Severity:** Medium
+- **Found:** 2026-03-22
+- **Fixed:** 2026-03-22
+- **Root Cause:** `buildSegments()` in `app.js:1129` derives the neighborhood label from the destination stop using `TACO_BELL_STOPS[Math.min(i+1, len-1)]`. For the last leg (i=7), `i+1=8` exceeds `TACO_BELL_STOPS` bounds (0–7), so `Math.min(8,7)=7` maps to Stop 7 (Union Station). But the actual destination is the Start/Finish location in Alexandria (`TACO_BELL_STOPS[0]`).
+- **Fix:** Added `isLastLeg` check in `buildSegments()`. When rendering the last segment, use `'Alexandria'` as the area name instead of deriving from `TACO_BELL_STOPS[0]` (whose label is "Taco Bell Cantina", not a neighborhood). Bumped `app.js?v=12`, `sw.js` to `tb50k-v7`.
+- **Lesson:** When a loop uses an index that wraps around (finish = start), handle the boundary explicitly rather than clamping.
 
 ### [ISSUE-012] Route Info section shows incorrect distance (32.8 mi vs 32.4 mi)
 - **Status:** Fixed
