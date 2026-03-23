@@ -28,6 +28,22 @@
 
 ## Open Issues
 
+### [ISSUE-016] Pace Calculator finish time overshoots goal when fatigue/GAP is applied
+- **Status:** Fixed
+- **Severity:** Medium
+- **Found:** 2026-03-23
+- **Fixed:** 2026-03-23
+- **Root Cause:** The Pace Calculator computed base pace as `goalMinutes / totalDistance`, then applied 4% fatigue after mile 20 (and optionally GAP elevation adjustments) on top. This caused the estimated finish to exceed the goal by 7–18 minutes. Additionally, time formatting had a rounding edge case where `Math.round(59.99)` → 60 produced "10h 60m" instead of "11h 0m".
+- **Fix:** (1) Compute `effectiveDist` — a weighted distance that accounts for fatigue (and GAP factors when enabled) — then derive `pacePerMile = goalMinutes / effectiveDist`. This ensures splits sum exactly to the goal time. (2) Added carry-over logic for the 60-minute rounding edge case. Bumped `app.js?v=13`, `sw.js` to `tb50k-v8`.
+- **Lesson:** When a pace model applies adjustments (fatigue, grade), solve for the base pace algebraically rather than applying adjustments to a naive pace. The base pace = goal time / weighted distance where each segment's weight reflects its adjustment factor.
+
+### [ISSUE-015] Weather fetch fails with TypeError on local/non-HTTPS dev server
+- **Status:** Open
+- **Severity:** Low
+- **Found:** 2026-03-23
+- **Root Cause:** `fetchWeather()` calls `api.weather.gov` which fails in non-HTTPS/localhost contexts. Two console errors logged on every page load. The weather section still renders cached/fallback data gracefully, so UX impact is minimal.
+- **Fix:** _(known limitation — works on deployed HTTPS site)_
+
 ### [ISSUE-014] Theme swatch buttons are 22×22px — below 44×44px minimum touch target
 - **Status:** Open
 - **Severity:** Low

@@ -829,6 +829,36 @@
       assert(G, 'minutes persisted to localStorage',
         localStorage.getItem('tb50k_pace_minutes') === '30');
 
+      // ISSUE-016 regression: finish time must match goal after fatigue adjustment
+      hoursInput.value = '7';
+      minsInput.value = '30';
+      calculatePace();
+      const finishRow = resultsDiv.querySelector('.finish-row .pace-split-time');
+      assert(G, 'finish time matches goal 7h30m (fatigue-adjusted)',
+        finishRow && finishRow.textContent.trim() === '7h 30m',
+        `got "${finishRow ? finishRow.textContent.trim() : 'N/A'}"`);
+
+      // Test multiple goals all hit exactly
+      const goalTests = [[5, 0, '5h 0m'], [8, 0, '8h 0m'], [10, 0, '10h 0m'], [6, 15, '6h 15m']];
+      for (const [gh, gm, expected] of goalTests) {
+        hoursInput.value = String(gh);
+        minsInput.value = String(gm);
+        calculatePace();
+        const fr = resultsDiv.querySelector('.finish-row .pace-split-time');
+        assert(G, `finish matches goal ${expected}`,
+          fr && fr.textContent.trim() === expected,
+          `got "${fr ? fr.textContent.trim() : 'N/A'}"`);
+      }
+
+      // ISSUE-016 regression: 60-minute rounding edge case (11h 0m, not 10h 60m)
+      hoursInput.value = '11';
+      minsInput.value = '0';
+      calculatePace();
+      const finishRow11 = resultsDiv.querySelector('.finish-row .pace-split-time');
+      assert(G, 'finish time shows 11h 0m (not 10h 60m)',
+        finishRow11 && finishRow11.textContent.trim() === '11h 0m',
+        `got "${finishRow11 ? finishRow11.textContent.trim() : 'N/A'}"`);
+
       // Clean up
       localStorage.removeItem('tb50k_pace_hours');
       localStorage.removeItem('tb50k_pace_minutes');

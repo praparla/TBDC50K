@@ -820,9 +820,40 @@ function calculatePace() {
   }
 
   const totalDist = STOP_DISTANCES[STOP_DISTANCES.length - 1]; // 32.4
-  const pacePerMile = totalMinutes / totalDist;
   const gapEnabled = document.getElementById('gap-toggle')?.checked && elevationData;
   const gapFactors = gapEnabled ? getGAPFactors() : null;
+
+  // Solve for base pace that hits the goal time *after* fatigue + GAP adjustments.
+  // Without this, applying 4% fatigue after mi 20 on top of a straight-line pace
+  // causes the finish time to overshoot the goal (ISSUE-016).
+  const fatigueThreshold = 20;
+  let effectiveDist = totalDist; // weighted distance accounting for fatigue + GAP
+  if (totalDist > fatigueThreshold) {
+    effectiveDist = fatigueThreshold + (totalDist - fatigueThreshold) * 1.04;
+  }
+  if (gapFactors) {
+    // Re-compute effectiveDist using per-leg GAP factors
+    effectiveDist = 0;
+    for (let i = 1; i < TACO_BELL_STOPS.length; i++) {
+      const legDist = STOP_DISTANCES[i] - STOP_DISTANCES[i - 1];
+      let factor = 1;
+      if (STOP_DISTANCES[i - 1] >= fatigueThreshold) {
+        factor = 1.04;
+      } else if (STOP_DISTANCES[i] > fatigueThreshold) {
+        const pre = fatigueThreshold - STOP_DISTANCES[i - 1];
+        const post = STOP_DISTANCES[i] - fatigueThreshold;
+        factor = (pre + post * 1.04) / legDist;
+      }
+      if (gapFactors[i - 1]) factor *= gapFactors[i - 1];
+      effectiveDist += legDist * factor;
+    }
+    // Add finish leg
+    const lastLegDist = totalDist - STOP_DISTANCES[STOP_DISTANCES.length - 2];
+    let lastFactor = 1.04;
+    if (gapFactors[gapFactors.length - 1]) lastFactor *= gapFactors[gapFactors.length - 1];
+    effectiveDist += lastLegDist * lastFactor;
+  }
+  const pacePerMile = totalMinutes / effectiveDist;
 
   // Get start time for time-of-day estimates
   const startH = parseInt(localStorage.getItem('tb50k_race_start_h')) || 0;
@@ -865,8 +896,9 @@ function calculatePace() {
       cumulativeMinutes += legDist * legPace;
     }
 
-    const hrs = Math.floor(cumulativeMinutes / 60);
-    const mins = Math.round(cumulativeMinutes % 60);
+    let mins = Math.round(cumulativeMinutes % 60);
+    let hrs = Math.floor(cumulativeMinutes / 60);
+    if (mins === 60) { mins = 0; hrs++; }
     const timeStr = hrs > 0 ? `${hrs}h ${mins}m` : `${mins}m`;
     const mandatory = stop.mandatory ? ' 🌮' : '';
     const clockStr = hasStartTime ? addMinutesToTime(startH, startM, cumulativeMinutes) : '';
@@ -887,8 +919,9 @@ function calculatePace() {
     lastLegPace *= gapFactors[gapFactors.length - 1];
   }
   const finishMins = cumulativeMinutes + lastLegDist * lastLegPace;
-  const fHrs = Math.floor(finishMins / 60);
-  const fMins = Math.round(finishMins % 60);
+  let fMins = Math.round(finishMins % 60);
+  let fHrs = Math.floor(finishMins / 60);
+  if (fMins === 60) { fMins = 0; fHrs++; }
   const finishClockStr = hasStartTime ? addMinutesToTime(startH, startM, finishMins) : '';
   html += `<div class="pace-split-row finish-row">
     <span class="pace-split-label">🏁 Finish</span>
