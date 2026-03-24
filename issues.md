@@ -45,11 +45,13 @@
 - **Fix:** _(known limitation — works on deployed HTTPS site)_
 
 ### [ISSUE-014] Theme swatch buttons are 22×22px — below 44×44px minimum touch target
-- **Status:** Open
+- **Status:** Fixed
 - **Severity:** Low
 - **Found:** 2026-03-22
+- **Fixed:** 2026-03-24
 - **Root Cause:** `.theme-swatch` CSS sets `width` and `height` to 22px. WCAG 2.5.8 and Apple HIG recommend minimum 44×44px touch targets for interactive elements, especially on mobile.
-- **Fix:** _(pending)_
+- **Fix:** Added a `::before` pseudo-element overlay (44×44px, centered, invisible) to each swatch button. This provides the required touch target area while keeping the visual circle compact at 22px. Bumped `style.css?v=11`, `sw.js` to `tb50k-v9`. Added regression tests for the touch target dimensions.
+- **Lesson:** Use invisible `::before`/`::after` pseudo-element overlays to expand touch targets without changing visual size. This is the standard technique used by Apple and Material Design.
 
 ---
 

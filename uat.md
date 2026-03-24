@@ -1,7 +1,7 @@
 # UAT Baseline — Taco Bell DC 50K Route Planner
 
 _Created: 2026-03-22_
-_Last run: 2026-03-22_
+_Last run: 2026-03-24_
 
 ## Project Info
 - **Stack**: Vanilla HTML/CSS/JS + Leaflet map (no build step)
@@ -26,48 +26,53 @@ _Last run: 2026-03-22_
 | Section | Last Tested | Notes |
 |---------|-------------|-------|
 | Header / Title | 2026-03-22 | Stable — title, subtitle, event link |
-| Theme Switcher | 2026-03-22 | Stable — all 6 themes work |
+| Theme Switcher | 2026-03-24 | Stable — all 6 themes work; ISSUE-014 fixed (44px touch targets) |
 | Runner/Crew Toggle | 2026-03-22 | Stable — switches view mode |
-| Taco Bell Stops | 2026-03-22 | Stable |
-| Pace Calculator | 2026-03-22 | Stable — tested with 6h30m |
+| Taco Bell Stops | 2026-03-24 | Stable — popup with details, Directions button |
+| Pace Calculator | 2026-03-24 | Stable — tested 7h30m and 9h0m with GAP, finish matches goal exactly |
 | Mandatory Food | 2026-03-22 | Stable — 2 checkboxes |
 | Food Log | 2026-03-22 | Not tested in detail |
 | Live Feed | 2026-03-22 | Not tested (needs backend) |
 | Party Spots | 2026-03-22 | Not tested (needs backend) |
 | Bets | 2026-03-22 | Not tested (needs backend) |
-| Race Day Clock | 2026-03-22 | Stable — countdown shows 250d, cutoff 6:00 PM |
-| Weather | 2026-03-22 | Stable — loads 4-day forecast (initial fetch may fail, retries succeed) |
+| Race Day Clock | 2026-03-24 | Stable — countdown 248d, start 7AM, cutoff 6PM |
+| Weather | 2026-03-22 | Stable — loads forecast (initial fetch may fail on non-HTTPS) |
 | Block Parties | 2026-03-22 | Not tested in detail (empty data) |
 | Course Sections | 2026-03-22 | Stable — 7 named sections with mile ranges |
-| Tools | 2026-03-22 | Stable — 14-button grid renders |
-| TB Passport | 2026-03-22 | Not tested in detail |
-| Custom Pins | 2026-03-22 | Stable — form with icon picker, name, note, type dropdown, search |
-| Alt Routes | 2026-03-22 | Not tested in detail |
-| Split History | 2026-03-22 | Not tested in detail |
+| Tools | 2026-03-24 | Stable — 14-button grid, Find Restrooms + Add to Calendar tested |
+| TB Passport | 2026-03-24 | Stable — 10 badges, 4 earned, grid renders correctly |
+| Custom Pins | 2026-03-24 | Stable — form with 7 icon picker, name, note, category dropdown, search |
+| Alt Routes | 2026-03-24 | Stable — description + "toggle from Tools" instruction |
+| Split History | 2026-03-24 | Stable — empty state with sauce packet quote, proper instructions |
 | Calorie Tracker | 2026-03-22 | Stable — +Add updates consumed/burned/net |
-| Segment Records | 2026-03-22 | Not tested in detail |
+| Segment Records | 2026-03-24 | Stable — 7 named segments with TBD KOM/QOM, distances correct |
 | Finisher Wall | 2026-03-22 | Stable — shows 2 entries |
-| Leg-by-Leg | 2026-03-22 | Fixed ISSUE-013 — last segment now shows Alexandria |
-| Elevation Profile | 2026-03-22 | Stable — canvas chart renders |
-| Route Info | 2026-03-22 | Stable — all stats correct |
+| Leg-by-Leg | 2026-03-24 | Stable — all 8 segments, last shows Alexandria (ISSUE-013 regression check) |
+| Elevation Profile | 2026-03-24 | Stable — canvas chart renders, stats correct |
+| Route Info | 2026-03-24 | Stable — 32.4 mi, 1992 pts, 8 stops, 11h, Nov 27 2026 |
 
 ## Known Stable Areas
-- Theme switching (all 6 themes)
+- Theme switching (all 6 themes) — now with proper 44px touch targets
 - Map rendering with route polyline and stop markers
-- Pace Calculator with split table
+- Pace Calculator with split table (with and without GAP)
 - Collapsible sections expand/collapse
 - Elevation Profile canvas chart
 - Route Info statistics
 - Course Sections display
 - Calorie Tracker add/clear
+- TB Passport badge grid
+- Segment Records display
+- Tools grid (14 buttons)
+- Stop popups with Directions button
 
 ## Known Flaky / Unstable Areas
-- Weather fetch: initial load sometimes fails with `TypeError: Failed to fetch`, but data appears after retry. Console error is cosmetic.
-- 2 pre-existing test failures: "map has .map-ready class after load" and "Default view mode is runner" — likely timing/race conditions in test environment.
+- Weather fetch: initial load sometimes fails with `TypeError: Failed to fetch`, but data appears after retry. Console error is cosmetic. (ISSUE-015)
+- 1 pre-existing test failure: "map has .map-ready class after load" — likely timing/race condition in test environment.
 
 ## Exploration Notes
-- Theme swatch buttons are 22x22px (below 44px touch target minimum) — logged as ISSUE-014
-- Tested viewports: desktop (1280x800), tablet (768x1024), mobile (375x812) — all layouts work correctly
+- ISSUE-014 (theme swatch 22px touch targets) FIXED in 2026-03-24 run — now 44px via ::before pseudo-element
+- Tested viewports: desktop (1280x800) and mobile (375x812) — all layouts work correctly
 - Sidebar scrolls independently from map on desktop; stacks above map on mobile/tablet
-- "Stop 6 → Stop 7" and "Stop 7 → Finish" previously both showed "Union Station" — fixed in ISSUE-013
 - Backend-dependent sections (Live Feed, Party Spots, Bets) show graceful degradation with "Backend not configured" message
+- Restroom finder (Overpass API) works — markers appear on map, button toggles to "Restrooms On"
+- UX observation: 22 sidebar sections may be overwhelming — consolidation ideas added to backlog (P2 UX Simplification)

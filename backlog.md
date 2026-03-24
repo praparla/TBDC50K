@@ -63,6 +63,13 @@
 - [x] **Add to Calendar (.ics)** - One-click `.ics` download for Nov 27, 2026 race day with event details pre-filled. Works in Apple Calendar, Google Calendar, and Outlook — no API keys needed.
 - [x] **Shareable race card image** - CSS-styled `<div>` showing route thumbnail, goal time, name, and Taco Bell branding — screenshottable for Instagram/social hype.
 
+### P2 - UX Simplification (Sidebar Declutter)
+The sidebar has 22 collapsible sections, which can feel overwhelming. Ideas to simplify:
+
+- [ ] **Consolidate food sections** — Merge "Mandatory Food" and "Food Log" into a single "Food Tracker" section with tabs or sub-headers. Both relate to food tracking at stops. Reduces section count by 1.
+- [ ] **Group backend-dependent sections** — "Live Feed", "Party Spots", and "Bets" all show "Backend not configured" when offline. Consider grouping these under a single "Social" section with tabs, or hiding them entirely when backend is not configured. Reduces visible section count by 2 when backend is off.
+- [ ] **Merge race-day TBD sections** — "Split History" and "Segment Records" are both TBD until race day. Consider combining into a single "Race Results" section that shows both split history and segment records. Reduces section count by 1.
+
 ### P2 - UI/UX
 - [x] **Theme switcher** - ~~See detailed plan below.~~ **DONE.** 6 TB-era themes (Live Más Modern, Retro '85, Purple Reign '94, Baja Blast, Cantina Night, Sauce Packet) switchable from swatch picker in sidebar header. CSS custom properties, tile layer swap, route color swap, themed sidebar background patterns, persisted to localStorage. See "Taco Bell Theme System" section for original plan.
 - [x] **Mobile-first redesign** - Collapsible sidebar sections on all viewports, proper touch targets, responsive tools grid

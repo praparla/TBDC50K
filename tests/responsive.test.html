@@ -528,6 +528,15 @@
         assert(G, 'swatch has data-theme attr', !!first.dataset.theme);
         assert(G, 'swatch has aria-label', !!first.getAttribute('aria-label'));
         assert(G, 'swatch has background color', first.style.background.length > 0);
+
+        // Touch target: ::before pseudo-element provides 44×44px hit area (WCAG 2.5.8)
+        const beforeStyles = getComputedStyle(first, '::before');
+        assert(G, 'swatch ::before touch target width >= 44px',
+          parseInt(beforeStyles.width) >= 44, beforeStyles.width);
+        assert(G, 'swatch ::before touch target height >= 44px',
+          parseInt(beforeStyles.height) >= 44, beforeStyles.height);
+        assert(G, 'swatch ::before is absolutely positioned',
+          beforeStyles.position === 'absolute');
       }
 
       // Exactly one swatch is active
