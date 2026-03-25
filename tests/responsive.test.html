@@ -1451,6 +1451,29 @@
       // buildPassport function
       assert(G, 'buildPassport is a function', typeof buildPassport === 'function');
       assert(G, 'trackAchievement is a function', typeof trackAchievement === 'function');
+
+      // Regression: ISSUE-017 — badges update in real-time after triggering actions
+      // Save current state, set pace to trigger Time Keeper, verify badge unlocks
+      const savedHrs = localStorage.getItem('tb50k_pace_hours');
+      const savedMin = localStorage.getItem('tb50k_pace_minutes');
+      localStorage.removeItem('tb50k_pace_hours');
+      localStorage.removeItem('tb50k_pace_minutes');
+      buildPassport();
+      const beforeBadges = content.querySelectorAll('.passport-badge.unlocked');
+      const beforeCount = beforeBadges.length;
+      // Trigger Time Keeper by setting pace
+      localStorage.setItem('tb50k_pace_hours', '8');
+      localStorage.setItem('tb50k_pace_minutes', '0');
+      buildPassport();
+      const afterBadges = content.querySelectorAll('.passport-badge.unlocked');
+      const afterCount = afterBadges.length;
+      assert(G, 'ISSUE-017 regression: badge count increases after pace set', afterCount > beforeCount, `before=${beforeCount} after=${afterCount}`);
+      // Restore original state
+      if (savedHrs !== null) localStorage.setItem('tb50k_pace_hours', savedHrs);
+      else localStorage.removeItem('tb50k_pace_hours');
+      if (savedMin !== null) localStorage.setItem('tb50k_pace_minutes', savedMin);
+      else localStorage.removeItem('tb50k_pace_minutes');
+      buildPassport();
     }
 
     // ── Pin Filters ──

@@ -236,6 +236,7 @@ function applyTheme(themeId) {
     const tried = JSON.parse(localStorage.getItem('tb50k_themes_tried') || '[]');
     if (!tried.includes(theme.id)) { tried.push(theme.id); localStorage.setItem('tb50k_themes_tried', JSON.stringify(tried)); }
   } catch(e) { /* ignore */ }
+  buildPassport();
 
   // Swap tile layer
   if (tileLayer) {
@@ -947,6 +948,7 @@ function calculatePace() {
   // Persist
   localStorage.setItem('tb50k_pace_hours', hoursInput.value);
   localStorage.setItem('tb50k_pace_minutes', minsInput.value);
+  buildPassport();
 }
 
 window.calculatePace = calculatePace;
@@ -973,6 +975,7 @@ function buildFoodTracker() {
       localStorage.setItem(rule.key, e.target.checked);
       row.classList.toggle('completed', e.target.checked);
       if (e.target.checked && audioEnabled) playTacoBellBong();
+      buildPassport();
     });
     container.appendChild(row);
   });
@@ -981,6 +984,7 @@ function buildFoodTracker() {
 // ── LocalStorage ──
 function saveCustomPins() {
   localStorage.setItem('tb50k_pins', JSON.stringify(customPins));
+  buildPassport();
 }
 
 function loadCustomPins() {
@@ -2127,6 +2131,7 @@ function trackAchievement(key) {
   const wasBefore = localStorage.getItem(key) === 'true';
   localStorage.setItem(key, 'true');
   if (!wasBefore && audioEnabled) playAchievementSound();
+  buildPassport();
 }
 
 // ── Pin Category Filtering ──

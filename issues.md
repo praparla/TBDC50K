@@ -37,6 +37,22 @@
 - **Fix:** (1) Compute `effectiveDist` — a weighted distance that accounts for fatigue (and GAP factors when enabled) — then derive `pacePerMile = goalMinutes / effectiveDist`. This ensures splits sum exactly to the goal time. (2) Added carry-over logic for the 60-minute rounding edge case. Bumped `app.js?v=13`, `sw.js` to `tb50k-v8`.
 - **Lesson:** When a pace model applies adjustments (fatigue, grade), solve for the base pace algebraically rather than applying adjustments to a naive pace. The base pace = goal time / weighted distance where each segment's weight reflects its adjustment factor.
 
+### [ISSUE-018] Pace Calculator doesn't auto-refresh arrival times when Race Day Clock start time is set
+- **Status:** Open
+- **Severity:** Low
+- **Found:** 2026-03-25
+- **Root Cause:** Setting a start time in the Race Day Clock section doesn't trigger a re-render of the Pace Calculator splits table. The Pace Calculator still shows "Set a start time in the Countdown section to see arrival times" until the user manually re-clicks Calculate. The two sections don't communicate.
+- **Fix:** _(UX papercut — arrival times appear after the next Calculate click, but the prompt is misleading)_
+
+### [ISSUE-017] TB Passport badges don't update in real-time after badge-triggering actions
+- **Status:** Fixed
+- **Severity:** Medium
+- **Found:** 2026-03-25
+- **Fixed:** 2026-03-25
+- **Root Cause:** `buildPassport()` was only called once during page init (`app.js:303`). After badge-triggering actions — switching themes (Fashionista), using the pace calculator (Time Keeper/Speed Demon), checking off mandatory food (Rule Follower), etc. — the passport grid was not re-rendered. Badges remained visually locked until a full page reload, even though localStorage already had the qualifying data.
+- **Fix:** Added `buildPassport()` calls to: `trackAchievement()` (covers bathrooms, calendar, flythrough, race mode), theme switch handler, `calculatePace()`, mandatory food checkbox handler, and `saveCustomPins()`. Bumped `app.js?v=14`, `sw.js` to `tb50k-v10`.
+- **Lesson:** When a gamification/achievement system checks state lazily (via localStorage), the display function must be re-invoked after every state-changing action, not just on init.
+
 ### [ISSUE-015] Weather fetch fails with TypeError on local/non-HTTPS dev server
 - **Status:** Open
 - **Severity:** Low
