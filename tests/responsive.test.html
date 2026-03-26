@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Responsive Layout Tests — TB DC 50K</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link rel="stylesheet" href="../style.css?v=10" />
+  <link rel="stylesheet" href="../style.css?v=12" />
   <style>
     /* Test overlay */
     #test-overlay {
@@ -1628,6 +1628,15 @@
       // Default view mode
       const mode = window.TB_VIEW_MODE || 'runner';
       assert(G, 'Default view mode is runner', mode === 'runner');
+
+      // ISSUE-019 regression: active button must have a non-transparent background
+      const activeBtn = toggle && toggle.querySelector('.view-toggle-btn.active');
+      if (activeBtn) {
+        const cs = getComputedStyle(activeBtn);
+        const bg = cs.backgroundColor;
+        const isTransparent = bg === 'rgba(0, 0, 0, 0)' || bg === 'transparent';
+        assert(G, 'Active toggle button has visible background (ISSUE-019)', !isTransparent);
+      }
     }
 
     // ── Elevation Profile ──

@@ -277,7 +277,7 @@ const TB_AUTH = (function () {
         bar.innerHTML = `<button class="auth-sign-in-btn" id="auth-open-modal">Sign In</button>`;
         bar.querySelector('#auth-open-modal').addEventListener('click', showAuthModal);
       } else {
-        bar.innerHTML = `<div class="auth-offline-note">Backend not configured</div>`;
+        bar.innerHTML = '';
       }
     }
   }

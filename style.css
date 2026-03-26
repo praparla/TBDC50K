@@ -1398,13 +1398,13 @@ body {
   transition: border-color 0.15s, transform 0.1s;
 }
 .acct-avatar-btn:hover {
-  border-color: var(--color-accent-primary);
+  border-color: var(--color-accent);
   transform: scale(1.1);
 }
 .acct-avatar-btn.selected {
-  border-color: var(--color-accent-primary);
+  border-color: var(--color-accent);
   background: rgba(168, 85, 247, 0.15);
-  box-shadow: 0 0 0 2px var(--color-accent-primary);
+  box-shadow: 0 0 0 2px var(--color-accent);
 }
 .acct-avatar-clear {
   font-size: 0.75rem;
@@ -1427,13 +1427,13 @@ body {
 }
 .acct-input:focus {
   outline: none;
-  border-color: var(--color-accent-primary);
+  border-color: var(--color-accent);
 }
 .acct-save-btn {
   padding: 8px 14px;
   border-radius: 6px;
   border: none;
-  background: var(--color-accent-primary);
+  background: var(--color-accent);
   color: #fff;
   font-size: 0.8rem;
   cursor: pointer;
@@ -1456,9 +1456,9 @@ body {
   cursor: pointer;
   transition: border-color 0.15s, background 0.15s;
 }
-.acct-role-btn:hover { border-color: var(--color-accent-primary); }
+.acct-role-btn:hover { border-color: var(--color-accent); }
 .acct-role-btn.active {
-  border-color: var(--color-accent-primary);
+  border-color: var(--color-accent);
   background: rgba(168, 85, 247, 0.15);
 }
 
@@ -1472,7 +1472,7 @@ body {
   cursor: pointer;
 }
 .acct-toggle-label input[type="checkbox"] {
-  accent-color: var(--color-accent-primary);
+  accent-color: var(--color-accent);
   width: 16px;
   height: 16px;
 }
@@ -1498,7 +1498,7 @@ body {
   display: block;
   font-size: 1.1rem;
   font-weight: bold;
-  color: var(--color-accent-primary);
+  color: var(--color-accent);
 }
 .acct-stat-lbl {
   display: block;
@@ -1580,7 +1580,7 @@ body {
   animation: toastSlideUp 0.3s ease;
 }
 .auth-toast-info {
-  background: var(--color-accent-primary);
+  background: var(--color-accent);
   color: #fff;
 }
 .auth-toast-warning {
@@ -1622,7 +1622,7 @@ body {
 .view-toggle-btn:first-child { border-right: 1px solid var(--color-border); }
 .view-toggle-btn:hover { background: rgba(255, 255, 255, 0.05); }
 .view-toggle-btn.active {
-  background: var(--color-accent-primary);
+  background: var(--color-accent);
   color: #fff;
 }
 

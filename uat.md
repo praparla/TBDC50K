@@ -1,7 +1,7 @@
 # UAT Baseline — Taco Bell DC 50K Route Planner
 
 _Created: 2026-03-22_
-_Last run: 2026-03-24_
+_Last run: 2026-03-26_
 
 ## Project Info
 - **Stack**: Vanilla HTML/CSS/JS + Leaflet map (no build step)
@@ -26,8 +26,8 @@ _Last run: 2026-03-24_
 | Section | Last Tested | Notes |
 |---------|-------------|-------|
 | Header / Title | 2026-03-22 | Stable — title, subtitle, event link |
-| Theme Switcher | 2026-03-24 | Stable — all 6 themes work; ISSUE-014 fixed (44px touch targets) |
-| Runner/Crew Toggle | 2026-03-22 | Stable — switches view mode |
+| Theme Switcher | 2026-03-26 | Stable — all 6 themes work; ISSUE-019 fixed (accent-primary → accent) |
+| Runner/Crew Toggle | 2026-03-26 | Stable — ISSUE-019 fixed (active button bg was transparent on light themes) |
 | Taco Bell Stops | 2026-03-24 | Stable — popup with details, Directions button |
 | Pace Calculator | 2026-03-24 | Stable — tested 7h30m and 9h0m with GAP, finish matches goal exactly |
 | Mandatory Food | 2026-03-22 | Stable — 2 checkboxes |
@@ -44,9 +44,9 @@ _Last run: 2026-03-24_
 | Custom Pins | 2026-03-24 | Stable — form with 7 icon picker, name, note, category dropdown, search |
 | Alt Routes | 2026-03-24 | Stable — description + "toggle from Tools" instruction |
 | Split History | 2026-03-24 | Stable — empty state with sauce packet quote, proper instructions |
-| Calorie Tracker | 2026-03-22 | Stable — +Add updates consumed/burned/net |
+| Calorie Tracker | 2026-03-26 | Stable — +Add updates consumed/burned/net, Clear resets |
 | Segment Records | 2026-03-24 | Stable — 7 named segments with TBD KOM/QOM, distances correct |
-| Finisher Wall | 2026-03-22 | Stable — shows 2 entries |
+| Finisher Wall | 2026-03-26 | Stable — shows 2 entries, note about Nov 27 race |
 | Leg-by-Leg | 2026-03-24 | Stable — all 8 segments, last shows Alexandria (ISSUE-013 regression check) |
 | Elevation Profile | 2026-03-24 | Stable — canvas chart renders, stats correct |
 | Route Info | 2026-03-24 | Stable — 32.4 mi, 1992 pts, 8 stops, 11h, Nov 27 2026 |
@@ -71,6 +71,7 @@ _Last run: 2026-03-24_
 
 ## Exploration Notes
 - ISSUE-014 (theme swatch 22px touch targets) FIXED in 2026-03-24 run — now 44px via ::before pseudo-element
+- ISSUE-019 (--color-accent-primary undefined) FIXED in 2026-03-26 run — 12 CSS rules used a variable that no theme defined; replaced with --color-accent
 - Tested viewports: desktop (1280x800) and mobile (375x812) — all layouts work correctly
 - Sidebar scrolls independently from map on desktop; stacks above map on mobile/tablet
 - Backend-dependent sections (Live Feed, Party Spots, Bets) show graceful degradation with "Backend not configured" message

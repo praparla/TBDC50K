@@ -28,6 +28,15 @@
 
 ## Open Issues
 
+### [ISSUE-019] Runner/Crew toggle and auth UI use undefined CSS variable --color-accent-primary
+- **Status:** Fixed
+- **Severity:** Medium
+- **Found:** 2026-03-26
+- **Fixed:** 2026-03-26
+- **Root Cause:** 12 CSS rules referenced `var(--color-accent-primary)` but no theme defines that variable. It resolved to empty, making `background` transparent. On dark themes this was masked (white text on dark sidebar), but on light themes (Baja Blast, Sauce Packet) the active Runner/Crew toggle button had white text on a near-white background — invisible. Also affected: auth avatar buttons, role buttons, and accent-color on checkboxes.
+- **Fix:** Replaced all 12 occurrences of `var(--color-accent-primary)` with `var(--color-accent)`, which is defined in every theme. Bumped `style.css?v=12`, `sw.js` to `tb50k-v11`.
+- **Lesson:** Audit CSS custom property references against their definitions. An undefined variable silently resolves to empty — it doesn't error — so the breakage is invisible until tested on specific themes/backgrounds.
+
 ### [ISSUE-016] Pace Calculator finish time overshoots goal when fatigue/GAP is applied
 - **Status:** Fixed
 - **Severity:** Medium
