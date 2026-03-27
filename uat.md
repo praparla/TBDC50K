@@ -1,7 +1,7 @@
 # UAT Baseline — Taco Bell DC 50K Route Planner
 
 _Created: 2026-03-22_
-_Last run: 2026-03-26_
+_Last run: 2026-03-27_
 
 ## Project Info
 - **Stack**: Vanilla HTML/CSS/JS + Leaflet map (no build step)
@@ -26,30 +26,30 @@ _Last run: 2026-03-26_
 | Section | Last Tested | Notes |
 |---------|-------------|-------|
 | Header / Title | 2026-03-22 | Stable — title, subtitle, event link |
-| Theme Switcher | 2026-03-26 | Stable — all 6 themes work; ISSUE-019 fixed (accent-primary → accent) |
-| Runner/Crew Toggle | 2026-03-26 | Stable — ISSUE-019 fixed (active button bg was transparent on light themes) |
-| Taco Bell Stops | 2026-03-24 | Stable — popup with details, Directions button |
-| Pace Calculator | 2026-03-24 | Stable — tested 7h30m and 9h0m with GAP, finish matches goal exactly |
-| Mandatory Food | 2026-03-22 | Stable — 2 checkboxes |
-| Food Log | 2026-03-22 | Not tested in detail |
+| Theme Switcher | 2026-03-27 | Stable — Baja Blast + Sauce Packet verified, accent colors correct |
+| Runner/Crew Toggle | 2026-03-27 | Stable — teal bg + white text on light themes (ISSUE-019 regression check) |
+| Taco Bell Stops | 2026-03-27 | Stable — popup with details, mandatory food reminder, Directions button |
+| Pace Calculator | 2026-03-27 | Stable — 8h goal = 8h 0m finish, "Race Day Clock" label fix verified |
+| Mandatory Food | 2026-03-27 | Stable — 2 checkboxes with sauce packet quote |
+| Food Log | 2026-03-27 | Stable — shows sign-in prompt (expected without backend) |
 | Live Feed | 2026-03-22 | Not tested (needs backend) |
 | Party Spots | 2026-03-22 | Not tested (needs backend) |
 | Bets | 2026-03-22 | Not tested (needs backend) |
-| Race Day Clock | 2026-03-24 | Stable — countdown 248d, start 7AM, cutoff 6PM |
+| Race Day Clock | 2026-03-27 | Stable — start time inputs, start button |
 | Weather | 2026-03-22 | Stable — loads forecast (initial fetch may fail on non-HTTPS) |
-| Block Parties | 2026-03-22 | Not tested in detail (empty data) |
-| Course Sections | 2026-03-22 | Stable — 7 named sections with mile ranges |
-| Tools | 2026-03-24 | Stable — 14-button grid, Find Restrooms + Add to Calendar tested |
-| TB Passport | 2026-03-24 | Stable — 10 badges, 4 earned, grid renders correctly |
-| Custom Pins | 2026-03-24 | Stable — form with 7 icon picker, name, note, category dropdown, search |
-| Alt Routes | 2026-03-24 | Stable — description + "toggle from Tools" instruction |
-| Split History | 2026-03-24 | Stable — empty state with sauce packet quote, proper instructions |
-| Calorie Tracker | 2026-03-26 | Stable — +Add updates consumed/burned/net, Clear resets |
-| Segment Records | 2026-03-24 | Stable — 7 named segments with TBD KOM/QOM, distances correct |
-| Finisher Wall | 2026-03-26 | Stable — shows 2 entries, note about Nov 27 race |
-| Leg-by-Leg | 2026-03-24 | Stable — all 8 segments, last shows Alexandria (ISSUE-013 regression check) |
-| Elevation Profile | 2026-03-24 | Stable — canvas chart renders, stats correct |
-| Route Info | 2026-03-24 | Stable — 32.4 mi, 1992 pts, 8 stops, 11h, Nov 27 2026 |
+| Block Parties | 2026-03-27 | Stable — empty state with "Submit your party" link, Show on Map toggle |
+| Course Sections | 2026-03-27 | Stable — 7 named sections with correct mile ranges |
+| Tools | 2026-03-27 | Stable — 16-button grid, all labels correct |
+| TB Passport | 2026-03-27 | Stable — 10 badges, 4 earned, grid renders correctly |
+| Custom Pins | 2026-03-27 | Stable — form with 7 icon picker, "Click Map to Place Pin" prompt |
+| Alt Routes | 2026-03-27 | Stable — "Toggle alt routes to see options" instruction |
+| Split History | 2026-03-27 | Stable — empty state with sauce packet quote, proper instructions |
+| Calorie Tracker | 2026-03-27 | Stable — +Add Chalupa Supreme updates to 350/3240/-2890, dropdown with 14 items |
+| Segment Records | 2026-03-27 | Stable — 7 named segments with TBD KOM/QOM, distances correct |
+| Finisher Wall | 2026-03-27 | Stable — 2 entries, note about Nov 27 race |
+| Leg-by-Leg | 2026-03-27 | Stable — all 8 segments, last shows Alexandria |
+| Elevation Profile | 2026-03-27 | Stable — stats correct (1263 ft gain/loss, 417 ft max, -3 ft min) |
+| Route Info | 2026-03-27 | Stable — 32.4 mi, 1992 pts, 8 stops, 11h, Nov 27 2026 |
 
 ## Known Stable Areas
 - Theme switching (all 6 themes) — now with proper 44px touch targets

@@ -940,7 +940,7 @@ function calculatePace() {
     html += '<p class="pace-note">Waiting for elevation data to load...</p>';
   }
   if (!hasStartTime) {
-    html += '<p class="pace-note">Set a start time in the Countdown section to see arrival times.</p>';
+    html += '<p class="pace-note">Set a start time in the Race Day Clock section to see arrival times.</p>';
   }
   html += '</div>';
   resultsDiv.innerHTML = html;
