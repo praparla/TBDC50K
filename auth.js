@@ -10,9 +10,18 @@ const TB_AUTH = (function () {
   let authChangeListeners = [];
   let wasSignedIn = false; // Track for session expiry detection
 
+  // ── Hide backend-only sidebar sections when backend is unavailable ──
+  function hideBackendSections() {
+    ['section-social', 'section-parties', 'section-betting'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.style.display = 'none';
+    });
+  }
+
   // ── Initialize ──
   function init() {
     if (!TB_CONFIG.FEATURES.AUTH) {
+      hideBackendSections();
       renderAuthBar();
       return;
     }
@@ -20,6 +29,7 @@ const TB_AUTH = (function () {
     // Check if Supabase SDK loaded
     if (typeof supabase === 'undefined' || !supabase.createClient) {
       console.warn('Supabase SDK not loaded. Backend features disabled.');
+      hideBackendSections();
       renderAuthBar();
       notifyListeners();
       return;
@@ -28,6 +38,7 @@ const TB_AUTH = (function () {
     // Skip init if placeholder credentials
     if (TB_CONFIG.SUPABASE_URL.includes('YOUR_PROJECT_ID')) {
       console.warn('Supabase not configured. Backend features disabled.');
+      hideBackendSections();
       renderAuthBar();
       notifyListeners();
       return;

@@ -28,6 +28,15 @@
 
 ## Open Issues
 
+### [ISSUE-020] Tools grid shows 2 columns on mobile instead of 1
+- **Status:** Fixed
+- **Severity:** Low
+- **Found:** 2026-03-28
+- **Fixed:** 2026-03-28
+- **Root Cause:** A later `@media (max-width: 768px)` block at `style.css:2902` sets `.tools-grid { grid-template-columns: repeat(2, 1fr); }`, overriding the earlier mobile rule at `style.css:977` which correctly sets `grid-template-columns: 1fr` (single column). CSS cascade: later rule wins.
+- **Fix:** Removed the duplicate `.tools-grid` rule from the later `@media` block. Bumped `style.css?v=13`, `sw.js` to `tb50k-v13`. Updated test file cache-bust version.
+- **Lesson:** When adding new mobile-specific styles in a new `@media` block, check for existing rules in earlier `@media` blocks that may get overridden by the cascade.
+
 ### [ISSUE-019] Runner/Crew toggle and auth UI use undefined CSS variable --color-accent-primary
 - **Status:** Fixed
 - **Severity:** Medium

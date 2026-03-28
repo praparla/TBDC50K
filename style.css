@@ -2898,10 +2898,6 @@ body {
     max-height: 60vh;
     padding: 12px 16px;
   }
-
-  .tools-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
 }
 
 /* ── Block Party Items ── */

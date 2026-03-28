@@ -1,7 +1,7 @@
 # UAT Baseline — Taco Bell DC 50K Route Planner
 
 _Created: 2026-03-22_
-_Last run: 2026-03-27_
+_Last run: 2026-03-28_
 
 ## Project Info
 - **Stack**: Vanilla HTML/CSS/JS + Leaflet map (no build step)
@@ -26,29 +26,29 @@ _Last run: 2026-03-27_
 | Section | Last Tested | Notes |
 |---------|-------------|-------|
 | Header / Title | 2026-03-22 | Stable — title, subtitle, event link |
-| Theme Switcher | 2026-03-27 | Stable — Baja Blast + Sauce Packet verified, accent colors correct |
-| Runner/Crew Toggle | 2026-03-27 | Stable — teal bg + white text on light themes (ISSUE-019 regression check) |
-| Taco Bell Stops | 2026-03-27 | Stable — popup with details, mandatory food reminder, Directions button |
-| Pace Calculator | 2026-03-27 | Stable — 8h goal = 8h 0m finish, "Race Day Clock" label fix verified |
+| Theme Switcher | 2026-03-28 | Stable — all 6 themes verified, Baja Blast + Cantina Night + Sauce Packet tested |
+| Runner/Crew Toggle | 2026-03-28 | Stable — toggle works on mobile Baja Blast theme, accent colors correct |
+| Taco Bell Stops | 2026-03-28 | Stable — stop detail panel with ratings, mandatory food, crew access, Directions |
+| Pace Calculator | 2026-03-28 | Stable — 9h30m goal = 9h 30m finish, all 8 stops + finish correct |
 | Mandatory Food | 2026-03-27 | Stable — 2 checkboxes with sauce packet quote |
 | Food Log | 2026-03-27 | Stable — shows sign-in prompt (expected without backend) |
 | Live Feed | 2026-03-22 | Not tested (needs backend) |
 | Party Spots | 2026-03-22 | Not tested (needs backend) |
 | Bets | 2026-03-22 | Not tested (needs backend) |
-| Race Day Clock | 2026-03-27 | Stable — start time inputs, start button |
+| Race Day Clock | 2026-03-28 | Stable — 7:00 AM start, 243d countdown, 6:00 PM cutoff correct |
 | Weather | 2026-03-22 | Stable — loads forecast (initial fetch may fail on non-HTTPS) |
 | Block Parties | 2026-03-27 | Stable — empty state with "Submit your party" link, Show on Map toggle |
 | Course Sections | 2026-03-27 | Stable — 7 named sections with correct mile ranges |
-| Tools | 2026-03-27 | Stable — 16-button grid, all labels correct |
+| Tools | 2026-03-28 | Stable — 16 buttons, single-col on mobile (ISSUE-020 fixed), 2-col on desktop |
 | TB Passport | 2026-03-27 | Stable — 10 badges, 4 earned, grid renders correctly |
 | Custom Pins | 2026-03-27 | Stable — form with 7 icon picker, "Click Map to Place Pin" prompt |
 | Alt Routes | 2026-03-27 | Stable — "Toggle alt routes to see options" instruction |
 | Split History | 2026-03-27 | Stable — empty state with sauce packet quote, proper instructions |
-| Calorie Tracker | 2026-03-27 | Stable — +Add Chalupa Supreme updates to 350/3240/-2890, dropdown with 14 items |
+| Calorie Tracker | 2026-03-28 | Stable — +Add Chalupa Supreme updates to 350/3240/-2890, math correct |
 | Segment Records | 2026-03-27 | Stable — 7 named segments with TBD KOM/QOM, distances correct |
 | Finisher Wall | 2026-03-27 | Stable — 2 entries, note about Nov 27 race |
 | Leg-by-Leg | 2026-03-27 | Stable — all 8 segments, last shows Alexandria |
-| Elevation Profile | 2026-03-27 | Stable — stats correct (1263 ft gain/loss, 417 ft max, -3 ft min) |
+| Elevation Profile | 2026-03-28 | Stable — grade-colored chart, stats correct (1263 ft gain/loss, 417 ft max, -3 ft min) |
 | Route Info | 2026-03-27 | Stable — 32.4 mi, 1992 pts, 8 stops, 11h, Nov 27 2026 |
 
 ## Known Stable Areas
@@ -62,7 +62,7 @@ _Last run: 2026-03-27_
 - Calorie Tracker add/clear
 - TB Passport badge grid
 - Segment Records display
-- Tools grid (14 buttons)
+- Tools grid (16 buttons)
 - Stop popups with Directions button
 
 ## Known Flaky / Unstable Areas
@@ -77,3 +77,5 @@ _Last run: 2026-03-27_
 - Backend-dependent sections (Live Feed, Party Spots, Bets) show graceful degradation with "Backend not configured" message
 - Restroom finder (Overpass API) works — markers appear on map, button toggles to "Restrooms On"
 - UX observation: 22 sidebar sections may be overwhelming — consolidation ideas added to backlog (P2 UX Simplification)
+- ISSUE-020 (tools-grid 2-col on mobile) FIXED in 2026-03-28 run — duplicate CSS rule in later @media block overrode the correct single-column mobile rule
+- Test suite: 836/837 passing (1 pre-existing flaky map-ready timing test)

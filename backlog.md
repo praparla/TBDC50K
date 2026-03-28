@@ -67,7 +67,7 @@
 The sidebar has 22 collapsible sections, which can feel overwhelming. Ideas to simplify:
 
 - [ ] **Consolidate food sections** — Merge "Mandatory Food" and "Food Log" into a single "Food Tracker" section with tabs or sub-headers. Both relate to food tracking at stops. Reduces section count by 1.
-- [ ] **Group backend-dependent sections** — "Live Feed", "Party Spots", and "Bets" all show "Backend not configured" when offline. Consider grouping these under a single "Social" section with tabs, or hiding them entirely when backend is not configured. Reduces visible section count by 2 when backend is off.
+- [x] **Group backend-dependent sections** — "Live Feed", "Party Spots", and "Bets" all show "Backend not configured" when offline. Consider grouping these under a single "Social" section with tabs, or hiding them entirely when backend is not configured. Reduces visible section count by 2 when backend is off. **DONE** (2026-03-28). Hidden all 3 sections via `display: none` when Supabase is not configured (`auth.js` init early-return paths). Visible section count drops from 22 to 19.
 - [ ] **Merge race-day TBD sections** — "Split History" and "Segment Records" are both TBD until race day. Consider combining into a single "Race Results" section that shows both split history and segment records. Reduces section count by 1.
 - [x] **Hide "Backend not configured" banner when offline** — The yellow "Backend not configured" banner takes up prominent space and is irrelevant to most users (the app works fully without backend). **DONE** (2026-03-26). Removed banner entirely when backend is not configured — auth bar is simply empty. Frees vertical space especially on mobile.
 - [ ] **Auto-hide empty pre-race sections** — "Finisher Wall", "Split History", and "Segment Records" are empty until race day. Consider hiding them from the sidebar when they have no data, or grouping under a "Race Day" accordion that only appears when race mode is activated. Reduces visible section count by 3 during the planning phase.
@@ -175,6 +175,12 @@ These features require user authentication and a persistent backend. **Implement
 - [x] **Community training heatmap overlay** - Static pre-rendered semi-transparent heatmap image showing high-activity corridors on the route from Strava's public Global Heatmap. **DONE** (2026-03-18). Canvas-based heatmap generated from GPX track data with Gaussian-weighted intensity near stops and popular corridors. Toggle in Tools. ~200 semi-transparent circles with blue/yellow/orange/red gradient.
 - [x] **Taco Bell-themed audio cheers** - Optional Web Audio API sound effects (Taco Bell "bong") when checking off stops or mandatory food items. RaceJoy-inspired.
 - [x] **Strava segment deep-links** - Links from named route sections to corresponding Strava segment pages for leaderboard comparison. **DONE** (2026-03-17). `STRAVA_SEGMENTS` object with placeholder IDs, link rendering in `buildCourseSectionsList()`. Ready for real Strava segment IDs.
+
+### P2 - Code Simplification & Refactoring
+
+- [ ] **Consolidate duplicate `@media (max-width: 768px)` blocks** — `style.css` has 3 separate `@media (max-width: 768px)` blocks (lines ~868, ~2524, ~2883). This caused ISSUE-020 where a later block overrode an earlier one's `.tools-grid` rule. Merge all three into a single block at the end of the file to prevent cascade conflicts and make mobile styles easier to find/audit.
+- [ ] **Extract `app.js` into modules** — At 3300+ lines, `app.js` is a monolith. Consider splitting into focused modules: `map.js` (Leaflet init, markers, popups), `pace.js` (pace calculator, splits, GAP), `sections.js` (collapsible section logic), `pins.js` (custom pins CRUD), `achievements.js` (passport badges). Use simple IIFE modules like `auth.js` pattern — no build step needed.
+- [ ] **Deduplicate Leaflet popup and detail panel rendering** — Stop popups (map) and stop detail panels (sidebar) render similar content with different formatting. Consider a shared `buildStopInfo(stop, format)` function that returns structured data, with popup and panel renderers consuming it. Reduces duplication and makes stop data changes safer.
 
 ---
 
