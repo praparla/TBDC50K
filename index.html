@@ -11,7 +11,7 @@
   <meta name="apple-mobile-web-app-title" content="TB DC 50K" />
   <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌮</text></svg>" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link rel="stylesheet" href="style.css?v=14" />
+  <link rel="stylesheet" href="style.css?v=15" />
   <script>
     // Apply saved theme before render to prevent flash of default theme
     (function() {
@@ -107,10 +107,22 @@
     </div>
 
     <div class="section collapsed" id="section-parties">
-      <h2>Party Spots &#127881; <span class="section-toggle">&#9660;</span></h2>
+      <h2>Parties &#127881; <span class="section-toggle">&#9660;</span></h2>
       <div class="section-body">
-        <div id="parties-content">
-          <p class="auth-locked-msg">Sign in to see and host parties along the route.</p>
+        <div class="food-tabs" id="party-tabs">
+          <button class="food-tab active" data-tab="party-tab-community">Community</button>
+          <button class="food-tab" data-tab="party-tab-hosted">Hosted</button>
+        </div>
+        <div id="party-tab-community" class="food-tab-panel active">
+          <p class="hint" data-sauce-id="block-party-hint" data-default-hint="Neighborhood parties along the route. Click to fly there.">Neighborhood parties along the route. Click to fly there.</p>
+          <button id="btn-block-parties" class="tool-btn" style="margin-bottom: 8px;" onclick="toggleBlockParties()">&#127881; Show on Map</button>
+          <div id="block-parties-list"></div>
+          <p class="hint" style="margin-top: 8px; font-size: 0.7rem;">Hosting a party along the route? <a href="mailto:tacobelldc50k@gmail.com?subject=Block%20Party%20Submission&body=Party%20Name%3A%0AAddress%3A%0AApproximate%20Mile%20Marker%3A%0AWhat%20You're%20Offering%3A%0ARunner%20Note%3A%0AContact%20Email%3A" style="color: var(--color-accent-secondary);">Submit your party &rarr;</a></p>
+        </div>
+        <div id="party-tab-hosted" class="food-tab-panel">
+          <div id="parties-content">
+            <p class="auth-locked-msg">Sign in to see and host parties along the route.</p>
+          </div>
         </div>
       </div>
     </div>
@@ -150,16 +162,6 @@
         <div id="weather-content">
           <p class="hint">Loading...</p>
         </div>
-      </div>
-    </div>
-
-    <div class="section collapsed" id="section-block-parties">
-      <h2>Block Parties &#127881; <span class="section-toggle">&#9660;</span></h2>
-      <div class="section-body">
-        <p class="hint" data-sauce-id="block-party-hint" data-default-hint="Neighborhood parties along the route. Click to fly there.">Neighborhood parties along the route. Click to fly there.</p>
-        <button id="btn-block-parties" class="tool-btn" style="margin-bottom: 8px;" onclick="toggleBlockParties()">&#127881; Show on Map</button>
-        <div id="block-parties-list"></div>
-        <p class="hint" style="margin-top: 8px; font-size: 0.7rem;">Hosting a party along the route? <a href="mailto:tacobelldc50k@gmail.com?subject=Block%20Party%20Submission&body=Party%20Name%3A%0AAddress%3A%0AApproximate%20Mile%20Marker%3A%0AWhat%20You're%20Offering%3A%0ARunner%20Note%3A%0AContact%20Email%3A" style="color: var(--color-accent-secondary);">Submit your party &rarr;</a></p>
       </div>
     </div>
 
@@ -339,7 +341,7 @@
   </script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="gpx_data.js"></script>
-  <script src="app.js?v=16"></script>
+  <script src="app.js?v=17"></script>
 
   <!-- Supabase + Backend Features -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>

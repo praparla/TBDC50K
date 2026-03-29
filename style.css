@@ -1087,6 +1087,67 @@ body {
     padding: 5px 10px;
     font-size: 0.72rem;
   }
+
+  /* Race banner mobile */
+  .race-banner {
+    bottom: 10px;
+    padding: 8px 14px;
+    font-size: 0.8rem;
+    gap: 8px;
+    max-width: 90%;
+  }
+
+  .race-banner-label { font-size: 0.78rem; }
+  .race-banner-dist { font-size: 0.82rem; }
+
+  .weather-period {
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 6px 4px;
+  }
+
+  .weather-period-desc {
+    width: 100%;
+    order: 10;
+  }
+
+  .segment-row {
+    font-size: 0.76rem;
+    padding: 6px 4px;
+  }
+
+  .countdown-row { font-size: 0.8rem; }
+
+  .pace-split-clock {
+    width: 62px;
+    font-size: 0.72rem;
+  }
+
+  #race-start-hours,
+  #race-start-minutes {
+    min-height: 44px;
+    font-size: 0.95rem;
+  }
+
+  #btn-start-countdown {
+    min-height: 44px;
+    font-size: 0.85rem;
+    padding: 8px 14px;
+  }
+
+  /* Passport grid mobile */
+  .passport-grid {
+    grid-template-columns: repeat(auto-fill, minmax(75px, 1fr));
+    gap: 6px;
+  }
+
+  .passport-badge { padding: 8px 4px; }
+  .passport-emoji { font-size: 1.3rem; }
+
+  .stop-detail-panel {
+    max-height: 60vh;
+    padding: 12px 16px;
+  }
 }
 
 /* Small phones */
@@ -2583,61 +2644,6 @@ body {
 }
 
 /* ── Mobile additions for new sections ── */
-@media (max-width: 768px) {
-  .race-banner {
-    bottom: 10px;
-    padding: 8px 14px;
-    font-size: 0.8rem;
-    gap: 8px;
-    max-width: 90%;
-  }
-
-  .race-banner-label {
-    font-size: 0.78rem;
-  }
-
-  .race-banner-dist {
-    font-size: 0.82rem;
-  }
-
-  .weather-period {
-    flex-wrap: wrap;
-    gap: 4px;
-    padding: 6px 4px;
-  }
-
-  .weather-period-desc {
-    width: 100%;
-    order: 10;
-  }
-
-  .segment-row {
-    font-size: 0.76rem;
-    padding: 6px 4px;
-  }
-
-  .countdown-row {
-    font-size: 0.8rem;
-  }
-
-  .pace-split-clock {
-    width: 62px;
-    font-size: 0.72rem;
-  }
-
-  #race-start-hours,
-  #race-start-minutes {
-    min-height: 44px;
-    font-size: 0.95rem;
-  }
-
-  #btn-start-countdown {
-    min-height: 44px;
-    font-size: 0.85rem;
-    padding: 8px 14px;
-  }
-}
-
 /* ── Course Section Rows ── */
 .course-section-row {
   display: flex;
@@ -2942,26 +2948,6 @@ body {
 }
 
 /* ── Mobile: Passport grid ── */
-@media (max-width: 768px) {
-  .passport-grid {
-    grid-template-columns: repeat(auto-fill, minmax(75px, 1fr));
-    gap: 6px;
-  }
-
-  .passport-badge {
-    padding: 8px 4px;
-  }
-
-  .passport-emoji {
-    font-size: 1.3rem;
-  }
-
-  .stop-detail-panel {
-    max-height: 60vh;
-    padding: 12px 16px;
-  }
-}
-
 /* ── Block Party Items ── */
 .block-party-item {
   padding: 8px 10px;

@@ -293,7 +293,7 @@ document.addEventListener('DOMContentLoaded', () => {
   handleOrientationAndResize();
   resetAddButton();
   buildFoodTracker();
-  setupFoodTabs();
+  setupSectionTabs();
   restorePaceInputs();
 
   // New features
@@ -983,17 +983,20 @@ function buildFoodTracker() {
   });
 }
 
-// ── Food & Nutrition Tabs ──
-function setupFoodTabs() {
-  const tabs = document.querySelectorAll('.food-tab');
-  const panels = document.querySelectorAll('.food-tab-panel');
-  tabs.forEach(tab => {
-    tab.addEventListener('click', () => {
-      tabs.forEach(t => t.classList.remove('active'));
-      panels.forEach(p => p.classList.remove('active'));
-      tab.classList.add('active');
-      const panel = document.getElementById(tab.dataset.tab);
-      if (panel) panel.classList.add('active');
+// ── Section Tabs (reusable) ──
+function setupSectionTabs() {
+  document.querySelectorAll('.food-tabs').forEach(tabBar => {
+    const tabs = tabBar.querySelectorAll('.food-tab');
+    const section = tabBar.closest('.section-body') || tabBar.parentElement;
+    const panels = section.querySelectorAll('.food-tab-panel');
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        tabs.forEach(t => t.classList.remove('active'));
+        panels.forEach(p => p.classList.remove('active'));
+        tab.classList.add('active');
+        const panel = document.getElementById(tab.dataset.tab);
+        if (panel) panel.classList.add('active');
+      });
     });
   });
 }

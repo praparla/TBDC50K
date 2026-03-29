@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Responsive Layout Tests — TB DC 50K</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link rel="stylesheet" href="../style.css?v=14" />
+  <link rel="stylesheet" href="../style.css?v=15" />
   <style>
     /* Test overlay */
     #test-overlay {
@@ -138,12 +138,20 @@
       </div>
     </div>
 
-    <div class="section collapsed" id="section-block-parties">
-      <h2>Block Parties &#127881; <span class="section-toggle">&#9660;</span></h2>
+    <div class="section collapsed" id="section-parties">
+      <h2>Parties &#127881; <span class="section-toggle">&#9660;</span></h2>
       <div class="section-body">
-        <p class="hint">Neighborhood parties along the route.</p>
-        <button id="btn-block-parties" class="tool-btn" onclick="toggleBlockParties()">&#127881; Show on Map</button>
-        <div id="block-parties-list"></div>
+        <div class="food-tabs" id="party-tabs">
+          <button class="food-tab active" data-tab="party-tab-community">Community</button>
+          <button class="food-tab" data-tab="party-tab-hosted">Hosted</button>
+        </div>
+        <div id="party-tab-community" class="food-tab-panel active">
+          <button id="btn-block-parties" class="tool-btn" onclick="toggleBlockParties()">&#127881; Show on Map</button>
+          <div id="block-parties-list"></div>
+        </div>
+        <div id="party-tab-hosted" class="food-tab-panel">
+          <div id="parties-content"></div>
+        </div>
       </div>
     </div>
 
@@ -302,7 +310,7 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="../gpx_data.js"></script>
   <script src="../config.js"></script>
-  <script src="../app.js?v=16"></script>
+  <script src="../app.js?v=17"></script>
   <script>
     // ── Test Runner ──
     const _tests = [];
@@ -417,7 +425,7 @@
 
       // New sections from Session #3
       assert(G, 'section-course-sections exists', document.getElementById('section-course-sections'));
-      assert(G, 'section-block-parties exists', document.getElementById('section-block-parties'));
+      assert(G, 'section-parties exists', document.getElementById('section-parties'));
       assert(G, 'section-passport exists', document.getElementById('section-passport'));
       assert(G, 'stop-detail-panel exists', document.getElementById('stop-detail-panel'));
       assert(G, 'pin-filters exists', document.getElementById('pin-filters'));
@@ -442,12 +450,12 @@
 
       // Food & Nutrition tabs
       assert(G, 'food-tabs container exists', document.querySelector('.food-tabs'));
-      assert(G, 'food tab panels exist', document.querySelectorAll('.food-tab-panel').length === 3);
+      assert(G, 'food tab panels exist (food 3 + party 2)', document.querySelectorAll('.food-tab-panel').length === 5);
 
       // Each section has section-body and section-toggle
       const sectionIds = ['section-stops', 'section-pace', 'section-food-nutrition',
                           'section-countdown', 'section-weather',
-                          'section-course-sections', 'section-block-parties',
+                          'section-course-sections', 'section-parties',
                           'section-tools', 'section-passport', 'section-pins',
                           'section-alt-routes', 'section-race-results',
                           'section-segments', 'section-elevation', 'section-route'];
