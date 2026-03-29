@@ -28,6 +28,15 @@
 
 ## Open Issues
 
+### [ISSUE-021] Service worker CORE_ASSETS cache-bust versions out of sync with index.html
+- **Status:** Fixed
+- **Severity:** Medium
+- **Found:** 2026-03-29
+- **Fixed:** 2026-03-29
+- **Root Cause:** `sw.js` CORE_ASSETS lists `style.css?v=13` and `app.js?v=15`, but `index.html` loads `style.css?v=15` and `app.js?v=17`. The consolidation commits (2026-03-28) bumped cache-bust versions in `index.html` but did not update `sw.js` to match. This means the SW pre-caches stale asset URLs that the page never requests, making offline caching ineffective for those files. Same class of bug as ISSUE-010.
+- **Fix:** Updated `sw.js` CORE_ASSETS to `style.css?v=15` and `app.js?v=17` to match `index.html`. Bumped cache version to `tb50k-v14`.
+- **Lesson:** When bumping cache-bust versions in `index.html`, always update `sw.js` CORE_ASSETS in the same commit. Consider a single-source-of-truth version constant.
+
 ### [ISSUE-020] Tools grid shows 2 columns on mobile instead of 1
 - **Status:** Fixed
 - **Severity:** Low

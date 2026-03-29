@@ -401,6 +401,7 @@
       testBugFixes();
       testAltRoutes();
       testTrainingHeatmap();
+      testSWCacheVersions();
     }
 
     // ── DOM Structure ──
@@ -2164,6 +2165,49 @@
     }
 
     // ── Training Heatmap ──
+    // ── ISSUE-021 regression: SW CORE_ASSETS versions must match index.html ──
+    function testSWCacheVersions() {
+      const G = 'SW Cache Versions';
+
+      // Fetch both files and compare cache-bust query strings
+      Promise.all([
+        fetch('/sw.js').then(r => r.text()),
+        fetch('/index.html').then(r => r.text())
+      ]).then(([swText, htmlText]) => {
+        // Extract versioned assets from sw.js CORE_ASSETS
+        const swVersions = {};
+        const swMatches = swText.matchAll(/['"]\/([a-z\-]+\.(js|css))\?v=(\d+)['"]/g);
+        for (const m of swMatches) { swVersions[m[1]] = m[3]; }
+
+        // Extract versioned assets from index.html
+        const htmlVersions = {};
+        const htmlMatches = htmlText.matchAll(/(?:src|href)="([a-z\-]+\.(js|css))\?v=(\d+)"/g);
+        for (const m of htmlMatches) { htmlVersions[m[1]] = m[3]; }
+
+        // Every versioned asset in sw.js must match index.html
+        Object.keys(swVersions).forEach(file => {
+          if (htmlVersions[file]) {
+            assert(G, `${file} version matches (sw:v${swVersions[file]} == html:v${htmlVersions[file]})`,
+              swVersions[file] === htmlVersions[file],
+              `sw.js has ?v=${swVersions[file]} but index.html has ?v=${htmlVersions[file]}`);
+          }
+        });
+
+        // Every versioned asset in index.html should be in sw.js
+        Object.keys(htmlVersions).forEach(file => {
+          const inSw = file in swVersions;
+          assert(G, `${file} present in SW CORE_ASSETS`,
+            inSw,
+            inSw ? '' : `index.html loads ${file}?v=${htmlVersions[file]} but sw.js doesn't cache it`);
+        });
+
+        renderTests();
+      }).catch(err => {
+        assert(G, 'fetch sw.js + index.html', false, err.message);
+        renderTests();
+      });
+    }
+
     function testTrainingHeatmap() {
       const G = 'Training Heatmap';
 
