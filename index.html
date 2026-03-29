@@ -11,7 +11,7 @@
   <meta name="apple-mobile-web-app-title" content="TB DC 50K" />
   <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌮</text></svg>" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link rel="stylesheet" href="style.css?v=13" />
+  <link rel="stylesheet" href="style.css?v=14" />
   <script>
     // Apply saved theme before render to prevent flash of default theme
     (function() {
@@ -72,19 +72,27 @@
       </div>
     </div>
 
-    <div class="section collapsed" id="section-food">
-      <h2>Mandatory Food &#127790; <span class="section-toggle">&#9660;</span></h2>
+    <div class="section collapsed" id="section-food-nutrition">
+      <h2>Food &amp; Nutrition &#127790; <span class="section-toggle">&#9660;</span></h2>
       <div class="section-body">
-        <p class="hint" data-sauce-id="food-hint" data-default-hint="Race rules — check off when completed.">Race rules — check off when completed.</p>
-        <div id="food-tracker"></div>
-      </div>
-    </div>
-
-    <div class="section collapsed" id="section-food-log">
-      <h2>Food Log &#127790; <span class="section-toggle">&#9660;</span></h2>
-      <div class="section-body">
-        <div id="food-log-content">
-          <p class="auth-locked-msg">Sign in to log your food at each stop.</p>
+        <div class="food-tabs">
+          <button class="food-tab active" data-tab="food-tab-rules">Rules</button>
+          <button class="food-tab" data-tab="food-tab-log">Log</button>
+          <button class="food-tab" data-tab="food-tab-calories">Calories</button>
+        </div>
+        <div id="food-tab-rules" class="food-tab-panel active">
+          <p class="hint" data-sauce-id="food-hint" data-default-hint="Race rules — check off when completed.">Race rules — check off when completed.</p>
+          <div id="food-tracker"></div>
+        </div>
+        <div id="food-tab-log" class="food-tab-panel">
+          <div id="food-log-content">
+            <p class="auth-locked-msg">Sign in to log your food at each stop.</p>
+          </div>
+        </div>
+        <div id="food-tab-calories" class="food-tab-panel">
+          <p class="hint" data-sauce-id="calorie-hint" data-default-hint="Track calories consumed vs burned on the course.">Track calories consumed vs burned on the course.</p>
+          <div id="calorie-log-form"></div>
+          <div id="calorie-tracker-content"><p class="hint">Loading...</p></div>
         </div>
       </div>
     </div>
@@ -231,38 +239,28 @@
       </div>
     </div>
 
-    <div class="section collapsed" id="section-splits">
-      <h2>Split History &#9201; <span class="section-toggle">&#9660;</span></h2>
+    <div class="section collapsed" id="section-race-results" style="display:none;">
+      <h2>Race Results &#127942; <span class="section-toggle">&#9660;</span></h2>
       <div class="section-body">
-        <p class="hint" data-sauce-id="splits-hint" data-default-hint="Splits are auto-recorded when Race Mode detects you near a stop.">Splits are auto-recorded when Race Mode detects you near a stop.</p>
-        <div id="split-history-content"><p class="hint">No splits recorded yet. Start Race Mode and approach a stop.</p></div>
+        <div class="race-results-subsection" id="race-results-splits">
+          <h3 class="race-results-subheading">Split History &#9201;</h3>
+          <p class="hint" data-sauce-id="splits-hint" data-default-hint="Splits are auto-recorded when Race Mode detects you near a stop.">Splits are auto-recorded when Race Mode detects you near a stop.</p>
+          <div id="split-history-content"><p class="hint">No splits recorded yet. Start Race Mode and approach a stop.</p></div>
+        </div>
+        <div class="race-results-subsection" id="race-results-records">
+          <h3 class="race-results-subheading">Segment Records &#128081;</h3>
+          <p class="hint" data-sauce-id="leaderboard-hint" data-default-hint="Fastest times per course section. KOM/QOM records.">Fastest times per course section. KOM/QOM records.</p>
+          <div id="leaderboard-content"><p class="hint">Loading...</p></div>
+        </div>
+        <div class="race-results-subsection" id="race-results-finishers">
+          <h3 class="race-results-subheading">Finisher Wall &#127942;</h3>
+          <p class="hint" data-sauce-id="finisher-hint" data-default-hint="Past finishers and race results.">Past finishers and race results.</p>
+          <div id="finisher-content"><p class="hint">Loading...</p></div>
+        </div>
       </div>
     </div>
 
-    <div class="section collapsed" id="section-calories">
-      <h2>Calorie Tracker &#128293; <span class="section-toggle">&#9660;</span></h2>
-      <div class="section-body">
-        <p class="hint" data-sauce-id="calorie-hint" data-default-hint="Track calories consumed vs burned on the course.">Track calories consumed vs burned on the course.</p>
-        <div id="calorie-log-form"></div>
-        <div id="calorie-tracker-content"><p class="hint">Loading...</p></div>
-      </div>
-    </div>
 
-    <div class="section collapsed" id="section-leaderboard">
-      <h2>Segment Records &#128081; <span class="section-toggle">&#9660;</span></h2>
-      <div class="section-body">
-        <p class="hint" data-sauce-id="leaderboard-hint" data-default-hint="Fastest times per course section. KOM/QOM records.">Fastest times per course section. KOM/QOM records.</p>
-        <div id="leaderboard-content"><p class="hint">Loading...</p></div>
-      </div>
-    </div>
-
-    <div class="section collapsed" id="section-finishers">
-      <h2>Finisher Wall &#127942; <span class="section-toggle">&#9660;</span></h2>
-      <div class="section-body">
-        <p class="hint" data-sauce-id="finisher-hint" data-default-hint="Past finishers and race results.">Past finishers and race results.</p>
-        <div id="finisher-content"><p class="hint">Loading...</p></div>
-      </div>
-    </div>
 
     <div class="section collapsed" id="section-segments">
       <h2>Leg-by-Leg &#128099; <span class="section-toggle">&#9660;</span></h2>
@@ -341,7 +339,7 @@
   </script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="gpx_data.js"></script>
-  <script src="app.js?v=15"></script>
+  <script src="app.js?v=16"></script>
 
   <!-- Supabase + Backend Features -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>

@@ -791,6 +791,65 @@ body {
   text-decoration: line-through;
 }
 
+/* ── Food & Nutrition Tabs ── */
+.food-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.food-tab {
+  flex: 1;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  padding: 6px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.72rem;
+  font-weight: 600;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.food-tab:hover {
+  color: var(--color-text);
+  border-color: var(--color-accent);
+}
+
+.food-tab.active {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: white;
+}
+
+.food-tab-panel {
+  display: none;
+}
+
+.food-tab-panel.active {
+  display: block;
+}
+
+/* ── Race Results Subsections ── */
+.race-results-subsection {
+  padding-bottom: 10px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.race-results-subsection:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.race-results-subheading {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  margin: 0 0 6px 0;
+}
+
 /* ── Tools Grid ── */
 .tools-grid {
   display: grid;
@@ -2427,7 +2486,6 @@ body {
   /* Hide non-essential sections */
   .theme-picker,
   #auth-bar,
-  #section-food-log,
   #section-social,
   #section-parties,
   #section-betting,
@@ -2440,12 +2498,16 @@ body {
   /* Show pace-relevant sections */
   #section-stops,
   #section-pace,
-  #section-food,
+  #section-food-nutrition,
   #section-countdown,
   #section-segments,
   #section-route {
     display: block !important;
   }
+
+  /* Show all food tabs in print */
+  .food-tabs { display: none !important; }
+  .food-tab-panel { display: block !important; }
 
   /* Force sections open for print */
   .section.collapsed .section-body {

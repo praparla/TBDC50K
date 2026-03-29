@@ -293,6 +293,7 @@ document.addEventListener('DOMContentLoaded', () => {
   handleOrientationAndResize();
   resetAddButton();
   buildFoodTracker();
+  setupFoodTabs();
   restorePaceInputs();
 
   // New features
@@ -311,6 +312,7 @@ document.addEventListener('DOMContentLoaded', () => {
   buildCalorieTracker();
   buildCalorieLogForm();
   buildSegmentLeaderboard();
+  updateRaceResultsVisibility();
   renderAltRoutesSidebar(false);
 
   // Initialize view toggle
@@ -979,6 +981,34 @@ function buildFoodTracker() {
     });
     container.appendChild(row);
   });
+}
+
+// ── Food & Nutrition Tabs ──
+function setupFoodTabs() {
+  const tabs = document.querySelectorAll('.food-tab');
+  const panels = document.querySelectorAll('.food-tab-panel');
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      tabs.forEach(t => t.classList.remove('active'));
+      panels.forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      const panel = document.getElementById(tab.dataset.tab);
+      if (panel) panel.classList.add('active');
+    });
+  });
+}
+
+// ── Race Results Visibility ──
+// Show the combined Race Results section only when there's real data
+function updateRaceResultsVisibility() {
+  const section = document.getElementById('section-race-results');
+  if (!section) return;
+
+  const hasSplits = splitHistory && splitHistory.length > 0;
+  const hasRecords = SEGMENT_RECORDS.some(r => r.kom.name !== 'TBD' || r.qom.name !== 'TBD');
+  const hasFinishers = FINISHER_DATA.some(f => f.time !== 'Surveyed' && f.time !== 'Nov 27');
+
+  section.style.display = (hasSplits || hasRecords || hasFinishers) ? '' : 'none';
 }
 
 // ── LocalStorage ──
@@ -2562,6 +2592,8 @@ function renderSplitHistory() {
   const container = document.getElementById('split-history-content');
   if (!container) return;
 
+  updateRaceResultsVisibility();
+
   if (splitHistory.length === 0) {
     container.innerHTML = '<p class="hint">No splits recorded yet. Start Race Mode and approach a stop.</p>';
     return;
@@ -2898,7 +2930,7 @@ function buildCalorieTracker() {
     });
     html += '</div>';
   } else {
-    html += '<p class="hint">Check off food items in the Mandatory Food section or use the Food Log to track calories.</p>';
+    html += '<p class="hint">Check off food items in the Rules tab or use the Log tab to track calories.</p>';
   }
 
   // Burn estimate note

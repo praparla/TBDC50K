@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Responsive Layout Tests — TB DC 50K</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link rel="stylesheet" href="../style.css?v=13" />
+  <link rel="stylesheet" href="../style.css?v=14" />
   <style>
     /* Test overlay */
     #test-overlay {
@@ -87,11 +87,25 @@
       </div>
     </div>
 
-    <div class="section collapsed" id="section-food">
-      <h2>Mandatory Food &#127790; <span class="section-toggle">&#9660;</span></h2>
+    <div class="section collapsed" id="section-food-nutrition">
+      <h2>Food &amp; Nutrition &#127790; <span class="section-toggle">&#9660;</span></h2>
       <div class="section-body">
-        <p class="hint">Race rules — check off when completed:</p>
-        <div id="food-tracker"></div>
+        <div class="food-tabs">
+          <button class="food-tab active" data-tab="food-tab-rules">Rules</button>
+          <button class="food-tab" data-tab="food-tab-log">Log</button>
+          <button class="food-tab" data-tab="food-tab-calories">Calories</button>
+        </div>
+        <div id="food-tab-rules" class="food-tab-panel active">
+          <p class="hint">Race rules — check off when completed:</p>
+          <div id="food-tracker"></div>
+        </div>
+        <div id="food-tab-log" class="food-tab-panel">
+          <div id="food-log-content"></div>
+        </div>
+        <div id="food-tab-calories" class="food-tab-panel">
+          <div id="calorie-log-form"></div>
+          <div id="calorie-tracker-content"></div>
+        </div>
       </div>
     </div>
 
@@ -209,36 +223,21 @@
       </div>
     </div>
 
-    <div class="section collapsed" id="section-splits">
-      <h2>Split History &#9201; <span class="section-toggle">&#9660;</span></h2>
+    <div class="section collapsed" id="section-race-results">
+      <h2>Race Results &#127942; <span class="section-toggle">&#9660;</span></h2>
       <div class="section-body">
-        <p class="hint" data-sauce-id="splits-hint" data-default-hint="Splits are auto-recorded when Race Mode detects you near a stop.">Splits are auto-recorded when Race Mode detects you near a stop.</p>
-        <div id="split-history-content"><p class="hint">No splits recorded yet. Start Race Mode and approach a stop.</p></div>
-      </div>
-    </div>
-
-    <div class="section collapsed" id="section-calories">
-      <h2>Calorie Tracker &#128293; <span class="section-toggle">&#9660;</span></h2>
-      <div class="section-body">
-        <p class="hint" data-sauce-id="calorie-hint" data-default-hint="Track calories consumed vs burned on the course.">Track calories consumed vs burned on the course.</p>
-        <div id="calorie-log-form"></div>
-        <div id="calorie-tracker-content"><p class="hint">Loading...</p></div>
-      </div>
-    </div>
-
-    <div class="section collapsed" id="section-leaderboard">
-      <h2>Segment Records &#128081; <span class="section-toggle">&#9660;</span></h2>
-      <div class="section-body">
-        <p class="hint" data-sauce-id="leaderboard-hint" data-default-hint="Fastest times per course section. KOM/QOM records.">Fastest times per course section. KOM/QOM records.</p>
-        <div id="leaderboard-content"><p class="hint">Loading...</p></div>
-      </div>
-    </div>
-
-    <div class="section collapsed" id="section-finishers">
-      <h2>Finisher Wall &#127942; <span class="section-toggle">&#9660;</span></h2>
-      <div class="section-body">
-        <p class="hint" data-sauce-id="finisher-hint" data-default-hint="Past finishers and race results.">Past finishers and race results.</p>
-        <div id="finisher-content"><p class="hint">Loading...</p></div>
+        <div class="race-results-subsection" id="race-results-splits">
+          <h3 class="race-results-subheading">Split History &#9201;</h3>
+          <div id="split-history-content"><p class="hint">No splits recorded yet.</p></div>
+        </div>
+        <div class="race-results-subsection" id="race-results-records">
+          <h3 class="race-results-subheading">Segment Records &#128081;</h3>
+          <div id="leaderboard-content"><p class="hint">Loading...</p></div>
+        </div>
+        <div class="race-results-subsection" id="race-results-finishers">
+          <h3 class="race-results-subheading">Finisher Wall &#127942;</h3>
+          <div id="finisher-content"><p class="hint">Loading...</p></div>
+        </div>
       </div>
     </div>
 
@@ -303,7 +302,7 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="../gpx_data.js"></script>
   <script src="../config.js"></script>
-  <script src="../app.js?v=9"></script>
+  <script src="../app.js?v=16"></script>
   <script>
     // ── Test Runner ──
     const _tests = [];
@@ -403,7 +402,7 @@
       assert(G, 'map container exists', document.getElementById('map'));
       assert(G, 'section-stops exists', document.getElementById('section-stops'));
       assert(G, 'section-pace exists', document.getElementById('section-pace'));
-      assert(G, 'section-food exists', document.getElementById('section-food'));
+      assert(G, 'section-food-nutrition exists', document.getElementById('section-food-nutrition'));
       assert(G, 'section-tools exists', document.getElementById('section-tools'));
       assert(G, 'section-pins exists', document.getElementById('section-pins'));
       assert(G, 'section-route exists', document.getElementById('section-route'));
@@ -425,30 +424,32 @@
 
       // New sections from Session #4
       assert(G, 'section-elevation exists', document.getElementById('section-elevation'));
-      assert(G, 'section-splits exists', document.getElementById('section-splits'));
-      assert(G, 'section-finishers exists', document.getElementById('section-finishers'));
+      assert(G, 'section-race-results exists', document.getElementById('section-race-results'));
       assert(G, 'search-input exists', document.getElementById('search-input'));
       assert(G, 'gap-toggle exists', document.getElementById('gap-toggle'));
 
-      // New sections from Session #5
-      assert(G, 'section-calories exists', document.getElementById('section-calories'));
-      assert(G, 'section-leaderboard exists', document.getElementById('section-leaderboard'));
-      assert(G, 'pin-note textarea exists', document.getElementById('pin-note'));
-      assert(G, 'calorie-tracker-content exists', document.getElementById('calorie-tracker-content'));
+      // Consolidated inner elements still exist
+      assert(G, 'split-history-content exists', document.getElementById('split-history-content'));
       assert(G, 'leaderboard-content exists', document.getElementById('leaderboard-content'));
+      assert(G, 'finisher-content exists', document.getElementById('finisher-content'));
+      assert(G, 'calorie-tracker-content exists', document.getElementById('calorie-tracker-content'));
       assert(G, 'calorie-log-form exists', document.getElementById('calorie-log-form'));
+      assert(G, 'pin-note textarea exists', document.getElementById('pin-note'));
       assert(G, 'offline-tiles button exists', document.getElementById('btn-offline-tiles'));
       assert(G, 'section-alt-routes exists', document.getElementById('section-alt-routes'));
       assert(G, 'alt-routes button exists', document.getElementById('btn-alt-routes'));
       assert(G, 'heatmap button exists', document.getElementById('btn-heatmap'));
 
+      // Food & Nutrition tabs
+      assert(G, 'food-tabs container exists', document.querySelector('.food-tabs'));
+      assert(G, 'food tab panels exist', document.querySelectorAll('.food-tab-panel').length === 3);
+
       // Each section has section-body and section-toggle
-      const sectionIds = ['section-stops', 'section-pace', 'section-food',
+      const sectionIds = ['section-stops', 'section-pace', 'section-food-nutrition',
                           'section-countdown', 'section-weather',
                           'section-course-sections', 'section-block-parties',
                           'section-tools', 'section-passport', 'section-pins',
-                          'section-alt-routes', 'section-splits', 'section-calories',
-                          'section-leaderboard', 'section-finishers',
+                          'section-alt-routes', 'section-race-results',
                           'section-segments', 'section-elevation', 'section-route'];
       sectionIds.forEach(id => {
         const sec = document.getElementById(id);
@@ -588,11 +589,11 @@
       const G = 'Collapsible Sections';
 
       // All start collapsed (class is in HTML)
-      const sectionIds = ['section-stops', 'section-pace', 'section-food',
+      const sectionIds = ['section-stops', 'section-pace', 'section-food-nutrition',
                           'section-countdown', 'section-weather',
                           'section-tools', 'section-pins', 'section-alt-routes',
-                          'section-splits', 'section-calories', 'section-leaderboard',
-                          'section-finishers', 'section-segments', 'section-elevation', 'section-route'];
+                          'section-race-results',
+                          'section-segments', 'section-elevation', 'section-route'];
       sectionIds.forEach(id => {
         assert(G, `${id} starts collapsed`,
           document.getElementById(id).classList.contains('collapsed'));
@@ -1825,8 +1826,8 @@
     function testSplitHistory() {
       const G = 'Split History';
 
-      // DOM
-      assert(G, 'section-splits exists', !!document.getElementById('section-splits'));
+      // DOM (now inside Race Results section)
+      assert(G, 'section-race-results exists', !!document.getElementById('section-race-results'));
       assert(G, 'split-history-content exists', !!document.getElementById('split-history-content'));
 
       // Functions
@@ -1903,8 +1904,7 @@
     function testFinisherWall() {
       const G = 'Finisher Wall';
 
-      // DOM
-      assert(G, 'section-finishers exists', !!document.getElementById('section-finishers'));
+      // DOM (now inside Race Results section)
       assert(G, 'finisher-content exists', !!document.getElementById('finisher-content'));
 
       // Function
@@ -1931,8 +1931,7 @@
     function testCalorieTracker() {
       const G = 'Calorie Tracker';
 
-      // DOM
-      assert(G, 'section-calories exists', !!document.getElementById('section-calories'));
+      // DOM (now inside Food & Nutrition tabs)
       assert(G, 'calorie-tracker-content exists', !!document.getElementById('calorie-tracker-content'));
       assert(G, 'calorie-log-form exists', !!document.getElementById('calorie-log-form'));
 
@@ -1972,8 +1971,7 @@
     function testSegmentLeaderboard() {
       const G = 'Segment Leaderboard';
 
-      // DOM
-      assert(G, 'section-leaderboard exists', !!document.getElementById('section-leaderboard'));
+      // DOM (now inside Race Results section)
       assert(G, 'leaderboard-content exists', !!document.getElementById('leaderboard-content'));
 
       // Functions
