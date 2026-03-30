@@ -388,8 +388,10 @@ function loadGPX() {
     map.invalidateSize();
     const padding = isMobile() ? 0.02 : 0.05;
     map.fitBounds(routeLayer.getBounds().pad(padding), { animate: false });
-    document.getElementById('map').classList.add('map-ready');
   });
+
+  // Signal that GPX data is loaded and map is initialized (ISSUE-022)
+  document.getElementById('map').classList.add('map-ready');
 
   // Calculate route info
   updateRouteInfo(GPX_TRACK);
@@ -1093,6 +1095,13 @@ function startCountdown() {
 
   localStorage.setItem('tb50k_race_start_h', hours);
   localStorage.setItem('tb50k_race_start_m', minutes);
+
+  // Auto-refresh pace calculator if goal time is set (ISSUE-018)
+  const paceH = document.getElementById('pace-hours');
+  const paceM = document.getElementById('pace-minutes');
+  if (paceH && paceM && (paceH.value || paceM.value)) {
+    calculatePace();
+  }
 
   // Race date: Nov 27, 2026
   const raceDate = new Date(2026, 10, 27); // month is 0-indexed

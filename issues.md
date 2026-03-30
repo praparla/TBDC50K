@@ -23,10 +23,20 @@
 - **User-supplied text in innerHTML:** Any string from user input or external data (pin names, display names, hot takes, party names) must be escaped before inserting into `innerHTML`. Use a DOM-based `escapeHtml()` utility (create a text node, read back `.innerHTML`) rather than regex replacement.
 - **Service worker cache versioning:** When `index.html` loads assets with cache-bust query strings (`style.css?v=8`), the service worker's `CORE_ASSETS` list must use the same versioned paths. Mismatched paths cause the SW to cache a resource that the page never requests.
 - **Test stub alignment:** When production data arrays change length or shape, test stubs must be updated to match. Periodically audit test stubs against their production counterparts (e.g., `TACO_BELL_STOPS` count).
+- **Don't couple status signals with rAF:** Adding CSS classes or flags inside `requestAnimationFrame` makes them depend on paint timing. If the element has zero dimensions, rAF may never fire. Keep status signals synchronous.
 
 ---
 
 ## Open Issues
+
+### [ISSUE-022] `.map-ready` class never set when map container has zero dimensions
+- **Status:** Fixed
+- **Severity:** Low
+- **Found:** 2026-03-30
+- **Fixed:** 2026-03-30
+- **Root Cause:** `loadGPX()` added `.map-ready` inside a `requestAnimationFrame` callback. When the map container has zero dimensions (e.g., in the test page where the test overlay squeezes the map), the browser may skip or indefinitely defer the rAF callback, so `.map-ready` is never set. This is a code bug — `.map-ready` signals "GPX loaded" which is independent of whether `fitBounds` succeeded.
+- **Fix:** Moved `.map-ready` class addition out of the rAF callback and into the synchronous flow of `loadGPX()`. The rAF still handles `invalidateSize()` + `fitBounds()` for visual fitting. Bumped `app.js?v=19`, `sw.js` to `tb50k-v15`.
+- **Lesson:** Don't couple status signals (like CSS classes indicating init completion) with deferred visual operations (like rAF). They are separate concerns.
 
 ### [ISSUE-021] Service worker CORE_ASSETS cache-bust versions out of sync with index.html
 - **Status:** Fixed
@@ -66,11 +76,13 @@
 - **Lesson:** When a pace model applies adjustments (fatigue, grade), solve for the base pace algebraically rather than applying adjustments to a naive pace. The base pace = goal time / weighted distance where each segment's weight reflects its adjustment factor.
 
 ### [ISSUE-018] Pace Calculator doesn't auto-refresh arrival times when Race Day Clock start time is set
-- **Status:** Open
+- **Status:** Fixed
 - **Severity:** Low
 - **Found:** 2026-03-25
+- **Fixed:** 2026-03-30
 - **Root Cause:** Setting a start time in the Race Day Clock section doesn't trigger a re-render of the Pace Calculator splits table. The Pace Calculator still shows "Set a start time in the Countdown section to see arrival times" until the user manually re-clicks Calculate. The two sections don't communicate.
-- **Fix:** _(UX papercut — arrival times appear after the next Calculate click, but the prompt is misleading)_
+- **Fix:** Added `calculatePace()` call in `startCountdown()` after saving start time to localStorage, but only if a goal time is already set. This auto-refreshes the splits table with arrival times when the user sets/updates their start time. Bumped `app.js?v=19`.
+- **Lesson:** When two sections share state via localStorage, the writing section should notify the reading section to re-render.
 
 ### [ISSUE-017] TB Passport badges don't update in real-time after badge-triggering actions
 - **Status:** Fixed

@@ -2,7 +2,7 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "dev",
+      "name": "tb50k",
       "runtimeExecutable": "bash",
       "runtimeArgs": ["-c", "cd /tmp/tb50k_serve && python3 -m http.server 8050"],
       "port": 8050
