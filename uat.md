@@ -1,7 +1,7 @@
 # UAT Baseline — Taco Bell DC 50K Route Planner
 
 _Created: 2026-03-22_
-_Last run: 2026-03-29_
+_Last run: 2026-03-31_
 
 ## Project Info
 - **Stack**: Vanilla HTML/CSS/JS + Leaflet map (no build step)
@@ -28,22 +28,22 @@ _Last run: 2026-03-29_
 | Section | Last Tested | Notes |
 |---------|-------------|-------|
 | Header / Title | 2026-03-22 | Stable — title, subtitle, event link |
-| Theme Switcher | 2026-03-29 | Stable — all 6 themes verified (Live Más, Baja Blast, Sauce Packet tested this run) |
-| Runner/Crew Toggle | 2026-03-28 | Stable — toggle works on mobile Baja Blast theme, accent colors correct |
-| Taco Bell Stops | 2026-03-29 | Stable — stop detail panel with ratings, mandatory food, crew access, Directions |
-| Pace Calculator | 2026-03-29 | Stable — 9h30m goal = 9h 30m finish, all 8 stops + finish correct |
-| Food & Nutrition | 2026-03-29 | Stable — consolidated section with 3 tabs (Rules, Log, Calories). All tabs work. Calorie tracker: 350/3240/-2890 math correct |
+| Theme Switcher | 2026-03-31 | Stable — all 6 themes verified (Baja Blast, Purple Reign, Cantina Night, Sauce Packet, Retro '85 tested this run) |
+| Runner/Crew Toggle | 2026-03-31 | Stable — toggle works, Crew view switches map tiles and detail panel shows crew access |
+| Taco Bell Stops | 2026-03-31 | Stable — stop detail panel with ratings, mandatory food, crew access, Directions |
+| Pace Calculator | 2026-03-31 | Stable — 10h goal = 10h 0m finish, all 8 stops + finish correct, 18.2 min/mi pace |
+| Food & Nutrition | 2026-03-31 | Stable — consolidated section with 3 tabs (Rules, Log, Calories). All tabs work on desktop and mobile |
 | Parties | 2026-03-29 | Stable — consolidated Community/Hosted tabs. Hidden when backend not configured. Community shows empty state + "Submit your party" link |
 | Race Day Clock | 2026-03-29 | Stable — 7:00 AM start, Start button, proper instructions |
 | Weather | 2026-03-22 | Stable — loads forecast (initial fetch may fail on non-HTTPS) |
 | Course Sections | 2026-03-27 | Stable — 7 named sections with correct mile ranges |
-| Tools | 2026-03-29 | Stable — 16 buttons, single-col on mobile, 2-col on desktop |
+| Tools | 2026-03-31 | Stable — 16 buttons, single-col on mobile (345px grid), 2-col on desktop |
 | TB Passport | 2026-03-29 | Stable — 10 badges, 3 earned (Time Keeper, Fashionista, Film Buff), grid renders correctly |
 | Custom Pins | 2026-03-27 | Stable — form with 7 icon picker, "Click Map to Place Pin" prompt |
 | Alt Routes | 2026-03-27 | Stable — "Toggle alt routes to see options" instruction |
 | Race Results | 2026-03-29 | Stable — auto-hidden when no race data (display:none). Old Split History/Segment Records/Finisher Wall sections removed |
 | Leg-by-Leg | 2026-03-29 | Stable — all 8 segments, correct neighborhoods |
-| Elevation Profile | 2026-03-29 | Stable — grade-colored chart, stats correct (1263 ft gain/loss, 417 ft max, -3 ft min) |
+| Elevation Profile | 2026-03-31 | Stable — grade-colored chart, stats correct (1263 ft gain/loss, 417 ft max, -3 ft min) |
 | Route Info | 2026-03-27 | Stable — 32.4 mi, 1992 pts, 8 stops, 11h, Nov 27 2026 |
 
 ## Known Stable Areas
@@ -76,4 +76,8 @@ _Last run: 2026-03-29_
 - Sidebar consolidation verified: 13 visible sections (from 22). Food sections merged to "Food & Nutrition" with tabs, Block Parties merged into "Parties", Race Results auto-hidden, backend sections hidden.
 - Tested viewports: desktop (1280x800) and mobile (375x812) — all layouts work correctly
 - Sidebar scrolls independently from map on desktop; stacks above map on mobile/tablet
-- Test suite: 826/828 passing (2 pre-existing mobile viewport tests that only pass at 375px)
+- Test suite: 829/829 passing (0 failures). Previous 826/828 had stale SW cache issue + 2 viewport tests; both resolved.
+- 2026-03-31: Single-source ASSET_VERSIONS in config.js eliminates SW cache version drift (backlog item). sw.js now importScripts config.js. Test updated to verify config.js↔index.html version sync.
+- Tested viewports this run: desktop (1280x800), mobile (375x812), tablet (768x1024) — all layouts correct
+- Tested themes this run: Baja Blast, Purple Reign '94, Cantina Night, Sauce Packet, Retro '85 — all render correctly
+- Stop detail panel tested (Stop 3): ratings, mandatory food badge, crew access, Directions button all working

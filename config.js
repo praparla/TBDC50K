@@ -1,4 +1,14 @@
-// ── Taco Bell DC 50K — Backend Configuration ──
+// ── Taco Bell DC 50K — Configuration ──
+
+// Asset cache-bust versions — single source of truth.
+// When bumping a version in index.html, update it here too.
+// sw.js reads these via importScripts to build CORE_ASSETS dynamically.
+const ASSET_VERSIONS = {
+  'style.css': 15,
+  'app.js': 20,
+  'auth.js': 2,
+};
+
 // Supabase anon key is PUBLIC by design (protected by Row Level Security).
 // Replace these with your actual Supabase project values.
 

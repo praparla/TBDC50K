@@ -2165,45 +2165,56 @@
     }
 
     // ── Training Heatmap ──
-    // ── ISSUE-021 regression: SW CORE_ASSETS versions must match index.html ──
+    // ── ISSUE-021 regression: asset versions in config.js must match index.html ──
     function testSWCacheVersions() {
       const G = 'SW Cache Versions';
 
-      // Fetch both files and compare cache-bust query strings
+      // ASSET_VERSIONS in config.js is the single source of truth for sw.js.
+      // Verify config.js versions match the cache-bust params in index.html.
       Promise.all([
-        fetch('/sw.js').then(r => r.text()),
-        fetch('/index.html').then(r => r.text())
-      ]).then(([swText, htmlText]) => {
-        // Extract versioned assets from sw.js CORE_ASSETS
-        const swVersions = {};
-        const swMatches = swText.matchAll(/['"]\/([a-z\-]+\.(js|css))\?v=(\d+)['"]/g);
-        for (const m of swMatches) { swVersions[m[1]] = m[3]; }
+        fetch('/config.js').then(r => r.text()),
+        fetch('/index.html').then(r => r.text()),
+        fetch('/sw.js').then(r => r.text())
+      ]).then(([configText, htmlText, swText]) => {
+        // Extract ASSET_VERSIONS from config.js
+        const configVersions = {};
+        const configMatches = configText.matchAll(/'([a-z\-]+\.(js|css))':\s*(\d+)/g);
+        for (const m of configMatches) { configVersions[m[1]] = m[3]; }
+
+        assert(G, 'ASSET_VERSIONS defined in config.js',
+          Object.keys(configVersions).length > 0,
+          'config.js must define ASSET_VERSIONS with versioned assets');
 
         // Extract versioned assets from index.html
         const htmlVersions = {};
         const htmlMatches = htmlText.matchAll(/(?:src|href)="([a-z\-]+\.(js|css))\?v=(\d+)"/g);
         for (const m of htmlMatches) { htmlVersions[m[1]] = m[3]; }
 
-        // Every versioned asset in sw.js must match index.html
-        Object.keys(swVersions).forEach(file => {
+        // Every versioned asset in config.js must match index.html
+        Object.keys(configVersions).forEach(file => {
           if (htmlVersions[file]) {
-            assert(G, `${file} version matches (sw:v${swVersions[file]} == html:v${htmlVersions[file]})`,
-              swVersions[file] === htmlVersions[file],
-              `sw.js has ?v=${swVersions[file]} but index.html has ?v=${htmlVersions[file]}`);
+            assert(G, `${file} version matches (config:v${configVersions[file]} == html:v${htmlVersions[file]})`,
+              configVersions[file] === htmlVersions[file],
+              `config.js has v=${configVersions[file]} but index.html has ?v=${htmlVersions[file]}`);
           }
         });
 
-        // Every versioned asset in index.html should be in sw.js
+        // Every versioned asset in index.html should be in config.js
         Object.keys(htmlVersions).forEach(file => {
-          const inSw = file in swVersions;
-          assert(G, `${file} present in SW CORE_ASSETS`,
-            inSw,
-            inSw ? '' : `index.html loads ${file}?v=${htmlVersions[file]} but sw.js doesn't cache it`);
+          const inConfig = file in configVersions;
+          assert(G, `${file} present in ASSET_VERSIONS`,
+            inConfig,
+            inConfig ? '' : `index.html loads ${file}?v=${htmlVersions[file]} but config.js ASSET_VERSIONS doesn't include it`);
         });
+
+        // Verify sw.js uses importScripts for config.js
+        assert(G, 'sw.js imports config.js',
+          swText.includes("importScripts('/config.js')") || swText.includes('importScripts("/config.js")'),
+          'sw.js must importScripts config.js for ASSET_VERSIONS');
 
         renderTests();
       }).catch(err => {
-        assert(G, 'fetch sw.js + index.html', false, err.message);
+        assert(G, 'fetch config.js + index.html + sw.js', false, err.message);
         renderTests();
       });
     }
