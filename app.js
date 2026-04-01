@@ -212,6 +212,12 @@ function openInMaps(lat, lng, label) {
 // Make globally accessible for inline onclick handlers in popups
 window.openInMaps = openInMaps;
 
+// Helper: returns HTML for a directions button (used in 7+ popups/panels)
+function directionsBtn(lat, lng, label) {
+  const safe = (label || 'Pin').replace(/'/g, "\\'");
+  return `<button class="popup-directions-btn" onclick="openInMaps(${lat}, ${lng}, '${safe}')">🧭 Directions</button>`;
+}
+
 // ── Theme System ──
 function getThemeId() {
   return localStorage.getItem(THEME_STORAGE_KEY) || DEFAULT_THEME;
@@ -424,7 +430,7 @@ function addStopMarkers(wptCoords) {
     if (stop.mandatory) {
       popupHtml += `<p class="mandatory">⚠️ ${stop.mandatory}</p>`;
     }
-    popupHtml += `<button class="popup-directions-btn" onclick="openInMaps(${wpt.lat}, ${wpt.lon}, '${stop.label.replace(/'/g, "\\'")}')">🧭 Directions</button>`;
+    popupHtml += directionsBtn(wpt.lat, wpt.lon, stop.label);
     popupHtml += '</div>';
     marker.bindPopup(popupHtml);
 
@@ -561,7 +567,7 @@ function addPinToMap(pin) {
     <h3>${emoji} ${safeName}</h3>
     ${safeNote ? `<p class="pin-note-text">${safeNote}</p>` : ''}
     <p>${pin.lat.toFixed(5)}, ${pin.lng.toFixed(5)}</p>
-    <button class="popup-directions-btn" onclick="openInMaps(${pin.lat}, ${pin.lng}, '${safeName.replace(/'/g, "\\'")}')">🧭 Directions</button>
+    ${directionsBtn(pin.lat, pin.lng, pin.name)}
   </div>`);
 
   marker.pinId = pin.id;
@@ -702,7 +708,7 @@ function renderBathrooms(nodes) {
     const marker = L.marker([lat, lng], { icon });
     marker.bindPopup(`<div class="popup-content">
       <h3>🚽 ${name}</h3>
-      <button class="popup-directions-btn" onclick="openInMaps(${lat}, ${lng}, '${name.replace(/'/g, "\\'")}')">🧭 Directions</button>
+      ${directionsBtn(lat, lng, name)}
     </div>`);
     bathroomLayer.addLayer(marker);
   });
@@ -2069,7 +2075,7 @@ function toggleSpectatorSpots() {
       if (isCrew) {
         html += `<p><em>🅿️ ${spot.parking}</em></p>`;
       }
-      html += `<button class="popup-directions-btn" onclick="openInMaps(${spot.lat}, ${spot.lng}, '${spot.name.replace(/'/g, "\\'")}')">🧭 Directions</button>
+      html += `${directionsBtn(spot.lat, spot.lng, spot.name)}
       </div>`;
       return html;
     });
@@ -2130,7 +2136,7 @@ function openStopDetail(stopIndex) {
         <summary>🌮 Menu & Calories</summary>
         ${buildMenuPanel(stopIndex)}
       </details>
-      <button class="popup-directions-btn" onclick="openInMaps(${wpt.lat}, ${wpt.lon}, '${stop.label.replace(/'/g, "\\'")}')">🧭 Directions</button>
+      ${directionsBtn(wpt.lat, wpt.lon, stop.label)}
     </div>
   `;
 
@@ -2426,7 +2432,7 @@ function buildBlockPartyPopup(party) {
     html += `<p>${amenityBadges}</p>`;
   }
 
-  html += `<button class="popup-directions-btn" onclick="openInMaps(${party.lat}, ${party.lng}, '${party.name.replace(/'/g, "\\'")}')">🧭 Directions</button>
+  html += `${directionsBtn(party.lat, party.lng, party.name)}
   </div>`;
   return html;
 }
@@ -2576,7 +2582,7 @@ function makePinDraggable(marker, pin) {
     marker.setPopupContent(`<div class="popup-content">
       <h3>${emoji} ${safeName}</h3>
       <p>${pin.lat.toFixed(5)}, ${pin.lng.toFixed(5)}</p>
-      <button class="popup-directions-btn" onclick="openInMaps(${pin.lat}, ${pin.lng}, '${safeName.replace(/'/g, "\\'")}')">🧭 Directions</button>
+      ${directionsBtn(pin.lat, pin.lng, pin.name)}
     </div>`);
   });
 }
@@ -3088,25 +3094,6 @@ const STRAVA_SEGMENTS = {
   'The Capitol Grind': null,
   'The Final Push': null,
 };
-
-// Enhance course section list items with Strava links when segment IDs are available
-function addStravaLinks() {
-  const items = document.querySelectorAll('.course-section-item');
-  items.forEach(item => {
-    const name = item.dataset.sectionName;
-    const segmentId = STRAVA_SEGMENTS[name];
-    if (segmentId) {
-      const link = document.createElement('a');
-      link.href = `https://www.strava.com/segments/${segmentId}`;
-      link.target = '_blank';
-      link.rel = 'noopener';
-      link.className = 'strava-link';
-      link.textContent = '🏃 Strava';
-      link.title = 'View on Strava';
-      item.querySelector('.course-section-header')?.appendChild(link);
-    }
-  });
-}
 
 // ── Alternative Route Suggestions ──
 // Static alternative route variants for key legs

@@ -25,9 +25,16 @@
 - **Test stub alignment:** When production data arrays change length or shape, test stubs must be updated to match. Periodically audit test stubs against their production counterparts (e.g., `TACO_BELL_STOPS` count).
 - **Don't couple status signals with rAF:** Adding CSS classes or flags inside `requestAnimationFrame` makes them depend on paint timing. If the element has zero dimensions, rAF may never fire. Keep status signals synchronous.
 
+- **DRY popup patterns:** When the same HTML pattern (e.g., a directions button) appears in 5+ popups/panels, extract it into a helper function. Reduces typo risk and makes global changes (like updating button text) a one-line edit.
+
 ---
 
 ## Open Issues
+
+### UAT Pass — 2026-04-01
+- **Scope:** Desktop + mobile (375×812), all 6 themes, 17 sidebar sections, pace calculator, food tracker tabs, tools grid, stop detail panel, elevation profile, leg-by-leg, TB passport, custom pins form, weather, race day clock, runner/crew toggle.
+- **Result:** No new bugs found. 830/830 tests pass. All themes render correctly with good contrast. Mobile layout is solid. Stop detail panel, map popups, and all interactive features work as expected.
+- **Cleanup:** Removed dead `addStravaLinks()` function. Extracted `directionsBtn()` helper to DRY 7 duplicate inline button patterns.
 
 ### [ISSUE-022] `.map-ready` class never set when map container has zero dimensions
 - **Status:** Fixed
