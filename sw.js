@@ -1,7 +1,7 @@
 // Service Worker for TB DC 50K — Offline caching
 importScripts('/config.js');
 
-const CACHE_NAME = 'tb50k-v17';
+const CACHE_NAME = 'tb50k-v18';
 
 // Build versioned asset paths from ASSET_VERSIONS (single source of truth in config.js)
 function versionedPath(file) {
@@ -9,6 +9,7 @@ function versionedPath(file) {
   return v ? `/${file}?v=${v}` : `/${file}`;
 }
 
+// Core assets — cached on install (required for initial page load)
 const CORE_ASSETS = [
   '/',
   '/index.html',
@@ -22,19 +23,15 @@ const CORE_ASSETS = [
   '/events.js',
   '/elevation.js',
   '/gpx_data.js',
-  '/config.js',
-  versionedPath('auth.js'),
-  '/db.js',
-  '/prefs-sync.js',
-  '/food-log.js',
-  '/social-feed.js',
-  '/party.js',
-  '/betting.js',
+  '/backend-loader.js?v=1',
   '/block_parties.json',
   '/manifest.json',
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
 ];
+
+// Backend assets — NOT cached on install; cached on-demand when lazy-loaded
+// (Supabase SDK, config, auth, db, prefs-sync, food-log, social-feed, party, betting)
 
 // Install: cache core assets
 self.addEventListener('install', (event) => {

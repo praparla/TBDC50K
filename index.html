@@ -339,26 +339,18 @@
       });
     }
   </script>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="gpx_data.js"></script>
-  <script src="events.js"></script>
-  <script src="stops.js?v=1"></script>
-  <script src="pins.js?v=1"></script>
-  <script src="pace.js?v=1"></script>
-  <script src="race.js?v=1"></script>
-  <script src="tools.js?v=1"></script>
-  <script src="app.js?v=23"></script>
-  <script src="elevation.js"></script>
+  <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script defer src="gpx_data.js"></script>
+  <script defer src="events.js"></script>
+  <script defer src="stops.js?v=1"></script>
+  <script defer src="pins.js?v=1"></script>
+  <script defer src="pace.js?v=1"></script>
+  <script defer src="race.js?v=1"></script>
+  <script defer src="tools.js?v=1"></script>
+  <script defer src="app.js?v=23"></script>
+  <script defer src="elevation.js"></script>
 
-  <!-- Supabase + Backend Features -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-  <script src="config.js"></script>
-  <script src="auth.js?v=2"></script>
-  <script src="db.js"></script>
-  <script src="prefs-sync.js"></script>
-  <script src="food-log.js"></script>
-  <script src="social-feed.js"></script>
-  <script src="party.js"></script>
-  <script src="betting.js"></script>
+  <!-- Supabase + Backend Features (lazy-loaded on first auth interaction) -->
+  <script defer src="backend-loader.js?v=1"></script>
 </body>
 </html>

@@ -625,6 +625,7 @@ const TB_AUTH = (function () {
     updateAvatarEmoji,
     showAccountPanel,
     hideAccountPanel,
+    showAuthModal,
     showToast,
     getSupabase() { return supabaseClient; },
   };

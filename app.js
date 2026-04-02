@@ -488,11 +488,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Initialize backend features (graceful degradation — works without these scripts)
-  if (typeof TB_AUTH !== 'undefined') TB_AUTH.init();
-  if (typeof TB_FOOD_LOG !== 'undefined') TB_FOOD_LOG.init();
-  if (typeof TB_SOCIAL_FEED !== 'undefined') TB_SOCIAL_FEED.init();
-  if (typeof TB_PARTIES !== 'undefined') TB_PARTIES.init();
-  if (typeof TB_BETTING !== 'undefined') TB_BETTING.init();
-  if (typeof TB_PREFS_SYNC !== 'undefined') TB_PREFS_SYNC.init();
+  // Backend features (auth, food log, social, parties, betting) are lazy-loaded
+  // by backend-loader.js on first auth interaction — not loaded eagerly.
 });

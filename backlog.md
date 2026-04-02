@@ -10,6 +10,12 @@
 
 ## Open Items
 
+### P1 - Performance
+
+- [ ] **Bundle & minify JS/CSS** — Set up esbuild (or similar zero-config bundler) to bundle all 10+ core JS files into 1-2 bundles and minify `style.css`. Would reduce request count from ~14 to 2-3 and save ~15-20% on transfer size via dead-code elimination and minification. No framework needed — just a build script.
+- [ ] **Minify style.css** — Remove comments and whitespace from the 69KB stylesheet. Quick standalone win (~15-20% reduction) even without full bundling.
+- [ ] **Preload critical assets** — Add `<link rel="preload">` for Leaflet JS/CSS and `gpx_data.js` to start downloads earlier in the critical path.
+
 ### P2 - Features
 
 - [ ] **Friend location sharing** — Real-time location sharing on race day via Supabase Realtime + Geolocation API.

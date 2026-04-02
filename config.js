@@ -12,6 +12,7 @@ const ASSET_VERSIONS = {
   'race.js': 1,
   'tools.js': 1,
   'auth.js': 2,
+  'backend-loader.js': 1,
 };
 
 // Supabase anon key is PUBLIC by design (protected by Row Level Security).
