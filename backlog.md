@@ -21,7 +21,7 @@
 
 ### P2 - Code Simplification
 
-- [ ] **Extract more `app.js` modules** — At ~2,900 lines, `app.js` still has room for extraction. Candidates: `pins.js` (custom pins CRUD, ~200 lines), `pace.js` (pace calculator + GAP, ~180 lines). Use same IIFE pattern as `elevation.js`.
+*(No open items — see Completed section below)*
 
 ---
 
@@ -64,8 +64,8 @@ Printable pace card, GPX export, .ics calendar download, shareable race card ima
 ### P2 — UX Simplification (7 items, 2026-03-26 – 2026-03-28)
 Merged food sections into tabbed "Food & Nutrition", merged split/segment/finisher into "Race Results", merged block parties into "Parties" with tabs, hidden backend-not-configured sections, auto-hide empty pre-race sections, fixed pace/countdown label mismatch, consolidated calorie tracker.
 
-### P2 — Code Simplification (5 items, 2026-03-28 – 2026-04-02)
-Consolidated 3 duplicate `@media` blocks, single-source `ASSET_VERSIONS` in `config.js`, DRY `directionsBtn()` helper, event bus (`events.js`) decoupling 6 cross-section calls, elevation module extraction (`elevation.js`, 476 lines), shared `buildStopPopup()` deduplicating popup/panel rendering.
+### P2 — Code Simplification (8 items, 2026-03-28 – 2026-04-02)
+Consolidated 3 duplicate `@media` blocks, single-source `ASSET_VERSIONS` in `config.js`, DRY `directionsBtn()` helper, event bus (`events.js`) decoupling 6 cross-section calls, elevation module extraction (`elevation.js`, 476 lines), shared `buildStopPopup()` deduplicating popup/panel rendering. Full modularization of `app.js` (~2,900→~350 lines): extracted `stops.js`, `pins.js`, `pace.js`, `race.js`, `tools.js` as IIFE modules with read-only state getters and backward-compat window globals.
 
 ### P2 — UI/UX (5 items, 2026-03-10 – 2026-03-16)
 6-theme switcher (CSS custom properties + tile swap), mobile-first redesign, location search, draggable pins, course preview flythrough.
