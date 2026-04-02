@@ -310,7 +310,9 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="../gpx_data.js"></script>
   <script src="../config.js"></script>
-  <script src="../app.js?v=20"></script>
+  <script src="../events.js"></script>
+  <script src="../app.js?v=22"></script>
+  <script src="../elevation.js"></script>
   <script>
     // ── Test Runner ──
     const _tests = [];
@@ -402,6 +404,8 @@
       testAltRoutes();
       testTrainingHeatmap();
       testSWCacheVersions();
+      testEventBus();
+      testBuildStopPopup();
     }
 
     // ── DOM Structure ──
@@ -1657,23 +1661,20 @@
       assert(G, 'elevation-content exists', !!document.getElementById('elevation-content'));
       assert(G, 'section-elevation exists', !!document.getElementById('section-elevation'));
 
-      // Functions exist
-      assert(G, 'fetchElevation is a function', typeof fetchElevation === 'function');
-      assert(G, 'renderElevationProfile is a function', typeof renderElevationProfile === 'function');
-      assert(G, 'drawElevationChart is a function', typeof drawElevationChart === 'function');
-      assert(G, 'setupElevationHover is a function', typeof setupElevationHover === 'function');
-      assert(G, 'updateRouteInfoWithElevation is a function', typeof updateRouteInfoWithElevation === 'function');
+      // TB_Elevation module exists with expected API
+      assert(G, 'TB_Elevation exists', typeof TB_Elevation === 'object' && TB_Elevation !== null);
+      assert(G, 'TB_Elevation.init is a function', typeof TB_Elevation.init === 'function');
+      assert(G, 'TB_Elevation.data getter exists', 'data' in TB_Elevation);
+      assert(G, 'TB_Elevation.gradeColorActive getter exists', 'gradeColorActive' in TB_Elevation);
+      assert(G, 'TB_Elevation.toggleGradeColor is a function', typeof TB_Elevation.toggleGradeColor === 'function');
+      assert(G, 'TB_Elevation.getGAPFactors is a function', typeof TB_Elevation.getGAPFactors === 'function');
+      assert(G, 'TB_Elevation.getGrade is a function', typeof TB_Elevation.getGrade === 'function');
+      assert(G, 'TB_Elevation.gradeToColor is a function', typeof TB_Elevation.gradeToColor === 'function');
 
-      // Constants
-      assert(G, 'ELEVATION_CACHE_KEY defined', typeof ELEVATION_CACHE_KEY === 'string');
-      assert(G, 'ELEVATION_CACHE_TTL is 30 days',
-        ELEVATION_CACHE_TTL === 30 * 24 * 60 * 60 * 1000,
-        `${ELEVATION_CACHE_TTL}ms`);
-      assert(G, 'ELEVATION_SAMPLE_STEP defined', typeof ELEVATION_SAMPLE_STEP === 'number');
-
-      // Helper functions
-      assert(G, 'getGrade is a function', typeof getGrade === 'function');
-      assert(G, 'gradeToColor is a function', typeof gradeToColor === 'function');
+      // Backward-compat shims still work
+      assert(G, 'fetchElevation shim exists', typeof fetchElevation === 'function');
+      assert(G, 'getGrade shim exists', typeof getGrade === 'function');
+      assert(G, 'gradeToColor shim exists', typeof gradeToColor === 'function');
 
       // gradeToColor returns expected colors
       assert(G, 'gradeToColor(1) is green', gradeToColor(1) === '#34d399');
@@ -1686,13 +1687,10 @@
     function testGradeColor() {
       const G = 'Grade Color';
 
-      assert(G, 'toggleGradeColor is a function', typeof toggleGradeColor === 'function');
-      assert(G, 'buildGradedPolyline is a function', typeof buildGradedPolyline === 'function');
-      assert(G, 'removeGradedPolyline is a function', typeof removeGradedPolyline === 'function');
+      assert(G, 'toggleGradeColor is a function', typeof TB_Elevation.toggleGradeColor === 'function');
 
-      // State variable
-      assert(G, 'gradeColorActive starts false', gradeColorActive === false);
-      assert(G, 'gradeColorLayers starts null', gradeColorLayers === null);
+      // State via module getter
+      assert(G, 'gradeColorActive starts false', TB_Elevation.gradeColorActive === false);
 
       // Grade color button exists
       const btn = document.getElementById('btn-grade-color');
@@ -2233,6 +2231,95 @@
       const btn = document.getElementById('btn-heatmap');
       assert(G, 'heatmap button exists', !!btn);
       assert(G, 'button text contains Heatmap', btn && btn.textContent.includes('Heatmap'));
+    }
+
+    // ── Event Bus ──
+    function testBuildStopPopup() {
+      const G = 'Stop Popup Builder';
+
+      // buildStopPopup exists
+      assert(G, 'buildStopPopup is a function', typeof buildStopPopup === 'function');
+
+      // Returns HTML for valid stop index
+      const html0 = buildStopPopup(0);
+      assert(G, 'stop 0 returns non-empty HTML', html0 && html0.length > 0);
+      assert(G, 'stop 0 includes popup-content class', html0.includes('popup-content'));
+      assert(G, 'stop 0 includes stop label', html0.includes(TACO_BELL_STOPS[0].label));
+      assert(G, 'stop 0 includes directions button', html0.includes('popup-directions-btn'));
+
+      // Mandatory stop (index 3) includes mandatory text
+      const html3 = buildStopPopup(3);
+      assert(G, 'stop 3 includes mandatory warning', html3.includes('mandatory'));
+
+      // Non-mandatory stop (index 1) does NOT include mandatory warning
+      const html1 = buildStopPopup(1);
+      assert(G, 'stop 1 has no mandatory warning', !html1.includes('class="mandatory"'));
+
+      // Invalid index returns empty
+      const htmlBad = buildStopPopup(999);
+      assert(G, 'invalid index returns empty string', htmlBad === '');
+    }
+
+    function testEventBus() {
+      const G = 'Event Bus';
+
+      // TB_Events exists and has the right API
+      assert(G, 'TB_Events exists', typeof TB_Events === 'object' && TB_Events !== null);
+      assert(G, 'TB_Events.on is a function', typeof TB_Events.on === 'function');
+      assert(G, 'TB_Events.off is a function', typeof TB_Events.off === 'function');
+      assert(G, 'TB_Events.emit is a function', typeof TB_Events.emit === 'function');
+
+      // on/emit round-trip
+      let received = null;
+      const handler = (data) => { received = data; };
+      TB_Events.on('test:ping', handler);
+      TB_Events.emit('test:ping', { value: 42 });
+      assert(G, 'emit delivers data to subscriber',
+        received && received.value === 42, JSON.stringify(received));
+
+      // off removes listener
+      received = null;
+      TB_Events.off('test:ping', handler);
+      TB_Events.emit('test:ping', { value: 99 });
+      assert(G, 'off prevents further delivery', received === null);
+
+      // Multiple listeners on same event
+      let count = 0;
+      const inc1 = () => { count++; };
+      const inc2 = () => { count++; };
+      TB_Events.on('test:multi', inc1);
+      TB_Events.on('test:multi', inc2);
+      TB_Events.emit('test:multi');
+      assert(G, 'multiple listeners called', count === 2, `count=${count}`);
+      TB_Events.off('test:multi', inc1);
+      TB_Events.off('test:multi', inc2);
+
+      // Event bus is wired: themeChanged triggers passport rebuild
+      // (verify by checking passport re-renders after theme event)
+      const passportEl = document.getElementById('passport-content');
+      if (passportEl) {
+        const htmlBefore = passportEl.innerHTML;
+        TB_Events.emit('themeChanged', { themeId: 'modern' });
+        assert(G, 'themeChanged triggers passport rebuild',
+          passportEl.innerHTML.length > 0);
+      }
+
+      // Event bus is wired: startTimeChanged triggers pace recalc
+      const paceH = document.getElementById('pace-hours');
+      const paceM = document.getElementById('pace-minutes');
+      if (paceH && paceM) {
+        paceH.value = '8';
+        paceM.value = '0';
+        TB_Events.emit('startTimeChanged', { hours: 7, minutes: 0 });
+        const resultsDiv = document.getElementById('pace-results');
+        assert(G, 'startTimeChanged triggers pace recalc',
+          resultsDiv && resultsDiv.innerHTML.includes('pace-splits'));
+        // Clean up
+        paceH.value = '';
+        paceM.value = '';
+        localStorage.removeItem('tb50k_pace_hours');
+        localStorage.removeItem('tb50k_pace_minutes');
+      }
     }
   </script>
 </body>

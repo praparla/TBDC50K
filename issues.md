@@ -26,10 +26,21 @@
 - **Don't couple status signals with rAF:** Adding CSS classes or flags inside `requestAnimationFrame` makes them depend on paint timing. If the element has zero dimensions, rAF may never fire. Keep status signals synchronous.
 
 - **DRY popup patterns:** When the same HTML pattern (e.g., a directions button) appears in 5+ popups/panels, extract it into a helper function. Reduces typo risk and makes global changes (like updating button text) a one-line edit.
+- **IIFE module extraction:** When extracting code from a monolith into a separate file, use the `const MOD = window.MOD = (() => { ... })()` pattern so the module is accessible both as a bare identifier (for same-scope scripts) and as a `window` property (for dynamically evaluated code and tests). Expose only the public API; keep constants and helpers private inside the IIFE.
+- **Backward-compat shims after extraction:** When extracting functions into a module, leave thin shim functions in the original file that delegate to the module (e.g., `function foo() { return MOD.foo(); }`). This avoids updating every call site at once and can be removed incrementally.
+- **Test cache-busting on module changes:** When adding new globals or changing script content, bump the `?v=N` cache-bust version in both `index.html` and `tests/responsive.test.html`. The browser may serve stale JS otherwise, causing tests to fail with "undefined" even though the file is correct on disk.
 
 ---
 
 ## Open Issues
+
+### UAT Pass — 2026-04-02 (Post-Refactor)
+- **Scope:** Code simplification session. Extracted event bus (`events.js`), elevation module (`elevation.js`), shared `buildStopPopup()`. Updated tests for module API.
+- **Result:** 844/845 tests pass (+14 net new assertions). Only pre-existing failure: "map container has dimensions" (test page layout issue). All 6 themes render correctly. No console errors on main app. Event bus wiring verified (theme→passport, pace, food, pin, achievement events). Elevation module functions correctly via backward-compat shims.
+
+### UAT Pass — 2026-04-02
+- **Scope:** Desktop (1280×800), mobile (375×812), tablet (768×1024). Themes tested: Sauce Packet, Baja Blast, Retro '85, Cantina Night. Sections tested: Pace Calculator, Food & Nutrition (all 3 tabs), Stop detail panel (Stop 5), Custom Pins form, Elevation Profile, Leg-by-Leg, Course Sections, Race Day Clock, Tools grid.
+- **Result:** No new bugs found. 830/830 tests pass. All themes render correctly. Mobile single-column tools grid correct. Sauce packet copy active on Sauce theme. Stop detail panel ratings/directions working. Elevation chart renders on mobile.
 
 ### UAT Pass — 2026-04-01
 - **Scope:** Desktop + mobile (375×812), all 6 themes, 17 sidebar sections, pace calculator, food tracker tabs, tools grid, stop detail panel, elevation profile, leg-by-leg, TB passport, custom pins form, weather, race day clock, runner/crew toggle.

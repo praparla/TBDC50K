@@ -5,7 +5,7 @@
 // sw.js reads these via importScripts to build CORE_ASSETS dynamically.
 const ASSET_VERSIONS = {
   'style.css': 15,
-  'app.js': 20,
+  'app.js': 22,
   'auth.js': 2,
 };
 
