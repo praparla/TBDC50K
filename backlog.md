@@ -12,9 +12,7 @@
 
 ### P1 - Performance
 
-- [ ] **Bundle & minify JS/CSS** — Set up esbuild (or similar zero-config bundler) to bundle all 10+ core JS files into 1-2 bundles and minify `style.css`. Would reduce request count from ~14 to 2-3 and save ~15-20% on transfer size via dead-code elimination and minification. No framework needed — just a build script.
-- [ ] **Minify style.css** — Remove comments and whitespace from the 69KB stylesheet. Quick standalone win (~15-20% reduction) even without full bundling.
-- [ ] **Preload critical assets** — Add `<link rel="preload">` for Leaflet JS/CSS and `gpx_data.js` to start downloads earlier in the critical path.
+*(No open items — see Completed section below)*
 
 ### P2 - Features
 
@@ -90,6 +88,9 @@ Stop detail panel with slide-in UX, emoji rating scales (burrito price / experie
 
 ### P2 — Block Parties (3 items, 2026-03-15 – 2026-03-17)
 `block_parties.json` data layer, sidebar section with amenity badges, party submission form (mailto).
+
+### P1 — Performance (3 items, 2026-04-02)
+Python build script (`build.py`) bundles 8 core JS files into `dist/bundle.min.js` (126KB→105KB, 17% smaller), minifies `style.css` into `dist/style.min.css` (70KB→54KB, 23% smaller), minifies `gpx_data.js` (48KB→44KB). Reduced script requests from ~12 to 3. Added `<link rel="preload">` for Leaflet JS, GPX data, and bundle. Updated service worker cache manifest.
 
 ---
 

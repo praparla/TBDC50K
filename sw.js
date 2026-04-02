@@ -1,7 +1,7 @@
 // Service Worker for TB DC 50K — Offline caching
 importScripts('/config.js');
 
-const CACHE_NAME = 'tb50k-v18';
+const CACHE_NAME = 'tb50k-v19';
 
 // Build versioned asset paths from ASSET_VERSIONS (single source of truth in config.js)
 function versionedPath(file) {
@@ -13,16 +13,10 @@ function versionedPath(file) {
 const CORE_ASSETS = [
   '/',
   '/index.html',
-  versionedPath('style.css'),
-  versionedPath('app.js'),
-  versionedPath('stops.js'),
-  versionedPath('pins.js'),
-  versionedPath('pace.js'),
-  versionedPath('race.js'),
-  versionedPath('tools.js'),
-  '/events.js',
-  '/elevation.js',
-  '/gpx_data.js',
+  versionedPath('dist/style.min.css'),
+  versionedPath('dist/bundle.min.js'),
+  versionedPath('dist/gpx_data.min.js'),
+  '/config.js',
   '/backend-loader.js?v=1',
   '/block_parties.json',
   '/manifest.json',

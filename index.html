@@ -10,8 +10,11 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="TB DC 50K" />
   <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌮</text></svg>" />
+  <link rel="preload" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" as="script" />
+  <link rel="preload" href="dist/gpx_data.min.js" as="script" />
+  <link rel="preload" href="dist/bundle.min.js" as="script" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link rel="stylesheet" href="style.css?v=15" />
+  <link rel="stylesheet" href="dist/style.min.css?v=1" />
   <script>
     // Apply saved theme before render to prevent flash of default theme
     (function() {
@@ -340,15 +343,8 @@
     }
   </script>
   <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script defer src="gpx_data.js"></script>
-  <script defer src="events.js"></script>
-  <script defer src="stops.js?v=1"></script>
-  <script defer src="pins.js?v=1"></script>
-  <script defer src="pace.js?v=1"></script>
-  <script defer src="race.js?v=1"></script>
-  <script defer src="tools.js?v=1"></script>
-  <script defer src="app.js?v=23"></script>
-  <script defer src="elevation.js"></script>
+  <script defer src="dist/gpx_data.min.js"></script>
+  <script defer src="dist/bundle.min.js?v=1"></script>
 
   <!-- Supabase + Backend Features (lazy-loaded on first auth interaction) -->
   <script defer src="backend-loader.js?v=1"></script>
