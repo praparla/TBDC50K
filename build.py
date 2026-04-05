@@ -44,12 +44,59 @@ CSS_OUT = "style.min.css"
 BUNDLE_OUT = "bundle.min.js"
 
 
+def _strip_js_comments(code: str) -> str:
+    """Remove JS comments while preserving // and /* inside string literals.
+
+    Walks the source character-by-character, tracking whether we're inside
+    a single-quoted, double-quoted, or template-literal string.  Only strips
+    comments found outside of string contexts.
+    """
+    result: list[str] = []
+    i = 0
+    n = len(code)
+    while i < n:
+        c = code[i]
+
+        # ── String literals ──
+        if c in ("'", '"', '`'):
+            quote = c
+            result.append(c)
+            i += 1
+            while i < n:
+                ch = code[i]
+                result.append(ch)
+                if ch == '\\':          # escaped char — skip next
+                    i += 1
+                    if i < n:
+                        result.append(code[i])
+                elif ch == quote:
+                    break
+                i += 1
+            i += 1
+            continue
+
+        # ── Single-line comment ──
+        if c == '/' and i + 1 < n and code[i + 1] == '/':
+            # Skip to end of line
+            while i < n and code[i] != '\n':
+                i += 1
+            continue
+
+        # ── Multi-line comment ──
+        if c == '/' and i + 1 < n and code[i + 1] == '*':
+            end = code.find('*/', i + 2)
+            i = end + 2 if end != -1 else n
+            continue
+
+        result.append(c)
+        i += 1
+
+    return ''.join(result)
+
+
 def minify_js(code: str) -> str:
     """Basic JS minification: strip comments, collapse whitespace."""
-    # Remove single-line comments (but not URLs like https://)
-    code = re.sub(r'(?<![:\'"\\])//(?!/)[^\n]*', '', code)
-    # Remove multi-line comments
-    code = re.sub(r'/\*[\s\S]*?\*/', '', code)
+    code = _strip_js_comments(code)
     # Collapse runs of whitespace (but preserve newlines to avoid breaking ASI)
     code = re.sub(r'[ \t]+', ' ', code)
     # Remove blank lines

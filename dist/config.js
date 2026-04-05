@@ -4,14 +4,9 @@
 // When bumping a version in index.html, update it here too.
 // sw.js reads these via importScripts to build CORE_ASSETS dynamically.
 const ASSET_VERSIONS = {
-  'style.css': 15,
-  'app.js': 23,
-  'stops.js': 1,
-  'pins.js': 1,
-  'pace.js': 1,
-  'race.js': 1,
-  'tools.js': 1,
-  'auth.js': 2,
+  'dist/style.min.css': 1,
+  'dist/bundle.min.js': 1,
+  'dist/gpx_data.min.js': 1,
   'backend-loader.js': 1,
 };
 

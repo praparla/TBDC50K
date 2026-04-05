@@ -409,6 +409,7 @@
       testAltRoutes();
       testTrainingHeatmap();
       testSWCacheVersions();
+      testBundleIntegrity();
       testEventBus();
       testBuildStopPopup();
       testModuleStructure();
@@ -2130,6 +2131,42 @@
         assert(G, 'fetch config.js + index.html + sw.js', false, err.message);
         renderTests();
       });
+    }
+
+    // ── ISSUE-023 regression: minifier must not strip // inside string literals ──
+    function testBundleIntegrity() {
+      const G = 'Bundle Integrity';
+
+      // Fetch the minified bundle and check that string literals containing //
+      // (like ICS PRODID) are preserved intact.
+      fetch('/dist/bundle.min.js?t=' + Date.now())
+        .then(r => r.text())
+        .then(bundleText => {
+          // PRODID contains // which naive comment-stripping regex would destroy
+          assert(G, 'PRODID string preserved in bundle',
+            bundleText.includes("'PRODID:-//TB DC 50K//Route Planner//EN'"),
+            'Minifier stripped // inside PRODID string literal — check build.py _strip_js_comments');
+
+          // Verify bundle parses without syntax errors by checking key globals exist
+          assert(G, 'TB_Events loaded from bundle', typeof TB_Events === 'object',
+            'Bundle has a syntax error — TB_Events not defined');
+          assert(G, 'THEMES loaded from bundle', typeof THEMES === 'object',
+            'Bundle has a syntax error — THEMES not defined');
+          assert(G, 'calculatePace loaded from bundle', typeof calculatePace === 'function',
+            'Bundle has a syntax error — calculatePace not defined');
+
+          // Check other // patterns in strings survive minification
+          const urlPatterns = bundleText.match(/https?:\/\//g);
+          assert(G, 'URL patterns (https://) preserved',
+            urlPatterns && urlPatterns.length > 0,
+            'Minifier is stripping // in URLs');
+
+          renderTests();
+        })
+        .catch(err => {
+          assert(G, 'fetch bundle.min.js', false, err.message);
+          renderTests();
+        });
     }
 
     function testTrainingHeatmap() {

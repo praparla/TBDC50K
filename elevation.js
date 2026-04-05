@@ -8,6 +8,16 @@ const TB_Elevation = window.TB_Elevation = (() => {
   const CACHE_TTL = 30 * 24 * 60 * 60 * 1000; // 30 days
   const SAMPLE_STEP = 20; // Sample every Nth track point
 
+  function calcGainLoss(elevations) {
+    let gain = 0, loss = 0;
+    for (let i = 1; i < elevations.length; i++) {
+      const diff = elevations[i] - elevations[i - 1];
+      if (diff > 0) gain += diff;
+      else loss -= diff;
+    }
+    return { gain, loss };
+  }
+
   let elevationData = null; // { distances: [], elevations: [], trackIndices: [] }
   let elevationMarker = null;
   let gradeColorActive = false;
@@ -96,14 +106,7 @@ const TB_Elevation = window.TB_Elevation = (() => {
     const minElev = Math.min(...elevations);
     const maxElev = Math.max(...elevations);
 
-    // Calculate total gain/loss
-    let totalGain = 0;
-    let totalLoss = 0;
-    for (let i = 1; i < elevations.length; i++) {
-      const diff = elevations[i] - elevations[i - 1];
-      if (diff > 0) totalGain += diff;
-      else totalLoss += Math.abs(diff);
-    }
+    const { gain: totalGain, loss: totalLoss } = calcGainLoss(elevations);
 
     container.innerHTML = '';
 
@@ -345,13 +348,7 @@ const TB_Elevation = window.TB_Elevation = (() => {
     if (!info) return;
 
     const { elevations } = elevationData;
-    let totalGain = 0;
-    let totalLoss = 0;
-    for (let i = 1; i < elevations.length; i++) {
-      const diff = elevations[i] - elevations[i - 1];
-      if (diff > 0) totalGain += diff;
-      else totalLoss += Math.abs(diff);
-    }
+    const { gain: totalGain, loss: totalLoss } = calcGainLoss(elevations);
 
     // Append elevation stats to route info
     const existingElevDiv = info.querySelector('.route-elev-info');

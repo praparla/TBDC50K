@@ -29,10 +29,25 @@
 - **IIFE module extraction:** When extracting code from a monolith into a separate file, use the `const MOD = window.MOD = (() => { ... })()` pattern so the module is accessible both as a bare identifier (for same-scope scripts) and as a `window` property (for dynamically evaluated code and tests). Expose only the public API; keep constants and helpers private inside the IIFE.
 - **Backward-compat shims after extraction:** When extracting functions into a module, leave thin shim functions in the original file that delegate to the module (e.g., `function foo() { return MOD.foo(); }`). This avoids updating every call site at once and can be removed incrementally.
 - **Test cache-busting on module changes:** When adding new globals or changing script content, bump the `?v=N` cache-bust version in both `index.html` and `tests/responsive.test.html`. The browser may serve stale JS otherwise, causing tests to fail with "undefined" even though the file is correct on disk.
+- **Regex-based JS comment stripping is unsafe:** A regex like `(?<![:\'"\\])//[^\n]*` cannot distinguish `//` inside string literals from actual comments. The lookbehind for `:` catches `https://` but misses other patterns (e.g., `PRODID:-//`). Use a character-by-character parser that tracks string literal context instead. Always syntax-check minifier output.
 
 ---
 
 ## Open Issues
+
+### UAT Pass — 2026-04-05
+- **Scope:** Desktop (1280×800), mobile (375×812). Themes tested: Purple Reign, Baja Blast, Sauce Packet. Sections tested: Header/Title, Theme Switcher, Pace Calculator (8h45m), Elevation Profile, Route Info, Tools, TB Passport, Custom Pins, Alt Routes, Leg-by-Leg, Course Sections.
+- **Result:** 1 critical bug found (ISSUE-023). App was completely broken — minified bundle had a JS syntax error so no scripts executed (theme swatches missing, map empty, all interactive features dead). Fixed same session. Regression test added.
+
+### [ISSUE-023] Minifier strips `//` inside string literals, breaking bundle.min.js
+- **Severity:** Critical
+- **Page/Section:** All — entire app non-functional
+- **Discovered:** 2026-04-05
+- **Status:** Fixed
+- **Description:** `build.py`'s `minify_js()` used a regex `(?<![:\'"\\])//(?!/)[^\n]*` to strip single-line comments. This regex matched `//` inside the ICS `PRODID` string literal (`'PRODID:-//TB DC 50K//Route Planner//EN'`), truncating the string and introducing a syntax error at line 1151 of `bundle.min.js`. Since all app modules are bundled into one file, a single syntax error prevented the entire app from loading — no theme swatches, no map route, no interactive features.
+- **Root Cause:** Code bug. The comment-stripping regex cannot distinguish `//` inside string literals from actual `//` comments. The lookbehind `(?<![:\'"\\])` was meant to skip URLs (`https://`), but `PRODID:-//` starts with `-`, not `:`, `'`, `"`, or `\`.
+- **Fix:** Replaced the regex-based comment stripper with a character-by-character parser (`_strip_js_comments()`) that tracks string literal context (single/double quotes, backticks) and only strips `//` and `/* */` when outside string literals. Rebuilt bundle. Added `testBundleIntegrity()` regression test that fetches `bundle.min.js` and verifies the PRODID string is preserved.
+- **Lesson:** Regex-based JS comment stripping is fundamentally unsafe — it cannot handle `//` inside string literals without a full parser. When using a basic minifier, always syntax-check the output.
 
 ### UAT Pass — 2026-04-02 (Post-Refactor)
 - **Scope:** Code simplification session. Extracted event bus (`events.js`), elevation module (`elevation.js`), shared `buildStopPopup()`. Updated tests for module API.

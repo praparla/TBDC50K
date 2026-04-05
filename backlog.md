@@ -25,7 +25,7 @@
 
 ### P2 - Code Simplification
 
-*(No open items — see Completed section below)*
+- [ ] **Remove inline `onclick` handlers** — Convert all `onclick="funcName()"` in `index.html` to `data-action` attributes with a single event delegation handler. This eliminates ~25 backward-compat `window.x = Module.x` shims across 5 IIFE modules and decouples HTML from global function names.
 
 ---
 

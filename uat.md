@@ -1,7 +1,7 @@
 # UAT Baseline — Taco Bell DC 50K Route Planner
 
 _Created: 2026-03-22_
-_Last run: 2026-04-02_
+_Last run: 2026-04-05_
 
 ## Project Info
 - **Stack**: Vanilla HTML/CSS/JS + Leaflet map (no build step)
@@ -27,11 +27,11 @@ _Last run: 2026-04-02_
 
 | Section | Last Tested | Notes |
 |---------|-------------|-------|
-| Header / Title | 2026-03-22 | Stable — title, subtitle, event link |
-| Theme Switcher | 2026-04-02 | Stable — all 6 themes verified (Sauce Packet, Baja Blast, Retro '85, Cantina Night tested this run) |
+| Header / Title | 2026-04-05 | Stable — title, subtitle, event link |
+| Theme Switcher | 2026-04-05 | Stable — all 6 themes verified (Purple Reign, Baja Blast, Sauce Packet tested this run) |
 | Runner/Crew Toggle | 2026-03-31 | Stable — toggle works, Crew view switches map tiles and detail panel shows crew access |
 | Taco Bell Stops | 2026-04-02 | Stable — stop detail panel with ratings, mandatory food, crew access, Directions |
-| Pace Calculator | 2026-04-02 | Stable — 9h30m goal = 9h 30m finish, all 8 stops + finish correct, 17.3 min/mi pace |
+| Pace Calculator | 2026-04-05 | Stable — 8h45m goal tested, split table correct |
 | Food & Nutrition | 2026-04-02 | Stable — consolidated section with 3 tabs (Rules, Log, Calories). All tabs work on desktop and mobile. Sauce packet copy active on Sauce theme |
 | Parties | 2026-03-29 | Stable — consolidated Community/Hosted tabs. Hidden when backend not configured. Community shows empty state + "Submit your party" link |
 | Race Day Clock | 2026-04-02 | Stable — 7:00 AM start, Start button, proper instructions |
@@ -40,11 +40,11 @@ _Last run: 2026-04-02_
 | Tools | 2026-04-02 | Stable — 16 buttons, single-col on mobile (345px grid), 2-col on desktop |
 | TB Passport | 2026-03-29 | Stable — 10 badges, 3 earned (Time Keeper, Fashionista, Film Buff), grid renders correctly |
 | Custom Pins | 2026-04-02 | Stable — form with icon picker, search, name, note inputs. Mobile layout correct |
-| Alt Routes | 2026-03-27 | Stable — "Toggle alt routes to see options" instruction |
+| Alt Routes | 2026-04-05 | Stable — "Toggle alt routes to see options" instruction |
 | Race Results | 2026-03-29 | Stable — auto-hidden when no race data (display:none). Old Split History/Segment Records/Finisher Wall sections removed |
 | Leg-by-Leg | 2026-04-02 | Stable — all 8 segments, correct neighborhoods (Alexandria finish confirmed) |
-| Elevation Profile | 2026-04-02 | Stable — grade-colored chart, stats correct (1263 ft gain/loss, 417 ft max, -3 ft min). Mobile rendering good |
-| Route Info | 2026-03-27 | Stable — 32.4 mi, 1992 pts, 8 stops, 11h, Nov 27 2026 |
+| Elevation Profile | 2026-04-05 | Stable — grade-colored chart, stats correct (1263 ft gain/loss, 417 ft max, -3 ft min). Mobile rendering good |
+| Route Info | 2026-04-05 | Stable — sauce packet copy working, section expands correctly |
 
 ## Known Stable Areas
 - Theme switching (all 6 themes) — proper 44px touch targets
@@ -67,6 +67,7 @@ _Last run: 2026-04-02_
 - Weather fetch: initial load sometimes fails with `TypeError: Failed to fetch`, but data appears after retry. Console error is cosmetic. (ISSUE-015)
 - 2 pre-existing test failures: mobile CSS tests fail at desktop viewport width (expected — pass at 375px)
 - SW cache can serve stale HTML if cache version not bumped (ISSUE-021 fixed, regression test added)
+- Minifier can break bundle if JS source contains `//` inside string literals (ISSUE-023 fixed, regression test added)
 
 ## Exploration Notes
 - ISSUE-014 (theme swatch 22px touch targets) FIXED in 2026-03-24 run
@@ -84,3 +85,5 @@ _Last run: 2026-04-02_
 - 2026-04-02: Tested Sauce Packet, Baja Blast, Retro '85, Cantina Night themes across desktop/mobile/tablet. All render correctly.
 - Tested: Pace Calculator (9h30m goal), Food & Nutrition tabs (Rules/Log/Calories), Stop 5 detail panel, Custom Pins form, Elevation Profile, Leg-by-Leg, Course Sections, Race Day Clock, Tools grid (16 buttons, single-col mobile)
 - 830/830 tests pass. No new bugs found. No console errors (only expected Supabase warnings).
+- 2026-04-05: CRITICAL BUG FOUND (ISSUE-023). Minifier's comment-stripping regex destroyed `//` inside ICS PRODID string literal, causing JS syntax error in bundle.min.js at line 1151. Entire app was non-functional (no theme swatches, no map route, no interactive features). Fixed with string-aware comment parser. Regression test `testBundleIntegrity()` added.
+- Tested: Themes (Purple Reign, Baja Blast, Sauce Packet), Pace Calculator (8h45m), Elevation Profile, Route Info, mobile layout (375×812). All working post-fix.
