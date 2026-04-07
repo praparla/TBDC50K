@@ -35,6 +35,10 @@
 
 ## Open Issues
 
+### UAT Pass — 2026-04-06
+- **Scope:** Desktop (1280×800), mobile (375×812). Themes tested: Sauce Packet, Baja Blast, Cantina Night, Retro '85. Sections tested: Pace Calculator (7h30m), Elevation Profile, Course Sections, TB Passport, Custom Pins, Food & Nutrition (all 3 tabs), Race Day Clock, Taco Bell Stops, Leg-by-Leg, Tools grid.
+- **Result:** No new bugs found. 826/826 automated tests pass. All themes render correctly with proper contrast. Mobile single-column layout correct. All interactive features work as expected. Zero console errors.
+
 ### UAT Pass — 2026-04-05
 - **Scope:** Desktop (1280×800), mobile (375×812). Themes tested: Purple Reign, Baja Blast, Sauce Packet. Sections tested: Header/Title, Theme Switcher, Pace Calculator (8h45m), Elevation Profile, Route Info, Tools, TB Passport, Custom Pins, Alt Routes, Leg-by-Leg, Course Sections.
 - **Result:** 1 critical bug found (ISSUE-023). App was completely broken — minified bundle had a JS syntax error so no scripts executed (theme swatches missing, map empty, all interactive features dead). Fixed same session. Regression test added.

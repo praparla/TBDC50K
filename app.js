@@ -420,12 +420,6 @@ function handleOrientationAndResize() {
   }
 }
 
-// ── Elevation: backward-compat shims ──
-function fetchElevation() { TB_Elevation.init(); }
-function getGAPFactors() { return TB_Elevation.getGAPFactors(); }
-function getGrade(i, j) { return TB_Elevation.getGrade(i, j); }
-function gradeToColor(grade) { return TB_Elevation.gradeToColor(grade); }
-
 // ── Initialize ──
 document.addEventListener('DOMContentLoaded', () => {
   initMap();
@@ -449,7 +443,7 @@ document.addEventListener('DOMContentLoaded', () => {
   TB_Pins.buildPinFilters();
   TB_Pins.loadPinsFromURL();
   TB_Tools.loadBlockParties();
-  fetchElevation();
+  TB_Elevation.init();
   TB_Race.loadSplitHistory();
   TB_Tools.buildFinisherWall();
   TB_Pace.buildCalorieTracker();

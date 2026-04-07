@@ -26,6 +26,8 @@
 ### P2 - Code Simplification
 
 - [ ] **Remove inline `onclick` handlers** — Convert all `onclick="funcName()"` in `index.html` to `data-action` attributes with a single event delegation handler. This eliminates ~25 backward-compat `window.x = Module.x` shims across 5 IIFE modules and decouples HTML from global function names.
+- [ ] **CSS font-size token scale** — Replace ~180 individual font-size declarations (0.7rem–0.9rem spread across 8 granularities) with CSS custom properties (`--fs-xs`, `--fs-sm`, `--fs-base`, `--fs-md`, etc.). Reduces style.css by ~150 lines and enables consistent typography scaling across themes.
+- [ ] **Lazy-load auth CSS** — Move ~50 account/auth CSS rules (`acct-*`, `auth-dropdown*`) into a separate stylesheet that's loaded only when auth.js initializes. Reduces initial CSS payload for anonymous visitors.
 
 ---
 
