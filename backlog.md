@@ -27,7 +27,8 @@
 
 - [ ] **Remove inline `onclick` handlers** — Convert all `onclick="funcName()"` in `index.html` to `data-action` attributes with a single event delegation handler. This eliminates ~25 backward-compat `window.x = Module.x` shims across 5 IIFE modules and decouples HTML from global function names.
 - [ ] **CSS font-size token scale** — Replace ~180 individual font-size declarations (0.7rem–0.9rem spread across 8 granularities) with CSS custom properties (`--fs-xs`, `--fs-sm`, `--fs-base`, `--fs-md`, etc.). Reduces style.css by ~150 lines and enables consistent typography scaling across themes.
-- [ ] **Lazy-load auth CSS** — Move ~50 account/auth CSS rules (`acct-*`, `auth-dropdown*`) into a separate stylesheet that's loaded only when auth.js initializes. Reduces initial CSS payload for anonymous visitors.
+- [ ] **Lazy-load auth CSS** — Move ~120 account/auth CSS rules (lines 1249–1697 of style.css: `auth-*`, `acct-*`, `.role-picker-*`, toast notifications, keyframes) into a separate `auth.css` loaded only when auth.js initializes. ~450 lines / ~8KB savings for anonymous visitors. Requires build.py update.
+- [ ] **DRY map-layer toggle pattern in tools.js** — Extract the repeated toggle-on/off pattern (check flag → remove layer → update button text/class, or add layer → update button) used by bathrooms, spectator spots, block parties, and alt routes into a shared `toggleMapLayer()` helper. ~80 lines of near-identical code across 4 features.
 
 ---
 
